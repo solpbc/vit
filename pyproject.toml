@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vit"
+version = "0.1.0"
+description = "Minimal DID:PLC genesis op generator + registrar"
+requires-python = ">=3.9"
+dependencies = [
+    "cryptography",
+    "dag-cbor",
+    "base58",
+    "requests",
+]
+
+[project.scripts]
+plc-register = "plc_register:main"
+
+[tool.setuptools]
+py-modules = ["plc_register"]
