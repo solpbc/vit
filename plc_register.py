@@ -112,7 +112,7 @@ class KeyBundle:
     signing_key_bytes: bytes  # compressed point (33 bytes)
 
 
-def generate_rotation_key(outdir: pathlib.Path, curve: str) -> KeyBundle:
+def generate_rotation_key(outdir: pathlib.Path, curve: str, verbose: bool = False) -> KeyBundle:
     ensure_dir(outdir)
     if curve == "k256":
         priv = ec.generate_private_key(ec.SECP256K1(), backend=default_backend())
@@ -142,6 +142,10 @@ def generate_rotation_key(outdir: pathlib.Path, curve: str) -> KeyBundle:
     # did:key for rotation key is allowed; PLC only requires rotationKeys to be did:key of k256 or p256
     compressed = compress_pubkey_bytes(pub)
     didk = did_key_for_pub(curve, compressed)
+
+    if verbose:
+        print(f"[verbose] Generated {curve.upper()} keypair")
+        print(f"[verbose] Compressed pubkey: {compressed.hex()}")
 
     return KeyBundle(
         curve=curve,
@@ -188,15 +192,23 @@ def main():
     ap.add_argument("--aka", action="append", default=[], help="alsoKnownAs entry (e.g., at://alice.example). May repeat.")
     ap.add_argument("--pds", default=None, help="PDS endpoint URL (e.g., https://pds.example.com)")
     ap.add_argument("--dry-run", action="store_true", help="Build & print but do not POST to PLC")
+    ap.add_argument("-v", "--verbose", action="store_true", help="Show verbose output")
     args = ap.parse_args()
 
     outdir = pathlib.Path(args.out)
-    kb = generate_rotation_key(outdir, args.curve)
+    kb = generate_rotation_key(outdir, args.curve, args.verbose)
 
     unsigned = build_unsigned_op([kb.did_key], args.aka, args.pds)
 
+    if args.verbose:
+        print("[verbose] Unsigned operation:")
+        print(json.dumps(unsigned, indent=2))
+
     # Sign DAG-CBOR bytes of unsigned op (without 'sig')
     unsigned_cbor = dag_cbor.encode(unsigned)
+    if args.verbose:
+        print(f"[verbose] Encoded CBOR size: {len(unsigned_cbor)} bytes")
+
     # cryptography ECDSA expects the message; spec requires ECDSA-SHA256; library will hash internally.
     # If you'd rather sign the SHA256 digest explicitly, replace message with hashlib.sha256(unsigned_cbor).digest()
     # and switch to ec.Prehashed(hashes.SHA256()).
@@ -205,16 +217,30 @@ def main():
     raw_sig = sign_low_s_raw(args.curve, priv, unsigned_cbor)
     sig_b64u = b64url_nopad(raw_sig)
 
+    if args.verbose:
+        print(f"[verbose] Signature (base64url): {sig_b64u}")
+
     signed = dict(unsigned)
     signed["sig"] = sig_b64u
 
     did = derive_plc_did(signed)
+
+    if args.verbose:
+        signed_cbor = dag_cbor.encode(signed)
+        digest = hashlib.sha256(signed_cbor).digest()
+        print(f"[verbose] SHA256 of signed op: {digest.hex()}")
 
     # Save artifacts
     (outdir / "genesis_unsigned.dag-cbor").write_bytes(unsigned_cbor)
     (outdir / "genesis_signed.json").write_text(json.dumps(signed, separators=(",", ":"), ensure_ascii=False) + "\n")
     (outdir / "did.txt").write_text(did + "\n")
     (outdir / "rotation_did_key.txt").write_text(kb.did_key + "\n")
+
+    if args.verbose:
+        print(f"[verbose] Wrote genesis_unsigned.dag-cbor ({len(unsigned_cbor)} bytes)")
+        print(f"[verbose] Wrote genesis_signed.json")
+        print(f"[verbose] Wrote did.txt")
+        print(f"[verbose] Wrote rotation_did_key.txt")
 
     print(f"Rotation key (did:key): {kb.did_key}")
     print(f"DID (derived):          {did}")
@@ -226,6 +252,11 @@ def main():
 
     # Submit to PLC directory (HTTP POST JSON to .../{did})
     url = f"https://plc.directory/{did}"
+    if args.verbose:
+        print(f"[verbose] POSTing to {url}")
+        print("[verbose] Request body:")
+        print(json.dumps(signed, indent=2))
+
     try:
         resp = requests.post(url, json=signed, timeout=10)
         print(f"POST {url} -> {resp.status_code}")
