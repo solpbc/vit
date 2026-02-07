@@ -31,3 +31,6 @@ wheels/
 
 # PLC keys and artifacts
 plc_keys/
+node_modules/
+bun.lockb
+bun.lock
