@@ -26,5 +26,8 @@ wheels/
 .installed.cfg
 *.egg
 
+# Ruff
+.ruff_cache/
+
 # PLC keys and artifacts
 plc_keys/

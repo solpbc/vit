@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=45", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "vit"
@@ -14,8 +14,25 @@ dependencies = [
     "requests",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+]
+
 [project.scripts]
 plc-register = "plc_register:main"
 
-[tool.setuptools]
-py-modules = ["plc_register"]
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+only-include = ["plc_register.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]

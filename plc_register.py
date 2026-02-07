@@ -20,21 +20,19 @@ Example:
 
 import argparse
 import base64
-import base58
 import dataclasses
 import hashlib
 import json
-import os
 import pathlib
 import sys
 import typing as t
 
+import base58
 import dag_cbor
 import requests
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, utils
-from cryptography.hazmat.backends import default_backend
-
 
 # --- Constants from atproto crypto spec (multicodec varints for compressed pubkeys) ---
 # p256-pub  code 0x1200  -> varint bytes [0x80, 0x24]
@@ -105,7 +103,7 @@ def sign_low_s_raw(curve: str, private_key, message: bytes) -> bytes:
 
 @dataclasses.dataclass
 class KeyBundle:
-    curve: str               # 'k256' or 'p256'
+    curve: str  # 'k256' or 'p256'
     priv_pem_path: pathlib.Path
     pub_pem_path: pathlib.Path
     did_key: str
@@ -139,7 +137,8 @@ def generate_rotation_key(outdir: pathlib.Path, curve: str, verbose: bool = Fals
     priv_path.write_bytes(priv_pem)
     pub_path.write_bytes(pub_pem)
 
-    # did:key for rotation key is allowed; PLC only requires rotationKeys to be did:key of k256 or p256
+    # did:key for rotation key is allowed;
+    # PLC only requires rotationKeys to be did:key of k256 or p256
     compressed = compress_pubkey_bytes(pub)
     didk = did_key_for_pub(curve, compressed)
 
@@ -156,9 +155,9 @@ def generate_rotation_key(outdir: pathlib.Path, curve: str, verbose: bool = Fals
     )
 
 
-def build_unsigned_op(rotation_did_keys: t.List[str],
-                      aka_list: t.List[str],
-                      pds_endpoint: t.Optional[str]) -> dict:
+def build_unsigned_op(
+    rotation_did_keys: t.List[str], aka_list: t.List[str], pds_endpoint: t.Optional[str]
+) -> dict:
     # Minimal regular op shape; empty maps/lists are fine
     verification_methods = {}
     services = {}
@@ -187,9 +186,16 @@ def derive_plc_did(signed_op: dict) -> str:
 
 def main():
     ap = argparse.ArgumentParser(description="Generate & register a DID:PLC genesis operation.")
-    ap.add_argument("--out", default="plc_keys", help="Output directory for keys (default: plc_keys)")
+    ap.add_argument(
+        "--out", default="plc_keys", help="Output directory for keys (default: plc_keys)"
+    )
     ap.add_argument("--curve", choices=["k256", "p256"], default="k256", help="Rotation key curve")
-    ap.add_argument("--aka", action="append", default=[], help="alsoKnownAs entry (e.g., at://alice.example). May repeat.")
+    ap.add_argument(
+        "--aka",
+        action="append",
+        default=[],
+        help="alsoKnownAs entry (e.g., at://alice.example). May repeat.",
+    )
     ap.add_argument("--pds", default=None, help="PDS endpoint URL (e.g., https://pds.example.com)")
     ap.add_argument("--dry-run", action="store_true", help="Build & print but do not POST to PLC")
     ap.add_argument("-v", "--verbose", action="store_true", help="Show verbose output")
@@ -209,8 +215,9 @@ def main():
     if args.verbose:
         print(f"[verbose] Encoded CBOR size: {len(unsigned_cbor)} bytes")
 
-    # cryptography ECDSA expects the message; spec requires ECDSA-SHA256; library will hash internally.
-    # If you'd rather sign the SHA256 digest explicitly, replace message with hashlib.sha256(unsigned_cbor).digest()
+    # cryptography ECDSA expects the message; spec requires ECDSA-SHA256;
+    # library will hash internally. To sign the SHA256 digest explicitly,
+    # replace message with hashlib.sha256(unsigned_cbor).digest()
     # and switch to ec.Prehashed(hashes.SHA256()).
     # Low-S enforcement + raw r||s per atproto crypto guidance.
     priv = serialization.load_pem_private_key(kb.priv_pem_path.read_bytes(), password=None)
@@ -232,15 +239,17 @@ def main():
 
     # Save artifacts
     (outdir / "genesis_unsigned.dag-cbor").write_bytes(unsigned_cbor)
-    (outdir / "genesis_signed.json").write_text(json.dumps(signed, separators=(",", ":"), ensure_ascii=False) + "\n")
+    (outdir / "genesis_signed.json").write_text(
+        json.dumps(signed, separators=(",", ":"), ensure_ascii=False) + "\n"
+    )
     (outdir / "did.txt").write_text(did + "\n")
     (outdir / "rotation_did_key.txt").write_text(kb.did_key + "\n")
 
     if args.verbose:
         print(f"[verbose] Wrote genesis_unsigned.dag-cbor ({len(unsigned_cbor)} bytes)")
-        print(f"[verbose] Wrote genesis_signed.json")
-        print(f"[verbose] Wrote did.txt")
-        print(f"[verbose] Wrote rotation_did_key.txt")
+        print("[verbose] Wrote genesis_signed.json")
+        print("[verbose] Wrote did.txt")
+        print("[verbose] Wrote rotation_did_key.txt")
 
     print(f"Rotation key (did:key): {kb.did_key}")
     print(f"DID (derived):          {did}")
