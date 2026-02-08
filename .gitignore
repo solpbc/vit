@@ -5,3 +5,6 @@ plc_keys/
 node_modules/
 bun.lockb
 bun.lock
+
+# Environment
+.env

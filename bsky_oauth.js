@@ -2,7 +2,7 @@
 
 import { NodeOAuthClient } from '@atproto/oauth-client-node';
 import { Command } from 'commander';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 function createStore() {
   const map = new Map();
@@ -16,6 +16,30 @@ function createStore() {
       map.delete(key);
     },
   };
+}
+
+function saveToEnv(vars) {
+  const envPath = new URL('.env', import.meta.url).pathname;
+  let lines = [];
+  try {
+    lines = readFileSync(envPath, 'utf-8').split('\n');
+  } catch {}
+  // Strip trailing empty lines from parsed content
+  while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+  const updated = new Set();
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^([A-Za-z_][A-Za-z0-9_]*)=/);
+    if (m && m[1] in vars) {
+      lines[i] = `${m[1]}=${vars[m[1]]}`;
+      updated.add(m[1]);
+    }
+  }
+  for (const [key, value] of Object.entries(vars)) {
+    if (!updated.has(key)) {
+      lines.push(`${key}=${value}`);
+    }
+  }
+  writeFileSync(envPath, lines.join('\n') + '\n');
 }
 
 async function main() {
@@ -169,6 +193,14 @@ async function main() {
     if (output) {
       writeFileSync(output, `${JSON.stringify(outputData, null, 2)}\n`);
     }
+
+    saveToEnv({
+      BSKY_DID: outputData.did,
+      BSKY_ACCESS_TOKEN: outputData.accessToken ?? '',
+      BSKY_REFRESH_TOKEN: outputData.refreshToken ?? '',
+      BSKY_EXPIRES_AT: outputData.expiresAt ?? '',
+    });
+    console.log('Saved credentials to .env');
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
     process.exitCode = 1;
