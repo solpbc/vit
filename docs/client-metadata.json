@@ -1,0 +1,12 @@
+{
+  "client_id": "https://v-it.org/client-metadata.json",
+  "client_name": "vit CLI",
+  "application_type": "native",
+  "grant_types": ["authorization_code"],
+  "response_types": ["code"],
+  "redirect_uris": ["http://127.0.0.1/callback"],
+  "scope": "atproto transition:generic",
+  "token_endpoint_auth_method": "none",
+  "dpop_bound_access_tokens": true,
+  "client_uri": "https://v-it.org"
+}

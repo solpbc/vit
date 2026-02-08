@@ -2,9 +2,10 @@
   "name": "vit",
   "type": "module",
   "dependencies": {
+    "@atproto/oauth-client-node": "^0.3.16",
+    "@ipld/dag-cbor": "^9.2.0",
     "@noble/curves": "^1.8.0",
     "@noble/hashes": "^1.7.0",
-    "@ipld/dag-cbor": "^9.2.0",
     "bs58": "^6.0.0",
     "commander": "^13.0.0"
   }
