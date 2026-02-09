@@ -2,6 +2,7 @@
   "name": "vit",
   "type": "module",
   "dependencies": {
+    "@atproto/api": "^0.18.20",
     "@atproto/oauth-client-node": "^0.3.16",
     "@ipld/dag-cbor": "^9.2.0",
     "@noble/curves": "^1.8.0",

@@ -8,3 +8,4 @@ bun.lock
 
 # Environment
 .env
+bsky_session.json

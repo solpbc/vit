@@ -6,6 +6,8 @@ import { NodeOAuthClient } from '@atproto/oauth-client-node';
 import { Command } from 'commander';
 import { readFileSync, writeFileSync } from 'node:fs';
 
+const SESSION_FILE = new URL('bsky_session.json', import.meta.url).pathname;
+
 function createStore() {
   const map = new Map();
 
@@ -16,6 +18,24 @@ function createStore() {
     get: async (key) => map.get(key),
     del: async (key) => {
       map.delete(key);
+    },
+  };
+}
+
+function createSessionStore() {
+  let data = {};
+  try {
+    data = JSON.parse(readFileSync(SESSION_FILE, 'utf-8'));
+  } catch {}
+  return {
+    set: async (key, value) => {
+      data[key] = value;
+      writeFileSync(SESSION_FILE, JSON.stringify(data, null, 2) + '\n');
+    },
+    get: async (key) => data[key],
+    del: async (key) => {
+      delete data[key];
+      writeFileSync(SESSION_FILE, JSON.stringify(data, null, 2) + '\n');
     },
   };
 }
@@ -108,7 +128,7 @@ async function main() {
     }
 
     const stateStore = createStore();
-    const sessionStore = createStore();
+    const sessionStore = createSessionStore();
 
     const client = new NodeOAuthClient({
       clientMetadata: {
