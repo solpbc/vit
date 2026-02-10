@@ -4,7 +4,18 @@ Development guidelines for vit, a Bun/JS toolkit for DID:PLC operations and Blue
 
 ## Project Overview
 
-vit is a minimal set of CLI tools: a DID:PLC genesis op generator + registrar (`plc_register.js`), a PLC directory verifier (`plc_test.js`), and a Bluesky OAuth CLI tool (`bsky_oauth.js`). All tools run on Bun.
+vit is a Bun CLI with subcommands for DID:PLC operations and Bluesky OAuth:
+- `vit oauth`
+- `vit plc-register`
+- `vit plc-verify`
+- `vit firehose`
+- `vit pds-record`
+
+Source layout:
+- `bin/vit.js` - executable entrypoint
+- `src/cli.js` - root Commander program
+- `src/cmd/` - subcommand modules
+- `src/lib/` - shared helpers
 
 ## Commands
 
@@ -33,4 +44,4 @@ All JS source files must include this header immediately after the shebang line:
 // Copyright (c) 2026 sol pbc
 ```
 
-Add this header to `.js` files at the repo root. Do not add headers to docs/, node_modules/, or non-source files.
+Add this header to `.js` files in `bin/` and `src/`. Do not add headers to docs/, node_modules/, or non-source files.

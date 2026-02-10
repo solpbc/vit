@@ -1,5 +1,15 @@
 {
   "name": "vit",
+  "version": "0.1.0",
+  "description": "CLI toolkit for DID:PLC operations and Bluesky OAuth",
+  "license": "AGPL-3.0-only",
+  "bin": {
+    "vit": "bin/vit.js"
+  },
+  "files": [
+    "bin/",
+    "src/"
+  ],
   "type": "module",
   "dependencies": {
     "@atproto/api": "^0.18.20",
