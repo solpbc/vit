@@ -80,7 +80,11 @@ async function main() {
     // Create OAuth client with file-backed session store
     const sessionStore = createSessionStore();
 
+    // No-op lock: safe for single-process CLI, silences concurrent-refresh warning
+    const requestLock = async (_name, fn) => await fn();
+
     const client = new NodeOAuthClient({
+      requestLock,
       clientMetadata: {
         client_id: 'https://v-it.org/client-metadata.json',
         client_name: 'vit CLI',
