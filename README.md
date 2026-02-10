@@ -16,6 +16,15 @@ For global CLI use:
 bun install -g .
 ```
 
+## Terminology
+
+- **beacon** — a git repo that uniquely represents a project for all vit users; all project groupings are based on a single beacon (one unified "upstream"); git urls are canonicalized into a uniform beacon; stored in `.vit/`
+- **follow** — atproto handles; stored in local project `.vit/`
+- **skim** — check follows + beacon for posts; read the feed
+- **remix** — mix a post with local codebase and create a plan to implement; auto-likes
+- **ship** — take any locally implemented feature and write up a post (or quote post if was remixed)
+- **curate** — vet/validate posts to repost them
+
 ## oauth
 
 Obtain an ATProto OAuth access token via browser-based authorization.
