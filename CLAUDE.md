@@ -20,6 +20,10 @@ make clean      # Remove node_modules
 - **DRY, KISS** - Extract common logic, prefer simple solutions.
 - **Fail fast** - Validate inputs and external state early. Clear error messages.
 
+## Hosting
+
+The `docs/` directory is published to [v-it.org](https://v-it.org) via GitHub Pages. Pushing to main auto-deploys.
+
 ## File Headers
 
 All JS source files must include this header immediately after the shebang line:
