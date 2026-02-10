@@ -135,7 +135,7 @@ async function main() {
         client_id: 'https://v-it.org/client-metadata.json',
         client_name: 'vit CLI',
         application_type: 'native',
-        grant_types: ['authorization_code'],
+        grant_types: ['authorization_code', 'refresh_token'],
         response_types: ['code'],
         redirect_uris: [redirectUri],
         scope: 'atproto transition:generic',
