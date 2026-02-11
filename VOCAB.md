@@ -77,6 +77,40 @@ Vit maintains explicit ancestry for traceability.
 
 ## Core Verbs (CLI Surface)
 
+### init
+
+Check environment readiness and configure vit for first use.
+
+```bash
+vit init
+vit doctor
+```
+
+`doctor` is an alias for `init`.
+
+Capabilities:
+- Log in to Bluesky (invokes OAuth flow)
+- Install skills (agent capabilities)
+- Initialize `.vit/` in the current git repo
+- Verify environment is correctly configured
+
+Init is the entry point for new users.
+
+### adopt
+
+Adopt an existing project by its beacon.
+
+```bash
+vit adopt <beacon>
+```
+
+Behavior:
+- Forks via `gh` if GitHub CLI is installed; otherwise clones
+- Initializes `.vit/` in the checked-out repo
+- Prints next-step directions
+
+Adopt is the fast path to join an existing project.
+
 ### follow
 
 Subscribe to an ATProto handle.
@@ -173,6 +207,13 @@ Ship is the outward publishing act.
 
 ## Workflow Model
 
+Setup (one-time):
+
+```bash
+vit init
+vit adopt <beacon>
+```
+
 Typical flow:
 
 ```bash
@@ -191,6 +232,8 @@ vit vouch <cap>
 ```
 
 Conceptual lifecycle:
+- Init prepares the environment
+- Adopt joins a project via its beacon
 - Beacon anchors the project
 - Caps describe structured changes
 - Vet validates integrity (mandatory before action)
