@@ -1,0 +1,92 @@
+{
+  "lexicon": 1,
+  "id": "org.v-it.cap",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Record containing a vit cap.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["text", "createdAt"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 3000,
+            "maxGraphemes": 300,
+            "description": "The primary cap content. May be an empty string, if there are embeds."
+          },
+          "facets": {
+            "type": "array",
+            "description": "Annotations of text (mentions, URLs, hashtags, etc).",
+            "items": {
+              "type": "ref",
+              "ref": "lex:app.bsky.richtext.facet"
+            }
+          },
+          "reply": {
+            "type": "ref",
+            "ref": "lex:org.v-it.cap#replyRef",
+            "description": "Reference to the parent and root caps when this cap is a reply in a thread."
+          },
+          "embed": {
+            "type": "union",
+            "description": "Embedded content: images, video, external links, or record references.",
+            "refs": [
+              "lex:app.bsky.embed.images",
+              "lex:app.bsky.embed.video",
+              "lex:app.bsky.embed.external",
+              "lex:app.bsky.embed.record",
+              "lex:app.bsky.embed.recordWithMedia"
+            ]
+          },
+          "langs": {
+            "type": "array",
+            "description": "Indicates human language of cap primary text content.",
+            "maxLength": 3,
+            "items": {
+              "type": "string",
+              "format": "language"
+            }
+          },
+          "labels": {
+            "type": "union",
+            "description": "Self-label values for this cap. Effectively content warnings.",
+            "refs": ["lex:com.atproto.label.defs#selfLabels"]
+          },
+          "tags": {
+            "type": "array",
+            "description": "Additional hashtags, in addition to any included in cap text and facets.",
+            "maxLength": 8,
+            "items": {
+              "type": "string",
+              "maxLength": 640,
+              "maxGraphemes": 64
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Client-declared timestamp when this cap was originally created."
+          }
+        }
+      }
+    },
+    "replyRef": {
+      "type": "object",
+      "required": ["root", "parent"],
+      "properties": {
+        "root": {
+          "type": "ref",
+          "ref": "lex:com.atproto.repo.strongRef",
+          "description": "The root cap of the thread."
+        },
+        "parent": {
+          "type": "ref",
+          "ref": "lex:com.atproto.repo.strongRef",
+          "description": "The direct parent cap being replied to."
+        }
+      }
+    }
+  }
+}
