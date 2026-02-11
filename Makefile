@@ -1,7 +1,10 @@
-.PHONY: install test clean
+.PHONY: install install-user test clean
 
 install:
 	bun install
+
+install-user:
+	bun link
 
 test:
 	bun test
