@@ -108,7 +108,7 @@ export default function register(program) {
     .command('firehose')
     .description('Listen to Bluesky Jetstream firehose for custom record events')
     .option('-v, --verbose', 'Show full JSON for each event')
-    .option('--did <did>', 'Filter by DID (reads BSKY_DID from .env if not provided)')
+    .option('--did <did>', 'Filter by DID (reads saved BSKY_DID if not provided)')
     .option('--collection <nsid>', 'Collection NSID to filter', DEFAULT_COLLECTION)
     .action(async (opts) => {
       try {

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { configDir, configPath } from './paths.js';
 
 export function loadEnv() {
-  const envPath = join(process.cwd(), '.env');
+  const envPath = configPath('.env');
   const vars = {};
   let content;
   if (!existsSync(envPath)) {
@@ -24,7 +24,7 @@ export function loadEnv() {
 }
 
 export function saveToEnv(vars) {
-  const envPath = join(process.cwd(), '.env');
+  const envPath = configPath('.env');
   let lines = [];
   if (existsSync(envPath)) {
     try {
@@ -45,5 +45,6 @@ export function saveToEnv(vars) {
       lines.push(`${key}=${value}`);
     }
   }
+  mkdirSync(configDir, { recursive: true });
   writeFileSync(envPath, lines.join('\n') + '\n');
 }

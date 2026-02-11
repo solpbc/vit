@@ -4,6 +4,7 @@
 import { writeFileSync } from 'node:fs';
 import { saveToEnv } from '../lib/env.js';
 import { createOAuthClient, createSessionStore, createStore } from '../lib/oauth.js';
+import { configPath } from '../lib/paths.js';
 
 export default function register(program) {
   program
@@ -143,7 +144,7 @@ export default function register(program) {
           BSKY_REFRESH_TOKEN: outputData.refreshToken ?? '',
           BSKY_EXPIRES_AT: outputData.expiresAt ?? '',
         });
-        console.log('Saved credentials to .env');
+        console.log(`Saved credentials to ${configPath('.env')}`);
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;

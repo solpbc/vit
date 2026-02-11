@@ -8,7 +8,7 @@ export default function register(program) {
     .command('plc-verify')
     .description('Verify PLC directory entry for saved Bluesky DID')
     .option('-v, --verbose', 'Show full API responses')
-    .option('--did <did>', 'DID to check (overrides .env)')
+    .option('--did <did>', 'DID to check (overrides saved credentials)')
     .action(async (opts) => {
       try {
         const env = loadEnv();

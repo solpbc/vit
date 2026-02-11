@@ -2,17 +2,16 @@
 // Copyright (c) 2026 sol pbc
 
 import { Agent } from '@atproto/api';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { loadEnv } from '../lib/env.js';
 import { createOAuthClient, createSessionStore } from '../lib/oauth.js';
+import { configPath } from '../lib/paths.js';
 
 export default function register(program) {
   program
     .command('pds-record')
     .description('Write and read a custom org.v-it.hello record on the authenticated PDS')
     .option('-v, --verbose', 'Show full API responses')
-    .option('--did <did>', 'DID to use (overrides .env)')
+    .option('--did <did>', 'DID to use (overrides saved credentials)')
     .option('--message <msg>', 'Message to write', 'hello world')
     .action(async (opts) => {
       try {
@@ -23,23 +22,18 @@ export default function register(program) {
           throw new Error('No DID found. Run `vit oauth` first or pass --did <did>.');
         }
 
-        let sessionData;
-        const sessionFile = join(process.cwd(), 'bsky_session.json');
-        try {
-          sessionData = JSON.parse(readFileSync(sessionFile, 'utf-8'));
-        } catch {
-          throw new Error('Session file not found. Run `vit oauth` first to authenticate.');
-        }
-
-        if (!sessionData[did]) {
-          throw new Error(`No session found for ${did}. Run \`vit oauth\` first to authenticate.`);
+        const sessionStore = createSessionStore();
+        const sessionData = await sessionStore.get(did);
+        if (!sessionData) {
+          throw new Error(
+            `No session found for ${did} in ${configPath('bsky_session.json')}. Run \`vit oauth\` first to authenticate.`,
+          );
         }
 
         if (opts.verbose) {
           console.log(`[verbose] Restoring session for ${did}`);
         }
 
-        const sessionStore = createSessionStore();
         const client = createOAuthClient({
           stateStore: {
             set: async () => {},

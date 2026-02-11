@@ -2,8 +2,8 @@
 // Copyright (c) 2026 sol pbc
 
 import { NodeOAuthClient } from '@atproto/oauth-client-node';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { configDir, configPath } from './paths.js';
 
 export const requestLock = async (_name, fn) => await fn();
 
@@ -22,7 +22,7 @@ export function createStore() {
 }
 
 export function createSessionStore() {
-  const sessionFile = join(process.cwd(), 'bsky_session.json');
+  const sessionFile = configPath('bsky_session.json');
   let data = {};
   try {
     data = JSON.parse(readFileSync(sessionFile, 'utf-8'));
@@ -30,11 +30,13 @@ export function createSessionStore() {
   return {
     set: async (key, value) => {
       data[key] = value;
+      mkdirSync(configDir, { recursive: true });
       writeFileSync(sessionFile, JSON.stringify(data, null, 2) + '\n');
     },
     get: async (key) => data[key],
     del: async (key) => {
       delete data[key];
+      mkdirSync(configDir, { recursive: true });
       writeFileSync(sessionFile, JSON.stringify(data, null, 2) + '\n');
     },
   };
