@@ -45,3 +45,13 @@ All JS source files must include this header immediately after the shebang line:
 ```
 
 Add this header to `.js` files in `bin/` and `src/`. Do not add headers to docs/, node_modules/, or non-source files.
+
+## Skills
+
+Agent skills for this project live in `skills/`. When authoring or updating skills, follow the [Claude agent skills best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices):
+
+- Keep SKILL.md concise — under 500 lines. Only add context Claude doesn't already have.
+- Use progressive disclosure: essentials inline, details in referenced files one level deep.
+- Use gerund or action-oriented naming (lowercase-hyphens only) for skill names.
+- Write descriptions in third person that specify both what the skill does and when to use it.
+- Test with all target models (Haiku, Sonnet, Opus) as effectiveness varies.
