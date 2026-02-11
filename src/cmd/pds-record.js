@@ -10,7 +10,6 @@ export default function register(program) {
   program
     .command('pds-record')
     .description('Write and read a custom org.v-it.hello record on the authenticated PDS')
-    .option('-v, --verbose', 'Show full API responses')
     .option('--did <did>', 'DID to use (overrides saved credentials)')
     .option('--message <msg>', 'Message to write', 'hello world')
     .action(async (opts) => {
@@ -30,10 +29,6 @@ export default function register(program) {
           );
         }
 
-        if (opts.verbose) {
-          console.log(`[verbose] Restoring session for ${did}`);
-        }
-
         const client = createOAuthClient({
           stateStore: {
             set: async () => {},
@@ -46,10 +41,7 @@ export default function register(program) {
 
         const session = await client.restore(did);
         const agent = new Agent(session);
-
-        if (opts.verbose) {
-          console.log('[verbose] Session restored, agent ready');
-        }
+        const pds = (await session.getTokenInfo(false)).aud;
 
         const record = {
           $type: 'org.v-it.hello',
@@ -57,33 +49,39 @@ export default function register(program) {
           createdAt: new Date().toISOString(),
         };
 
-        if (opts.verbose) {
-          console.log('[verbose] Writing record:');
-          console.log(JSON.stringify(record, null, 2));
-        }
-
-        const putResult = await agent.com.atproto.repo.putRecord({
+        const putArgs = {
           repo: did,
           collection: 'org.v-it.hello',
           rkey: 'self',
           record,
           validate: false,
-        });
+        };
+        const putResult = await agent.com.atproto.repo.putRecord(putArgs);
+        console.log(
+          JSON.stringify({
+            ts: new Date().toISOString(),
+            pds,
+            xrpc: 'com.atproto.repo.putRecord',
+            request: putArgs,
+            response: putResult.data,
+          }),
+        );
 
-        console.log(`Record written: ${putResult.data.uri}`);
-
-        const getResult = await agent.com.atproto.repo.getRecord({
+        const getArgs = {
           repo: did,
           collection: 'org.v-it.hello',
           rkey: 'self',
-        });
-
-        if (opts.verbose) {
-          console.log('[verbose] Read-back result:');
-          console.log(JSON.stringify(getResult.data, null, 2));
-        }
-
-        console.log(`Record value: ${JSON.stringify(getResult.data.value)}`);
+        };
+        const getResult = await agent.com.atproto.repo.getRecord(getArgs);
+        console.log(
+          JSON.stringify({
+            ts: new Date().toISOString(),
+            pds,
+            xrpc: 'com.atproto.repo.getRecord',
+            request: getArgs,
+            response: getResult.data,
+          }),
+        );
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;
