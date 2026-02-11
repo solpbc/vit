@@ -2,6 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { Command } from 'commander';
+import registerConfig from './cmd/config.js';
 import registerOauth from './cmd/oauth.js';
 import registerPlcRegister from './cmd/plc-register.js';
 import registerPlcVerify from './cmd/plc-verify.js';
@@ -14,6 +15,7 @@ program
   .description('CLI toolkit for DID:PLC operations and Bluesky OAuth')
   .version('0.1.0');
 
+registerConfig(program);
 registerOauth(program);
 registerPlcRegister(program);
 registerPlcVerify(program);
