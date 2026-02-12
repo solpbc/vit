@@ -1,19 +1,23 @@
-# vit
+# Vit Manifesto
 
-CLI toolkit for DID:PLC operations and Bluesky OAuth.
+Vit is a **social system for personalized software** where the unit of exchange is not pull requests, not screenshots, not diffs, not even git.
+
+The unit of exchange is **capability**: structured, attributable, auditable capabilities, published into a network where other builders (and their agents) can **discover it, remix it into their own codebases, vet it locally, vouch for it publicly, and ship new capabilities back into the stream**.
+
+Vit is how software becomes *organic* and *yours*.
 
 ## Install
 
 For development:
 
 ```bash
-bun install
+make install
 ```
 
 For global CLI use:
 
 ```bash
-bun install -g .
+make install-user
 ```
 
 ## Terminology
