@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadConfig } from '../lib/config.js';
 
@@ -24,6 +24,14 @@ export default function register(program) {
           console.log('.vit: found');
         } else {
           console.log('.vit: not found');
+        }
+
+        const beaconPath = join(vitDir, 'beacon');
+        if (existsSync(beaconPath)) {
+          const uri = readFileSync(beaconPath, 'utf-8').trim();
+          console.log(`beacon: ${uri}`);
+        } else {
+          console.log('beacon: not set');
         }
       } catch (err) {
         console.error(err.message);
