@@ -2,6 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { Command } from 'commander';
+import registerBeacon from './cmd/beacon.js';
 import registerConfig from './cmd/config.js';
 import registerDoctor from './cmd/doctor.js';
 import registerInit from './cmd/init.js';
@@ -17,6 +18,7 @@ program
   .description('CLI toolkit for DID:PLC operations and Bluesky OAuth')
   .version('0.1.0');
 
+registerBeacon(program);
 registerConfig(program);
 registerDoctor(program);
 registerInit(program);

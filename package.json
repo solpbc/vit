@@ -19,6 +19,8 @@
     "@noble/hashes": "^1.7.0",
     "bs58": "^6.0.0",
     "commander": "^13.0.0",
-    "env-paths": "4.0.0"
+    "env-paths": "4.0.0",
+    "isomorphic-git": "1.37.0",
+    "memfs": "4.56.10"
   }
 }

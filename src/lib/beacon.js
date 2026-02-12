@@ -85,3 +85,13 @@ export function toBeacon(input) {
   const { host, org, repo } = parseGitUrl(input);
   return org ? `${host}/${org}/${repo}` : `${host}//${repo}`;
 }
+
+export function beaconToHttps(input) {
+  if (typeof input === 'string' && input.startsWith('vit:')) {
+    const path = input.slice(4);
+    if (!path) throw new Error('Invalid beacon URI: ' + input);
+    return 'https://' + path.replace(/\/\//, '/');
+  }
+  const { host, org, repo } = parseGitUrl(input);
+  return org ? `https://${host}/${org}/${repo}` : `https://${host}/${repo}`;
+}
