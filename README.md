@@ -19,7 +19,8 @@ bun install -g .
 ## Terminology
 
 - **beacon** — a git repo that uniquely represents a project for all vit users; all project groupings are based on a single beacon (one unified "upstream"); git urls are canonicalized into a uniform beacon; stored in `.vit/config.json`
-- **init** — check environment readiness and configure vit for first use; alias: `doctor`
+- **init** — check environment readiness and configure vit for first use
+- **doctor** — check vit setup status and beacon configuration
 - **adopt** — adopt an existing project by its beacon; forks or clones the repo
 - **follow** — atproto handles; stored in local project `.vit/`
 - **skim** — check follows + beacon for posts; read the feed
@@ -27,6 +28,19 @@ bun install -g .
 - **vouch** — publicly endorse a vetted cap, optionally attaching evidence
 - **remix** — mix a post with local codebase and create a plan to implement; auto-likes
 - **ship** — take any locally implemented feature and write up a post (or quote post if was remixed)
+
+## beacon
+
+Probe a remote repo for its beacon.
+
+```bash
+vit beacon https://github.com/solpbc/vit.git
+vit beacon vit:github.com/solpbc/vit
+```
+
+| Option | Description |
+|---|---|
+| `-v, --verbose` | Show step-by-step details |
 
 ## login
 

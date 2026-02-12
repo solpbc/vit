@@ -2,9 +2,9 @@
 // Copyright (c) 2026 sol pbc
 
 import { loadConfig } from '../lib/config.js';
+import { CAP_COLLECTION } from '../lib/constants.js';
 
 const JETSTREAM_URL = 'wss://jetstream2.us-east.bsky.network/subscribe';
-const DEFAULT_COLLECTION = 'org.v-it.cap';
 
 let ws = null;
 let shuttingDown = false;
@@ -109,7 +109,7 @@ export default function register(program) {
     .description('Listen to Bluesky Jetstream firehose for custom record events')
     .option('-v, --verbose', 'Show full JSON for each event')
     .option('--did <did>', 'Filter by DID (reads saved DID from config if not provided)')
-    .option('--collection <nsid>', 'Collection NSID to filter', DEFAULT_COLLECTION)
+    .option('--collection <nsid>', 'Collection NSID to filter', CAP_COLLECTION)
     .action(async (opts) => {
       try {
         if (!opts.did) {

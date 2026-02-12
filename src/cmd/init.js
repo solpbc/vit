@@ -56,7 +56,7 @@ export default function register(program) {
         if (verbose) console.log(`[verbose] Wrote config.json`);
         console.log(`beacon: ${beacon}`);
       } catch (err) {
-        console.error(err.message);
+        console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;
       }
     });

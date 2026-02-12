@@ -86,7 +86,7 @@ vit init
 vit doctor
 ```
 
-`doctor` is an alias for `init`.
+`doctor` checks setup status and beacon configuration without modifying anything.
 
 Capabilities:
 - Log in to Bluesky (invokes login flow)

@@ -2,6 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { loadConfig } from '../lib/config.js';
+import { CAP_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
 
 export default function register(program) {
@@ -15,6 +16,11 @@ export default function register(program) {
       try {
         const { verbose } = opts;
         const did = opts.did || loadConfig().did;
+        if (!did) {
+          console.error("No DID configured. Run 'vit login <handle>' first or pass --did.");
+          process.exitCode = 1;
+          return;
+        }
         if (verbose) console.log(`[verbose] DID: ${did}`);
 
         const { agent, session } = await restoreAgent(did);
@@ -22,7 +28,7 @@ export default function register(program) {
 
         const listArgs = {
           repo: did,
-          collection: 'org.v-it.cap',
+          collection: CAP_COLLECTION,
           limit: parseInt(opts.limit, 10),
         };
         if (verbose) console.log(`[verbose] listRecords ${listArgs.collection} limit=${listArgs.limit}`);
@@ -38,8 +44,8 @@ export default function register(program) {
             }),
           );
         }
-      } catch (e) {
-        console.error(e.message);
+      } catch (err) {
+        console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;
       }
     });
