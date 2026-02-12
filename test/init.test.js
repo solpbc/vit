@@ -41,8 +41,8 @@ describe('vit init --beacon', () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toBe('beacon: vit:github.com/solpbc/vit');
 
-    const content = readFileSync(join(tmpDir, '.vit', 'beacon'), 'utf-8');
-    expect(content).toBe('vit:github.com/solpbc/vit\n');
+    const content = readFileSync(join(tmpDir, '.vit', 'config.json'), 'utf-8');
+    expect(JSON.parse(content).beacon).toBe('vit:github.com/solpbc/vit');
   });
 
   test('writes beacon from SSH URL', () => {
@@ -50,8 +50,8 @@ describe('vit init --beacon', () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toBe('beacon: vit:github.com/solpbc/vit');
 
-    const content = readFileSync(join(tmpDir, '.vit', 'beacon'), 'utf-8');
-    expect(content).toBe('vit:github.com/solpbc/vit\n');
+    const content = readFileSync(join(tmpDir, '.vit', 'config.json'), 'utf-8');
+    expect(JSON.parse(content).beacon).toBe('vit:github.com/solpbc/vit');
   });
 
   test('creates .vit directory if missing', () => {
@@ -64,8 +64,8 @@ describe('vit init --beacon', () => {
     run('init --beacon https://github.com/old/repo.git', tmpDir);
     run('init --beacon https://github.com/solpbc/vit.git', tmpDir);
 
-    const content = readFileSync(join(tmpDir, '.vit', 'beacon'), 'utf-8');
-    expect(content).toBe('vit:github.com/solpbc/vit\n');
+    const content = readFileSync(join(tmpDir, '.vit', 'config.json'), 'utf-8');
+    expect(JSON.parse(content).beacon).toBe('vit:github.com/solpbc/vit');
   });
 
   test('reads beacon from git remote with --beacon .', () => {

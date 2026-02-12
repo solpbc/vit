@@ -23,7 +23,7 @@ async function readTreeFile(fs, dir, treeOid, pathParts) {
 export default function register(program) {
   program
     .command('beacon')
-    .description('Probe a remote repo for a .vit/beacon file')
+    .description('Probe a remote repo for its beacon')
     .argument('<target>', 'vit: URI or git URL to probe')
     .action(async (target) => {
       try {
@@ -35,10 +35,15 @@ export default function register(program) {
 
         const head = await git.resolveRef({ fs, dir, ref: 'HEAD' });
         const commit = await git.readObject({ fs, dir, oid: head, format: 'parsed' });
-        const content = await readTreeFile(fs, dir, commit.object.tree, ['.vit', 'beacon']);
+        const content = await readTreeFile(fs, dir, commit.object.tree, ['.vit', 'config.json']);
 
-        if (content && content.trim()) {
-          console.log('beacon: lit ' + content.trim());
+        let beacon;
+        try {
+          beacon = content && JSON.parse(content).beacon;
+        } catch {}
+
+        if (beacon) {
+          console.log('beacon: lit ' + beacon);
         } else {
           console.log('beacon: unlit');
         }

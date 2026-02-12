@@ -67,6 +67,6 @@ For complete definitions, see [VOCAB.md](../../VOCAB.md).
 
 ## Configuration
 
-- **`.vit/`** — local project directory, stores beacon and follows
+- **`.vit/`** — local project directory, stores config.json (beacon) and local state (JSONL logs)
 - **`vit.json`** — credentials (`did`, `access_token`, etc.) and config, written by `vit login` and `vit config`
 - **`vit config`** — read/write `vit.json` user-level config

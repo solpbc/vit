@@ -5,6 +5,7 @@ import { Agent } from '@atproto/api';
 import { TID } from '@atproto/common-web';
 import { loadEnv } from '../lib/env.js';
 import { createOAuthClient, createSessionStore } from '../lib/oauth.js';
+import { appendLog } from '../lib/vit-dir.js';
 
 export default function register(program) {
   program
@@ -45,6 +46,19 @@ export default function register(program) {
           validate: false,
         };
         const putRes = await agent.com.atproto.repo.putRecord(putArgs);
+        try {
+          appendLog('caps.jsonl', {
+            ts: new Date().toISOString(),
+            did,
+            rkey,
+            collection: 'org.v-it.cap',
+            pds: session.serverMetadata?.issuer,
+            uri: putRes.data.uri,
+            cid: putRes.data.cid,
+          });
+        } catch (logErr) {
+          console.error('warning: failed to write caps.jsonl:', logErr.message);
+        }
         console.log(
           JSON.stringify({
             ts: new Date().toISOString(),

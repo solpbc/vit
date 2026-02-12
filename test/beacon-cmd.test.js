@@ -23,7 +23,7 @@ function run(args) {
 }
 
 describe('vit beacon', () => {
-  test('probes a public repo without .vit/beacon (unlit)', () => {
+  test('probes a public repo without .vit/config.json beacon (unlit)', () => {
     const result = run('beacon https://github.com/octocat/Hello-World.git');
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toBe('beacon: unlit');

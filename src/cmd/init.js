@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
-import { join } from 'node:path';
 import { toBeacon } from '../lib/beacon.js';
+import { vitDir, readProjectConfig, writeProjectConfig } from '../lib/vit-dir.js';
 
 export default function register(program) {
   program
@@ -13,15 +13,13 @@ export default function register(program) {
     .option('--beacon <url>', 'Git URL (or "." to read from git remote origin) to derive the beacon URI')
     .action(async (opts) => {
       try {
-        const vitDir = join(process.cwd(), '.vit');
-        const beaconPath = join(vitDir, 'beacon');
+        const dir = vitDir();
 
         if (!opts.beacon) {
-          // No --beacon flag: report status
-          if (existsSync(beaconPath)) {
-            const uri = readFileSync(beaconPath, 'utf-8').trim();
-            console.log(`beacon: ${uri}`);
-          } else if (existsSync(vitDir)) {
+          const config = readProjectConfig();
+          if (config.beacon) {
+            console.log(`beacon: ${config.beacon}`);
+          } else if (existsSync(dir)) {
             console.log('beacon: not set');
           } else {
             console.log('.vit directory not found');
@@ -29,7 +27,6 @@ export default function register(program) {
           return;
         }
 
-        // Resolve git URL
         let gitUrl = opts.beacon;
         if (gitUrl === '.') {
           try {
@@ -50,8 +47,7 @@ export default function register(program) {
         }
 
         const beacon = 'vit:' + toBeacon(gitUrl);
-        mkdirSync(vitDir, { recursive: true });
-        writeFileSync(beaconPath, beacon + '\n');
+        writeProjectConfig({ beacon });
         console.log(`beacon: ${beacon}`);
       } catch (err) {
         console.error(err.message);

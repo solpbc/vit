@@ -11,7 +11,7 @@ A canonical project identity derived from normalized git URLs. All vit activity 
 - Unifies forks and mirrors under one canonical reference
 - Anchors feeds and cap lineage
 - Defines project scope
-- Stored locally in `.vit/`
+- Stored in `.vit/config.json`
 
 **Related Concepts**
 - Beacon ID / URI — canonical identifier

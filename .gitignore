@@ -9,3 +9,7 @@ bun.lock
 # Environment
 .env
 bsky_session.json
+
+# vit project state (user-local)
+.vit/*
+!.vit/config.json

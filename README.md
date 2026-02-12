@@ -18,7 +18,7 @@ bun install -g .
 
 ## Terminology
 
-- **beacon** — a git repo that uniquely represents a project for all vit users; all project groupings are based on a single beacon (one unified "upstream"); git urls are canonicalized into a uniform beacon; stored in `.vit/`
+- **beacon** — a git repo that uniquely represents a project for all vit users; all project groupings are based on a single beacon (one unified "upstream"); git urls are canonicalized into a uniform beacon; stored in `.vit/config.json`
 - **init** — check environment readiness and configure vit for first use; alias: `doctor`
 - **adopt** — adopt an existing project by its beacon; forks or clones the repo
 - **follow** — atproto handles; stored in local project `.vit/`
