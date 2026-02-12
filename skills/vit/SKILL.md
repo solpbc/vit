@@ -12,7 +12,7 @@ CLI toolkit for DID:PLC operations and Bluesky OAuth.
 ```bash
 bun install          # install dependencies
 vit init             # check environment and configure vit
-vit login --handle alice.bsky.social  # authenticate with Bluesky
+vit login alice.bsky.social           # authenticate with Bluesky
 ```
 
 ## Subcommands
@@ -20,8 +20,9 @@ vit login --handle alice.bsky.social  # authenticate with Bluesky
 | Command | Purpose |
 |---------|---------|
 | `vit init` | Check environment readiness, configure vit for first use |
+| `vit beacon <target>` | Probe a remote repo for its beacon |
 | `vit setup` | Initialize user-level config |
-| `vit doctor` | Check vit setup status (alias for init) |
+| `vit doctor` | Check vit setup status and beacon configuration |
 | `vit login <handle>` | Browser-based ATProto OAuth, saves DID to vit.json |
 | `vit config [action]` | Read/write vit.json config (list, set, delete) |
 | `vit firehose` | Listen to Bluesky Jetstream for custom record events |

@@ -2,27 +2,11 @@
 // Copyright (c) 2026 sol pbc
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { run } from './helpers.js';
 import { mkdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execSync } from 'node:child_process';
-
-const vitBin = join(import.meta.dir, '..', 'bin', 'vit.js');
-
-function run(args, cwd) {
-  try {
-    return {
-      stdout: execSync(`bun ${vitBin} ${args}`, { cwd, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim(),
-      exitCode: 0,
-    };
-  } catch (err) {
-    return {
-      stdout: (err.stdout || '').trim(),
-      stderr: (err.stderr || '').trim(),
-      exitCode: err.status,
-    };
-  }
-}
 
 describe('vit init --beacon', () => {
   let tmpDir;

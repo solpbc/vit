@@ -25,7 +25,7 @@ export default function register(program) {
           console.log('beacon: not set');
         }
       } catch (err) {
-        console.error(err.message);
+        console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;
       }
     });

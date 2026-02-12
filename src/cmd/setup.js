@@ -19,7 +19,7 @@ export default function register(program) {
         saveConfig(config);
         console.log('vit setup complete');
       } catch (err) {
-        console.error(err.message);
+        console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;
       }
     });
