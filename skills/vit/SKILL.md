@@ -24,8 +24,6 @@ vit oauth --handle alice.bsky.social  # authenticate with Bluesky
 | `vit doctor` | Check vit setup status (alias for init) |
 | `vit oauth --handle <h>` | Browser-based ATProto OAuth, saves tokens to .env |
 | `vit config [action]` | Read/write vit.json config (list, set, delete) |
-| `vit plc-register` | Generate and register a DID:PLC genesis operation |
-| `vit plc-verify` | Verify DID document and audit log from PLC directory |
 | `vit firehose` | Listen to Bluesky Jetstream for custom record events |
 | `vit pds-record` | Write/read org.v-it records on authenticated PDS |
 
