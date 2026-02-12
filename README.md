@@ -54,45 +54,6 @@ This will:
 
 The access token is DPoP-bound, meaning it requires a DPoP proof JWT for each API request. The token cannot be used as a simple Bearer token.
 
-## plc-register
-
-Generate and register a DID:PLC genesis operation.
-
-### Usage
-
-```bash
-vit plc-register --help
-```
-
-### Options
-
-- `--out <dir>` - Output directory for keys (default: `plc_keys`)
-- `--curve <curve>` - Rotation key curve (`k256` or `p256`, default: `k256`)
-- `--aka <uri>` - `alsoKnownAs` entry (may be repeated)
-- `--pds <url>` - PDS endpoint URL
-- `--dry-run` - Build and print but do not POST to PLC
-- `-v, --verbose` - Show verbose output
-
-## plc-verify
-
-Verify your saved DID against the PLC directory.
-
-### Usage
-
-```bash
-vit plc-verify
-```
-
-This reads `did` from `vit.json` and:
-- Resolves the DID document via `https://plc.directory/{did}`
-- Fetches the audit log
-- Prints a summary of handles, services, verification methods, and operation history
-
-### Options
-
-- `--did <did>` - Check a specific DID (overrides config)
-- `-v, --verbose` - Show full API responses
-
 ## firehose
 
 Listen to Bluesky Jetstream for custom record events.

@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
@@ -8,6 +9,7 @@ import { encode as dagCborEncode } from '@ipld/dag-cbor';
 import bs58 from 'bs58';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { Command } from 'commander';
 
 const MC_P256_PUB = new Uint8Array([0x80, 0x24]);
 const MC_K256_PUB = new Uint8Array([0xe7, 0x01]);
@@ -220,96 +222,97 @@ function collect(value, previous) {
   return previous;
 }
 
-export default function register(program) {
-  program
-    .command('plc-register')
-    .description('Generate & register a DID:PLC genesis operation.')
-    .option('--out <dir>', 'Output directory for keys (default: plc_keys)', 'plc_keys')
-    .option('--curve <curve>', 'Rotation key curve', 'k256')
-    .option('--aka <uri>', 'alsoKnownAs entry (e.g., at://alice.example). May repeat.', collect, [])
-    .option('--pds <url>', 'PDS endpoint URL (e.g., https://pds.example.com)')
-    .option('--dry-run', 'Build & print but do not POST to PLC')
-    .option('-v, --verbose', 'Show verbose output')
-    .action(async (opts) => {
-      if (!['k256', 'p256'].includes(opts.curve)) {
-        console.error(`error: option '--curve' must be 'k256' or 'p256'`);
-        process.exit(1);
+const program = new Command();
+program
+  .name('plc-register')
+  .description('Generate & register a DID:PLC genesis operation.')
+  .option('--out <dir>', 'Output directory for keys (default: plc_keys)', 'plc_keys')
+  .option('--curve <curve>', 'Rotation key curve', 'k256')
+  .option('--aka <uri>', 'alsoKnownAs entry (e.g., at://alice.example). May repeat.', collect, [])
+  .option('--pds <url>', 'PDS endpoint URL (e.g., https://pds.example.com)')
+  .option('--dry-run', 'Build & print but do not POST to PLC')
+  .option('-v, --verbose', 'Show verbose output')
+  .action(async (opts) => {
+    if (!['k256', 'p256'].includes(opts.curve)) {
+      console.error(`error: option '--curve' must be 'k256' or 'p256'`);
+      process.exit(1);
+    }
+    const kb = generateRotationKey(opts.out, opts.curve, opts.verbose);
+    const unsigned = buildUnsignedOp([kb.didKey], opts.aka, opts.pds ?? null);
+
+    if (opts.verbose) {
+      console.log('[verbose] Unsigned operation:');
+      console.log(JSON.stringify(unsigned, null, 2));
+    }
+
+    const unsignedCbor = dagCborEncode(unsigned);
+    if (opts.verbose) {
+      console.log(`[verbose] Encoded CBOR size: ${unsignedCbor.length} bytes`);
+    }
+
+    const rawSig = signLowSRaw(opts.curve, kb.privateKeyBytes, unsignedCbor);
+    const sigB64u = b64urlNopad(rawSig);
+
+    if (opts.verbose) {
+      console.log(`[verbose] Signature (base64url): ${sigB64u}`);
+    }
+
+    const signed = { ...unsigned, sig: sigB64u };
+    const did = derivePlcDid(signed);
+
+    if (opts.verbose) {
+      const signedCbor = dagCborEncode(signed);
+      const digest = sha256(signedCbor);
+      console.log(`[verbose] SHA256 of signed op: ${Buffer.from(digest).toString('hex')}`);
+    }
+
+    writeFileSync(`${opts.out}/genesis_unsigned.dag-cbor`, Buffer.from(unsignedCbor));
+    writeFileSync(`${opts.out}/genesis_signed.json`, `${JSON.stringify(signed)}\n`);
+    writeFileSync(`${opts.out}/did.txt`, `${did}\n`);
+    writeFileSync(`${opts.out}/rotation_did_key.txt`, `${kb.didKey}\n`);
+
+    if (opts.verbose) {
+      console.log(`[verbose] Wrote genesis_unsigned.dag-cbor (${unsignedCbor.length} bytes)`);
+      console.log('[verbose] Wrote genesis_signed.json');
+      console.log('[verbose] Wrote did.txt');
+      console.log('[verbose] Wrote rotation_did_key.txt');
+    }
+
+    console.log(`Rotation key (did:key): ${kb.didKey}`);
+    console.log(`DID (derived):          ${did}`);
+    console.log(`Wrote keys & artifacts to: ${resolve(opts.out)}`);
+
+    if (opts.dryRun) {
+      console.log('Dry run selected; not POSTing to PLC.');
+      return;
+    }
+
+    const url = `https://plc.directory/${did}`;
+    if (opts.verbose) {
+      console.log(`[verbose] POSTing to ${url}`);
+      console.log('[verbose] Request body:');
+      console.log(JSON.stringify(signed, null, 2));
+    }
+
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(signed),
+        signal: AbortSignal.timeout(10000),
+      });
+      const text = await resp.text();
+      console.log(`POST ${url} -> ${resp.status}`);
+      console.log(text.slice(0, 5000));
+      if (resp.ok) {
+        console.log('Registration appears successful.');
+      } else {
+        console.log('Registration failed; see response above.');
       }
-      const kb = generateRotationKey(opts.out, opts.curve, opts.verbose);
-      const unsigned = buildUnsignedOp([kb.didKey], opts.aka, opts.pds ?? null);
+    } catch (e) {
+      process.stderr.write(`Error POSTing to PLC: ${e}\n`);
+      process.exit(2);
+    }
+  });
 
-      if (opts.verbose) {
-        console.log('[verbose] Unsigned operation:');
-        console.log(JSON.stringify(unsigned, null, 2));
-      }
-
-      const unsignedCbor = dagCborEncode(unsigned);
-      if (opts.verbose) {
-        console.log(`[verbose] Encoded CBOR size: ${unsignedCbor.length} bytes`);
-      }
-
-      const rawSig = signLowSRaw(opts.curve, kb.privateKeyBytes, unsignedCbor);
-      const sigB64u = b64urlNopad(rawSig);
-
-      if (opts.verbose) {
-        console.log(`[verbose] Signature (base64url): ${sigB64u}`);
-      }
-
-      const signed = { ...unsigned, sig: sigB64u };
-      const did = derivePlcDid(signed);
-
-      if (opts.verbose) {
-        const signedCbor = dagCborEncode(signed);
-        const digest = sha256(signedCbor);
-        console.log(`[verbose] SHA256 of signed op: ${Buffer.from(digest).toString('hex')}`);
-      }
-
-      writeFileSync(`${opts.out}/genesis_unsigned.dag-cbor`, Buffer.from(unsignedCbor));
-      writeFileSync(`${opts.out}/genesis_signed.json`, `${JSON.stringify(signed)}\n`);
-      writeFileSync(`${opts.out}/did.txt`, `${did}\n`);
-      writeFileSync(`${opts.out}/rotation_did_key.txt`, `${kb.didKey}\n`);
-
-      if (opts.verbose) {
-        console.log(`[verbose] Wrote genesis_unsigned.dag-cbor (${unsignedCbor.length} bytes)`);
-        console.log('[verbose] Wrote genesis_signed.json');
-        console.log('[verbose] Wrote did.txt');
-        console.log('[verbose] Wrote rotation_did_key.txt');
-      }
-
-      console.log(`Rotation key (did:key): ${kb.didKey}`);
-      console.log(`DID (derived):          ${did}`);
-      console.log(`Wrote keys & artifacts to: ${resolve(opts.out)}`);
-
-      if (opts.dryRun) {
-        console.log('Dry run selected; not POSTing to PLC.');
-        return;
-      }
-
-      const url = `https://plc.directory/${did}`;
-      if (opts.verbose) {
-        console.log(`[verbose] POSTing to ${url}`);
-        console.log('[verbose] Request body:');
-        console.log(JSON.stringify(signed, null, 2));
-      }
-
-      try {
-        const resp = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(signed),
-          signal: AbortSignal.timeout(10000),
-        });
-        const text = await resp.text();
-        console.log(`POST ${url} -> ${resp.status}`);
-        console.log(text.slice(0, 5000));
-        if (resp.ok) {
-          console.log('Registration appears successful.');
-        } else {
-          console.log('Registration failed; see response above.');
-        }
-      } catch (e) {
-        process.stderr.write(`Error POSTing to PLC: ${e}\n`);
-        process.exit(2);
-      }
-    });
-}
+program.parse();
