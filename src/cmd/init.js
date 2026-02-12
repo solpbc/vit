@@ -11,9 +11,12 @@ export default function register(program) {
     .command('init')
     .description('Initialize .vit directory and set project beacon. Use the most official upstream or well-known git URL so all contributors converge on the same beacon.')
     .option('--beacon <url>', 'Git URL (or "." to read from git remote origin) to derive the beacon URI')
+    .option('-v, --verbose', 'Show step-by-step details')
     .action(async (opts) => {
       try {
+        const { verbose } = opts;
         const dir = vitDir();
+        if (verbose) console.log(`[verbose] .vit dir: ${dir}`);
 
         if (!opts.beacon) {
           const config = readProjectConfig();
@@ -34,6 +37,7 @@ export default function register(program) {
               encoding: 'utf-8',
               stdio: ['pipe', 'pipe', 'pipe'],
             }).trim();
+            if (verbose) console.log(`[verbose] Read git remote origin: ${gitUrl}`);
           } catch {
             console.error('No git remote origin found. Set a remote or provide a git URL directly.');
             process.exitCode = 1;
@@ -47,7 +51,9 @@ export default function register(program) {
         }
 
         const beacon = 'vit:' + toBeacon(gitUrl);
+        if (verbose) console.log(`[verbose] Computed beacon: ${beacon}`);
         writeProjectConfig({ beacon });
+        if (verbose) console.log(`[verbose] Wrote config.json`);
         console.log(`beacon: ${beacon}`);
       } catch (err) {
         console.error(err.message);

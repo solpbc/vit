@@ -11,11 +11,14 @@ export default function register(program) {
   program
     .command('ship <text>')
     .description('Write a cap to the authenticated PDS')
+    .option('-v, --verbose', 'Show step-by-step details')
     .option('--did <did>', 'DID to use (reads saved DID from config if not provided)')
     .action(async (text, opts) => {
       try {
+        const { verbose } = opts;
         const envDid = loadConfig().did;
         const did = opts.did || envDid;
+        if (verbose) console.log(`[verbose] Config loaded, DID: ${did}`);
 
         const clientId = `http://localhost?redirect_uri=${encodeURIComponent('http://127.0.0.1')}&scope=${encodeURIComponent('atproto transition:generic')}`;
         const sessionStore = createSessionStore();
@@ -30,6 +33,7 @@ export default function register(program) {
           redirectUri: 'http://127.0.0.1',
         });
         const session = await client.restore(did);
+        if (verbose) console.log(`[verbose] Session restored, PDS: ${session.serverMetadata?.issuer}`);
         const agent = new Agent(session);
 
         const record = {
@@ -38,6 +42,7 @@ export default function register(program) {
           createdAt: new Date().toISOString(),
         };
         const rkey = TID.nextStr();
+        if (verbose) console.log(`[verbose] Record built, rkey: ${rkey}`);
         const putArgs = {
           repo: did,
           collection: 'org.v-it.cap',
@@ -45,6 +50,7 @@ export default function register(program) {
           record,
           validate: false,
         };
+        if (verbose) console.log(`[verbose] putRecord ${putArgs.collection} rkey=${rkey}`);
         const putRes = await agent.com.atproto.repo.putRecord(putArgs);
         try {
           appendLog('caps.jsonl', {
@@ -59,6 +65,7 @@ export default function register(program) {
         } catch (logErr) {
           console.error('warning: failed to write caps.jsonl:', logErr.message);
         }
+        if (verbose) console.log(`[verbose] Log written to caps.jsonl`);
         console.log(
           JSON.stringify({
             ts: new Date().toISOString(),

@@ -11,10 +11,13 @@ export default function register(program) {
     .description('List caps from the authenticated PDS')
     .option('--did <did>', 'DID to use (reads saved DID from config if not provided)')
     .option('--limit <n>', 'Max records to return', '25')
+    .option('-v, --verbose', 'Show step-by-step details')
     .action(async (opts) => {
       try {
+        const { verbose } = opts;
         const envDid = loadConfig().did;
         const did = opts.did || envDid;
+        if (verbose) console.log(`[verbose] Config loaded, DID: ${did}`);
 
         const clientId = `http://localhost?redirect_uri=${encodeURIComponent('http://127.0.0.1')}&scope=${encodeURIComponent('atproto transition:generic')}`;
         const sessionStore = createSessionStore();
@@ -29,6 +32,7 @@ export default function register(program) {
           redirectUri: 'http://127.0.0.1',
         });
         const session = await client.restore(did);
+        if (verbose) console.log(`[verbose] Session restored, PDS: ${session.serverMetadata?.issuer}`);
         const agent = new Agent(session);
 
         const listArgs = {
@@ -36,7 +40,9 @@ export default function register(program) {
           collection: 'org.v-it.cap',
           limit: parseInt(opts.limit, 10),
         };
+        if (verbose) console.log(`[verbose] listRecords ${listArgs.collection} limit=${listArgs.limit}`);
         const listRes = await agent.com.atproto.repo.listRecords(listArgs);
+        if (verbose) console.log(`[verbose] Received ${listRes.data.records.length} records`);
         for (const rec of listRes.data.records) {
           console.log(
             JSON.stringify({
