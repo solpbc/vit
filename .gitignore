@@ -1,6 +1,3 @@
-# PLC keys and artifacts
-plc_keys/
-
 # Bun / Node
 node_modules/
 bun.lockb
@@ -8,7 +5,3 @@ bun.lock
 
 # Environment
 .env
-
-# vit project state (user-local)
-.vit/*
-!.vit/config.json
