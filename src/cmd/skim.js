@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
-import { Agent } from '@atproto/api';
 import { loadConfig } from '../lib/config.js';
-import { createOAuthClient, createSessionStore } from '../lib/oauth.js';
+import { restoreAgent } from '../lib/oauth.js';
 
 export default function register(program) {
   program
@@ -15,25 +14,11 @@ export default function register(program) {
     .action(async (opts) => {
       try {
         const { verbose } = opts;
-        const envDid = loadConfig().did;
-        const did = opts.did || envDid;
-        if (verbose) console.log(`[verbose] Config loaded, DID: ${did}`);
+        const did = opts.did || loadConfig().did;
+        if (verbose) console.log(`[verbose] DID: ${did}`);
 
-        const clientId = `http://localhost?redirect_uri=${encodeURIComponent('http://127.0.0.1')}&scope=${encodeURIComponent('atproto transition:generic')}`;
-        const sessionStore = createSessionStore();
-        const client = createOAuthClient({
-          clientId,
-          sessionStore,
-          stateStore: {
-            set: async () => {},
-            get: async () => undefined,
-            del: async () => {},
-          },
-          redirectUri: 'http://127.0.0.1',
-        });
-        const session = await client.restore(did);
+        const { agent, session } = await restoreAgent(did);
         if (verbose) console.log(`[verbose] Session restored, PDS: ${session.serverMetadata?.issuer}`);
-        const agent = new Agent(session);
 
         const listArgs = {
           repo: did,

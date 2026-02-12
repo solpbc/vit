@@ -35,24 +35,19 @@ Log in to Bluesky via browser-based OAuth.
 ### Usage
 
 ```bash
-vit login --handle alice.bsky.social
+vit login alice.bsky.social
 ```
 
 This will:
 1. Start a temporary localhost callback server
 2. Open your browser to the Bluesky authorization page
-3. After you approve, print the DPoP-bound access token and DID
-4. Save credentials (`did`, `access_token`, `refresh_token`, `expires_at`) to `vit.json`
+3. After you approve, print your DID
+4. Save your DID to `vit.json` and OAuth session to `session.json`
 
 ### Options
 
-- `--handle <handle>` - Bluesky handle (required)
 - `-v, --verbose` - Show discovery and protocol details
-- `--output <file>` - Save token JSON to a file
-
-### Notes
-
-The access token is DPoP-bound, meaning it requires a DPoP proof JWT for each API request. The token cannot be used as a simple Bearer token.
+- `--reset` - Force re-login even if credentials are valid
 
 ## firehose
 

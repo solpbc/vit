@@ -1,11 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
+import { Agent } from '@atproto/api';
 import { NodeOAuthClient } from '@atproto/oauth-client-node';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { configDir, configPath } from './paths.js';
 
-export const requestLock = async (_name, fn) => await fn();
+const requestLock = async (_name, fn) => await fn();
+
+const noopStore = {
+  set: async () => {},
+  get: async () => undefined,
+  del: async () => {},
+};
 
 export function createStore() {
   const map = new Map();
@@ -22,7 +29,7 @@ export function createStore() {
 }
 
 export function createSessionStore() {
-  const sessionFile = configPath('bsky_session.json');
+  const sessionFile = configPath('session.json');
   let data = {};
   try {
     data = JSON.parse(readFileSync(sessionFile, 'utf-8'));
@@ -42,11 +49,11 @@ export function createSessionStore() {
   };
 }
 
-export function createOAuthClient({ stateStore, sessionStore, redirectUri, clientId }) {
+export function createOAuthClient({ stateStore, sessionStore, redirectUri }) {
   return new NodeOAuthClient({
     requestLock,
     clientMetadata: {
-      client_id: clientId || 'https://v-it.org/client-metadata.json',
+      client_id: 'https://v-it.org/client-metadata.json',
       client_name: 'vit CLI',
       application_type: 'native',
       grant_types: ['authorization_code', 'refresh_token'],
@@ -60,4 +67,15 @@ export function createOAuthClient({ stateStore, sessionStore, redirectUri, clien
     stateStore,
     sessionStore,
   });
+}
+
+export async function restoreAgent(did) {
+  const sessionStore = createSessionStore();
+  const client = createOAuthClient({
+    sessionStore,
+    stateStore: noopStore,
+    redirectUri: 'http://127.0.0.1',
+  });
+  const session = await client.restore(did);
+  return { agent: new Agent(session), session };
 }

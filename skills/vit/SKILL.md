@@ -22,7 +22,7 @@ vit login --handle alice.bsky.social  # authenticate with Bluesky
 | `vit init` | Check environment readiness, configure vit for first use |
 | `vit setup` | Initialize user-level config |
 | `vit doctor` | Check vit setup status (alias for init) |
-| `vit login --handle <h>` | Browser-based ATProto OAuth, saves tokens to vit.json |
+| `vit login <handle>` | Browser-based ATProto OAuth, saves DID to vit.json |
 | `vit config [action]` | Read/write vit.json config (list, set, delete) |
 | `vit firehose` | Listen to Bluesky Jetstream for custom record events |
 | `vit ship <text>` | Write a cap to the authenticated PDS |
@@ -68,5 +68,6 @@ For complete definitions, see [VOCAB.md](../../VOCAB.md).
 ## Configuration
 
 - **`.vit/`** — local project directory, stores config.json (beacon) and local state (JSONL logs)
-- **`vit.json`** — credentials (`did`, `access_token`, etc.) and config, written by `vit login` and `vit config`
+- **`vit.json`** — user config (`did`, `setup_at`, etc.), written by `vit login`, `vit setup`, and `vit config`
+- **`session.json`** — OAuth session data managed by the ATProto client, written by `vit login`
 - **`vit config`** — read/write `vit.json` user-level config

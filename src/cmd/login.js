@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
-import { writeFileSync } from 'node:fs';
 import { loadConfig, saveConfig } from '../lib/config.js';
 import { createOAuthClient, createSessionStore, createStore } from '../lib/oauth.js';
 
@@ -11,19 +10,17 @@ export default function register(program) {
     .description('Log in to Bluesky via browser-based OAuth')
     .argument('<handle>', 'Bluesky handle (e.g. alice.bsky.social)')
     .option('-v, --verbose', 'Show discovery details')
-    .option('--output <file>', 'Save token JSON to file')
     .option('--reset', 'Force re-login even if credentials are valid')
     .action(async (handle, opts) => {
-      const { verbose, output, reset } = opts;
+      const { verbose, reset } = opts;
       handle = handle.replace(/^@/, '');
 
       if (!reset) {
         const existing = loadConfig();
-        if (existing.did && existing.access_token && existing.expires_at) {
-          const expiresAt = new Date(existing.expires_at).getTime();
-          if (expiresAt > Date.now() + 60_000) {
+        if (existing.did) {
+          const session = await createSessionStore().get(existing.did);
+          if (session) {
             console.log(`Already logged in as ${existing.did}`);
-            console.log(`Token expires: ${existing.expires_at}`);
             return;
           }
         }
@@ -134,28 +131,10 @@ export default function register(program) {
 
         console.log(`DID: ${session.did}`);
 
-        const sessionData = await sessionStore.get(session.did);
-        const tokens = sessionData?.tokenSet ?? {};
-        const outputData = {
-          did: session.did,
-          accessToken: tokens.access_token ?? null,
-          refreshToken: tokens.refresh_token ?? null,
-          expiresAt: tokens.expires_at ?? null,
-        };
-
-        console.log(JSON.stringify(outputData, null, 2));
-
-        if (output) {
-          writeFileSync(output, `${JSON.stringify(outputData, null, 2)}\n`);
-        }
-
         const config = loadConfig();
         config.did = session.did;
-        config.access_token = tokens.access_token;
-        config.refresh_token = tokens.refresh_token;
-        config.expires_at = tokens.expires_at;
         saveConfig(config);
-        console.log('\nCredentials saved to vit.json');
+        console.log('Logged in');
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;
