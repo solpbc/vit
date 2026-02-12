@@ -42,11 +42,11 @@ export function createSessionStore() {
   };
 }
 
-export function createOAuthClient({ stateStore, sessionStore, redirectUri }) {
+export function createOAuthClient({ stateStore, sessionStore, redirectUri, clientId }) {
   return new NodeOAuthClient({
     requestLock,
     clientMetadata: {
-      client_id: 'https://v-it.org/client-metadata.json',
+      client_id: clientId || 'https://v-it.org/client-metadata.json',
       client_name: 'vit CLI',
       application_type: 'native',
       grant_types: ['authorization_code', 'refresh_token'],
