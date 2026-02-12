@@ -9,19 +9,30 @@ export default function register(program) {
   program
     .command('login')
     .description('Log in to Bluesky via browser-based OAuth')
-    .option('--handle <handle>', 'Bluesky handle (e.g. alice.bsky.social)')
+    .argument('<handle>', 'Bluesky handle (e.g. alice.bsky.social)')
     .option('-v, --verbose', 'Show discovery details')
     .option('--output <file>', 'Save token JSON to file')
-    .action(async (opts) => {
-      const { handle, verbose, output } = opts;
+    .option('--reset', 'Force re-login even if credentials are valid')
+    .action(async (handle, opts) => {
+      const { verbose, output, reset } = opts;
+      handle = handle.replace(/^@/, '');
+
+      if (!reset) {
+        const existing = loadConfig();
+        if (existing.did && existing.access_token && existing.expires_at) {
+          const expiresAt = new Date(existing.expires_at).getTime();
+          if (expiresAt > Date.now() + 60_000) {
+            console.log(`Already logged in as ${existing.did}`);
+            console.log(`Token expires: ${existing.expires_at}`);
+            return;
+          }
+        }
+      }
+
       let server;
       let timeout;
 
       try {
-        if (!handle) {
-          throw new Error('Missing required --handle argument.');
-        }
-
         let resolveCallback;
         let callbackResolved = false;
         const callbackPromise = new Promise((resolve) => {
@@ -154,7 +165,7 @@ export default function register(program) {
         }
 
         if (server) {
-          server.stop();
+          server.stop(true);
         }
       }
     });
