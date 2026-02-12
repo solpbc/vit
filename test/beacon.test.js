@@ -2,7 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { describe, test, expect } from 'bun:test';
-import { toBeacon, parseGitUrl } from '../src/lib/beacon.js';
+import { toBeacon, parseGitUrl, beaconToHttps } from '../src/lib/beacon.js';
 
 describe('toBeacon', () => {
   test('SCP SSH with .git', () => expect(toBeacon('git@github.com:org/repo.git')).toBe('github.com/org/repo'));
@@ -51,4 +51,25 @@ describe('parseGitUrl', () => {
     const r = parseGitUrl('git@myhost.com:repo.git');
     expect(r).toEqual({ host: 'myhost.com', org: '', repo: 'repo' });
   });
+});
+
+describe('beaconToHttps', () => {
+  test('vit: URI with org', () =>
+    expect(beaconToHttps('vit:github.com/solpbc/vit')).toBe('https://github.com/solpbc/vit'));
+  test('vit: URI no-org (double slash)', () =>
+    expect(beaconToHttps('vit:myhost.com//repo')).toBe('https://myhost.com/repo'));
+  test('HTTPS URL passthrough', () =>
+    expect(beaconToHttps('https://github.com/org/repo.git')).toBe('https://github.com/org/repo'));
+  test('SSH URL conversion', () =>
+    expect(beaconToHttps('git@github.com:org/repo.git')).toBe('https://github.com/org/repo'));
+  test('bare slug conversion', () =>
+    expect(beaconToHttps('github.com/org/repo')).toBe('https://github.com/org/repo'));
+  test('no-org HTTPS', () =>
+    expect(beaconToHttps('https://myhost.com/repo.git')).toBe('https://myhost.com/repo'));
+  test('no-org SCP', () =>
+    expect(beaconToHttps('git@myhost.com:repo.git')).toBe('https://myhost.com/repo'));
+  test('invalid input throws', () =>
+    expect(() => beaconToHttps('notaurl')).toThrow('Invalid git URL'));
+  test('empty vit: URI throws', () =>
+    expect(() => beaconToHttps('vit:')).toThrow('Invalid beacon URI'));
 });
