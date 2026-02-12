@@ -7,7 +7,8 @@ import registerDoctor from './cmd/doctor.js';
 import registerInit from './cmd/init.js';
 import registerLogin from './cmd/login.js';
 import registerFirehose from './cmd/firehose.js';
-import registerPdsRecord from './cmd/pds-record.js';
+import registerShip from './cmd/ship.js';
+import registerSkim from './cmd/skim.js';
 import registerSetup from './cmd/setup.js';
 
 const program = new Command();
@@ -21,7 +22,8 @@ registerDoctor(program);
 registerInit(program);
 registerLogin(program);
 registerFirehose(program);
-registerPdsRecord(program);
+registerShip(program);
+registerSkim(program);
 registerSetup(program);
 
 export { program };

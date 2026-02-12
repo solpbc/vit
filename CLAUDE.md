@@ -7,7 +7,8 @@ Development guidelines for vit, a Bun/JS toolkit for DID:PLC operations and Blue
 vit is a Bun CLI with subcommands for DID:PLC operations and Bluesky OAuth:
 - `vit login`
 - `vit firehose`
-- `vit pds-record`
+- `vit ship`
+- `vit skim`
 
 Source layout:
 - `bin/vit.js` - executable entrypoint

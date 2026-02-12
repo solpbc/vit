@@ -25,7 +25,8 @@ vit login --handle alice.bsky.social  # authenticate with Bluesky
 | `vit login --handle <h>` | Browser-based ATProto OAuth, saves tokens to vit.json |
 | `vit config [action]` | Read/write vit.json config (list, set, delete) |
 | `vit firehose` | Listen to Bluesky Jetstream for custom record events |
-| `vit pds-record` | Write/read org.v-it records on authenticated PDS |
+| `vit ship <text>` | Write a cap to the authenticated PDS |
+| `vit skim` | List caps from the authenticated PDS |
 
 For full option details, see [README.md](../../README.md).
 

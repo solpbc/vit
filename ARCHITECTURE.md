@@ -72,5 +72,4 @@ This mirrors the convention used in the atproto repository.
 
 - Custom lexicons for vouch (`org.v-it.vouch`), evidence, and other vit record types.
 - Cap-specific fields (intent, scope, risk, kind, beacon, provenance) as lexicon properties.
-- Runtime lexicon validation (currently `validate: false` in pds-record.js).
-- Migration of `org.v-it.hello` references to `org.v-it.cap` in CLI commands.
+- Runtime lexicon validation (currently `validate: false` in CLI write commands).

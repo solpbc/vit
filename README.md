@@ -67,21 +67,30 @@ vit firehose
 ### Options
 
 - `--did <did>` - Filter by DID (reads saved DID from config if not provided)
-- `--collection <nsid>` - Collection NSID to filter (default: `org.v-it.hello`)
+- `--collection <nsid>` - Collection NSID to filter (default: `org.v-it.cap`)
 - `-v, --verbose` - Show full JSON for each event
 
-## pds-record
+## ship
 
-Write and read a custom `org.v-it.hello` record on the authenticated PDS.
-
-### Usage
+Write a cap (org.v-it.cap record) to the authenticated PDS.
 
 ```bash
-vit pds-record --message "hello world"
+vit ship "hello from caps"
 ```
 
-### Options
+| Option | Description |
+|---|---|
+| `--did <did>` | DID to use (default: from config) |
 
-- `--did <did>` - DID to use (overrides config)
-- `--message <msg>` - Message to write (default: `hello world`)
-- `-v, --verbose` - Show full API responses
+## skim
+
+List caps from the authenticated PDS.
+
+```bash
+vit skim
+```
+
+| Option | Description |
+|---|---|
+| `--did <did>` | DID to use (default: from config) |
+| `--limit <n>` | Max records to return (default: 25) |
