@@ -4,7 +4,7 @@
 import { loadEnv } from '../lib/env.js';
 
 const JETSTREAM_URL = 'wss://jetstream2.us-east.bsky.network/subscribe';
-const DEFAULT_COLLECTION = 'org.v-it.hello';
+const DEFAULT_COLLECTION = 'org.v-it.cap';
 
 let ws = null;
 let shuttingDown = false;
@@ -35,7 +35,7 @@ function formatEvent(event) {
       return `[${time}] ${operation} ${collection} from ${didShort} rkey=${rkey}`;
     }
 
-    const message = event.commit?.record?.message;
+    const message = event.commit?.record?.text;
     if (typeof message === 'string') {
       return `[${time}] ${operation} ${collection} from ${didShort} rkey=${rkey} — "${message}"`;
     }

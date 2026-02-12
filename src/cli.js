@@ -9,7 +9,8 @@ import registerOauth from './cmd/oauth.js';
 import registerPlcRegister from './cmd/plc-register.js';
 import registerPlcVerify from './cmd/plc-verify.js';
 import registerFirehose from './cmd/firehose.js';
-import registerPdsRecord from './cmd/pds-record.js';
+import registerShip from './cmd/ship.js';
+import registerSkim from './cmd/skim.js';
 import registerSetup from './cmd/setup.js';
 
 const program = new Command();
@@ -25,7 +26,8 @@ registerOauth(program);
 registerPlcRegister(program);
 registerPlcVerify(program);
 registerFirehose(program);
-registerPdsRecord(program);
+registerShip(program);
+registerSkim(program);
 registerSetup(program);
 
 export { program };

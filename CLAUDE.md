@@ -9,7 +9,8 @@ vit is a Bun CLI with subcommands for DID:PLC operations and Bluesky OAuth:
 - `vit plc-register`
 - `vit plc-verify`
 - `vit firehose`
-- `vit pds-record`
+- `vit ship`
+- `vit skim`
 
 Source layout:
 - `bin/vit.js` - executable entrypoint

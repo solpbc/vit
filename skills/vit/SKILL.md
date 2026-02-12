@@ -27,7 +27,8 @@ vit oauth --handle alice.bsky.social  # authenticate with Bluesky
 | `vit plc-register` | Generate and register a DID:PLC genesis operation |
 | `vit plc-verify` | Verify DID document and audit log from PLC directory |
 | `vit firehose` | Listen to Bluesky Jetstream for custom record events |
-| `vit pds-record` | Write/read org.v-it records on authenticated PDS |
+| `vit ship <text>` | Write a cap to the authenticated PDS |
+| `vit skim` | List caps from the authenticated PDS |
 
 For full option details, see [README.md](../../README.md).
 
