@@ -11,7 +11,7 @@ export default function register(program) {
   program
     .command('ship')
     .argument('<text>', 'Cap text to publish')
-    .description('Write a cap to the authenticated PDS')
+    .description('Publish a cap to your feed')
     .option('-v, --verbose', 'Show step-by-step details')
     .option('--did <did>', 'DID to use (reads saved DID from config if not provided)')
     .action(async (text, opts) => {

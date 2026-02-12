@@ -8,7 +8,7 @@ import { restoreAgent } from '../lib/oauth.js';
 export default function register(program) {
   program
     .command('skim')
-    .description('List caps from the authenticated PDS')
+    .description('Read caps from the authenticated PDS')
     .option('--did <did>', 'DID to use (reads saved DID from config if not provided)')
     .option('--limit <n>', 'Max records to return', '25')
     .option('-v, --verbose', 'Show step-by-step details')

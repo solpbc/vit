@@ -6,7 +6,7 @@ import { loadConfig, saveConfig } from '../lib/config.js';
 export default function register(program) {
   program
     .command('setup')
-    .description('Initialize user-level vit configuration')
+    .description('Initialize user-level vit setup')
     .action(async () => {
       try {
         const config = loadConfig();

@@ -1,7 +1,7 @@
 {
   "name": "vit",
   "version": "0.1.0",
-  "description": "CLI toolkit for DID:PLC operations and Bluesky OAuth",
+  "description": "Social toolkit for personalized software",
   "license": "AGPL-3.0-only",
   "bin": {
     "vit": "bin/vit.js"

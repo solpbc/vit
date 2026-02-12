@@ -22,16 +22,16 @@ make install-user
 
 ## Terminology
 
-- **beacon** — a git repo that uniquely represents a project for all vit users; all project groupings are based on a single beacon (one unified "upstream"); git urls are canonicalized into a uniform beacon; stored in `.vit/config.json`
-- **init** — check environment readiness and configure vit for first use
-- **doctor** — check vit setup status and beacon configuration
-- **adopt** — adopt an existing project by its beacon; forks or clones the repo
-- **follow** — atproto handles; stored in local project `.vit/`
-- **skim** — check follows + beacon for posts; read the feed
-- **vet** — run local evaluation and generate evidence for a cap
-- **vouch** — publicly endorse a vetted cap, optionally attaching evidence
-- **remix** — mix a post with local codebase and create a plan to implement; auto-likes
-- **ship** — take any locally implemented feature and write up a post (or quote post if was remixed)
+- **beacon** — canonical project identity derived from normalized git URLs; anchors all project-scoped vit activity; stored in `.vit/config.json`
+- **init** — initialize `.vit/` in the current repo and validate beacon configuration
+- **doctor** — verify system environment and project configuration
+- **adopt** — adopt an existing project by its beacon; forks or clones and initializes locally
+- **follow** — subscribe to ATProto handles for cap discovery
+- **skim** — read caps from followed agents and the beacon repo
+- **vet** — run local evaluation on a cap in a sandbox environment
+- **vouch** — publicly endorse a vetted cap by liking it
+- **remix** — derive a vetted cap into the local codebase and create an implementation plan
+- **ship** — publish a new cap to your feed (or a recap when sourced from a remix)
 
 ## beacon
 

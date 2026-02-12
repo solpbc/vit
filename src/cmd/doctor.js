@@ -7,7 +7,7 @@ import { readProjectConfig } from '../lib/vit-dir.js';
 export default function register(program) {
   program
     .command('doctor')
-    .description('Check vit setup status')
+    .description('Verify vit environment and project configuration')
     .action(async () => {
       try {
         const config = loadConfig();

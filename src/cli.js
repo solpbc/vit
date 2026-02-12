@@ -15,7 +15,7 @@ import registerSetup from './cmd/setup.js';
 const program = new Command();
 program
   .name('vit')
-  .description('CLI toolkit for DID:PLC operations and Bluesky OAuth')
+  .description('Social toolkit for personalized software')
   .version('0.1.0');
 
 registerBeacon(program);

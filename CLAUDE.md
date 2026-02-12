@@ -1,14 +1,14 @@
 # CLAUDE.md
 
-Development guidelines for vit, a Bun/JS toolkit for DID:PLC operations and Bluesky OAuth.
+Development guidelines for vit, a social toolkit for personalized software built with Bun.
 
 ## Project Overview
 
-vit is a Bun CLI with subcommands for DID:PLC operations and Bluesky OAuth:
-- `vit login`
-- `vit firehose`
-- `vit ship`
-- `vit skim`
+vit is a Bun CLI for discovering, vetting, remixing, and shipping software capabilities:
+- `vit setup`, `vit login`, `vit init`, `vit doctor` — authentication and environment setup
+- `vit beacon`, `vit config` — project beacon inspection and user configuration
+- `vit firehose` — listen to Jetstream for cap events
+- `vit ship`, `vit skim` — publish and read caps
 
 Source layout:
 - `bin/vit.js` - executable entrypoint

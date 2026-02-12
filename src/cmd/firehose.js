@@ -106,7 +106,7 @@ function connect(opts, cursor) {
 export default function register(program) {
   program
     .command('firehose')
-    .description('Listen to Bluesky Jetstream firehose for custom record events')
+    .description('Listen to Jetstream for cap events')
     .option('-v, --verbose', 'Show full JSON for each event')
     .option('--did <did>', 'Filter by DID (reads saved DID from config if not provided)')
     .option('--collection <nsid>', 'Collection NSID to filter', CAP_COLLECTION)

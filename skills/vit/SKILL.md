@@ -1,17 +1,17 @@
 ---
 name: using-vit
-description: Operates the vit CLI for DID:PLC identity management and ATProto social collaboration. Use when working with beacons, caps, vetting, vouching, remixing, or shipping in a vit project.
+description: Operates the vit CLI for discovering, vetting, remixing, and shipping software capabilities. Use when working with beacons, caps, vetting, vouching, remixing, or shipping in a vit project.
 ---
 
 # vit CLI
 
-CLI toolkit for DID:PLC operations and Bluesky OAuth.
+Social toolkit for personalized software.
 
 ## Quick start
 
 ```bash
-bun install          # install dependencies
-vit init             # check environment and configure vit
+make install         # install dependencies
+vit setup            # initialize user-level vit configuration
 vit login alice.bsky.social           # authenticate with Bluesky
 ```
 
@@ -19,15 +19,15 @@ vit login alice.bsky.social           # authenticate with Bluesky
 
 | Command | Purpose |
 |---------|---------|
-| `vit init` | Check environment readiness, configure vit for first use |
+| `vit init` | Initialize .vit/ in the current repo and validate beacon |
 | `vit beacon <target>` | Probe a remote repo for its beacon |
-| `vit setup` | Initialize user-level config |
-| `vit doctor` | Check vit setup status and beacon configuration |
+| `vit setup` | Initialize user-level vit setup |
+| `vit doctor` | Verify vit environment and project configuration |
 | `vit login <handle>` | Browser-based ATProto OAuth, saves DID to vit.json |
 | `vit config [action]` | Read/write vit.json config (list, set, delete) |
-| `vit firehose` | Listen to Bluesky Jetstream for custom record events |
-| `vit ship <text>` | Write a cap to the authenticated PDS |
-| `vit skim` | List caps from the authenticated PDS |
+| `vit firehose` | Listen to Jetstream for cap events |
+| `vit ship <text>` | Publish a cap to your feed |
+| `vit skim` | Read caps from followed agents and the beacon repo |
 
 For full option details, see [README.md](../../README.md).
 
@@ -36,31 +36,31 @@ For full option details, see [README.md](../../README.md).
 Setup (one-time):
 
 ```bash
+vit setup
 vit init
-vit adopt <beacon>
 ```
 
 Typical flow:
 
 ```bash
-vit skim              # read caps from followed agents and beacon
-vit vet <cap>         # run local evaluation, generate evidence
-vit remix <cap>       # derive vetted cap into local codebase, create plan
-vit ship              # publish new cap to beacon
+vit skim              # read caps from followed agents and the beacon repo
+vit vet <cap>         # run local evaluation on a cap in a sandbox
+vit remix <cap>       # derive a vetted cap into local codebase, create implementation plan
+vit ship              # publish a new cap to your feed
 ```
 
 Endorsement path:
 
 ```bash
 vit vet <cap>
-vit vouch <cap>       # publicly endorse a vetted cap
+vit vouch <cap>       # publicly endorse a vetted cap by liking it
 ```
 
 A cap must be vetted before it can be remixed or vouched.
 
 ## Terminology
 
-Key terms: **beacon** (canonical project identity), **cap** (structured change record), **remix** (local derivative of a cap), **evidence** (proof artifacts from vetting), **provenance** (lineage chain).
+Key terms: **beacon** (canonical project identity), **cap** (atomic social capability object), **remix** (local derivative of a vetted cap), **provenance** (lineage chain via vetting, remixing or vouching, and shipping).
 
 Key verbs: **init**, **adopt**, **follow**, **skim**, **vet**, **vouch**, **remix**, **ship**.
 

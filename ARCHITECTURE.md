@@ -51,9 +51,7 @@ Fields carried over from `app.bsky.feed.post` and their cap-context meaning:
 
 ### Relationship to VOCAB.md
 
-VOCAB.md defines a cap as a structured record with fields like intent, scope, risk, and provenance. The current lexicon does not include these fields — it establishes structural parity with `app.bsky.feed.post` so caps can thread, embed, use rich text, and be liked.
-
-Cap-specific fields (intent, scope, risk, kind, evidence, artifacts, provenance) are planned as future lexicon extensions. The `text` field and `tags` can carry some of this information informally until dedicated fields exist.
+VOCAB.md defines a cap as a markdown document containing free-form instructions for implementing a change — with sections for intent, scope, risk, implementation guide, and other context. The current lexicon mirrors `app.bsky.feed.post`, so cap semantics are encoded in `text`, `tags`, threading, and embeds rather than dedicated structured fields.
 
 ## Directory Layout
 
@@ -70,6 +68,6 @@ This mirrors the convention used in the atproto repository.
 
 ## Future Work
 
-- Custom lexicons for vouch (`org.v-it.vouch`), evidence, and other vit record types.
-- Cap-specific fields (intent, scope, risk, kind, beacon, provenance) as lexicon properties.
+- Custom lexicons for vouch (`org.v-it.vouch`) and other vit interaction record types.
+- Provenance tracking across vet, remix, vouch, and ship lineage.
 - Runtime lexicon validation (currently `validate: false` in CLI write commands).
