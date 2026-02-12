@@ -3,7 +3,7 @@
 
 import { Agent } from '@atproto/api';
 import { TID } from '@atproto/common-web';
-import { loadEnv } from '../lib/env.js';
+import { loadConfig } from '../lib/config.js';
 import { createOAuthClient, createSessionStore } from '../lib/oauth.js';
 import { appendLog } from '../lib/vit-dir.js';
 
@@ -11,10 +11,10 @@ export default function register(program) {
   program
     .command('ship <text>')
     .description('Write a cap to the authenticated PDS')
-    .option('--did <did>', 'DID to use (default: from .env)')
+    .option('--did <did>', 'DID to use (reads saved DID from config if not provided)')
     .action(async (text, opts) => {
       try {
-        const { BSKY_DID: envDid } = loadEnv();
+        const envDid = loadConfig().did;
         const did = opts.did || envDid;
 
         const clientId = `http://localhost?redirect_uri=${encodeURIComponent('http://127.0.0.1')}&scope=${encodeURIComponent('atproto transition:generic')}`;

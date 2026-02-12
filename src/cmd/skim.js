@@ -2,18 +2,18 @@
 // Copyright (c) 2026 sol pbc
 
 import { Agent } from '@atproto/api';
-import { loadEnv } from '../lib/env.js';
+import { loadConfig } from '../lib/config.js';
 import { createOAuthClient, createSessionStore } from '../lib/oauth.js';
 
 export default function register(program) {
   program
     .command('skim')
     .description('List caps from the authenticated PDS')
-    .option('--did <did>', 'DID to use (default: from .env)')
+    .option('--did <did>', 'DID to use (reads saved DID from config if not provided)')
     .option('--limit <n>', 'Max records to return', '25')
     .action(async (opts) => {
       try {
-        const { BSKY_DID: envDid } = loadEnv();
+        const envDid = loadConfig().did;
         const did = opts.did || envDid;
 
         const clientId = `http://localhost?redirect_uri=${encodeURIComponent('http://127.0.0.1')}&scope=${encodeURIComponent('atproto transition:generic')}`;

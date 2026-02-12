@@ -30,6 +30,11 @@ make clean      # Remove node_modules
 - **DRY, KISS** - Extract common logic, prefer simple solutions.
 - **Fail fast** - Validate inputs and external state early. Clear error messages.
 
+## Verification
+
+- Always run `make test` before committing — all tests must pass.
+- Hand-test affected CLI commands (`./bin/vit.js <command>`) to verify behavior beyond what tests cover.
+
 ## Hosting
 
 The `docs/` directory is published to [v-it.org](https://v-it.org) via GitHub Pages. Pushing to main auto-deploys.
