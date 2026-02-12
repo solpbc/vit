@@ -89,7 +89,7 @@ vit doctor
 `doctor` is an alias for `init`.
 
 Capabilities:
-- Log in to Bluesky (invokes OAuth flow)
+- Log in to Bluesky (invokes login flow)
 - Install skills (agent capabilities)
 - Initialize `.vit/` in the current git repo
 - Verify environment is correctly configured

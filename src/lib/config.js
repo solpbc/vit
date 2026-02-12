@@ -16,6 +16,9 @@ export function loadConfig() {
 }
 
 export function saveConfig(obj) {
+  const now = Math.floor(Date.now() / 1000);
+  if (!obj.created_at) obj.created_at = now;
+  obj.updated_at = now;
   mkdirSync(configDir, { recursive: true });
   writeFileSync(vitJsonPath, JSON.stringify(obj, null, 2) + '\n');
 }

@@ -5,7 +5,7 @@ import { Command } from 'commander';
 import registerConfig from './cmd/config.js';
 import registerDoctor from './cmd/doctor.js';
 import registerInit from './cmd/init.js';
-import registerOauth from './cmd/oauth.js';
+import registerLogin from './cmd/login.js';
 import registerPlcRegister from './cmd/plc-register.js';
 import registerPlcVerify from './cmd/plc-verify.js';
 import registerFirehose from './cmd/firehose.js';
@@ -21,7 +21,7 @@ program
 registerConfig(program);
 registerDoctor(program);
 registerInit(program);
-registerOauth(program);
+registerLogin(program);
 registerPlcRegister(program);
 registerPlcVerify(program);
 registerFirehose(program);

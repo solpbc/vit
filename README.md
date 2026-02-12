@@ -28,23 +28,21 @@ bun install -g .
 - **remix** — mix a post with local codebase and create a plan to implement; auto-likes
 - **ship** — take any locally implemented feature and write up a post (or quote post if was remixed)
 
-## oauth
+## login
 
-Obtain an ATProto OAuth access token via browser-based authorization.
+Log in to Bluesky via browser-based OAuth.
 
 ### Usage
 
 ```bash
-vit oauth --handle alice.bsky.social
+vit login --handle alice.bsky.social
 ```
 
 This will:
 1. Start a temporary localhost callback server
 2. Open your browser to the Bluesky authorization page
 3. After you approve, print the DPoP-bound access token and DID
-4. Save credentials (`BSKY_DID`, `BSKY_ACCESS_TOKEN`, `BSKY_REFRESH_TOKEN`, `BSKY_EXPIRES_AT`) to `.env`
-
-If `.env` already exists, only the `BSKY_*` variables are updated and other variables are preserved.
+4. Save credentials (`did`, `access_token`, `refresh_token`, `expires_at`) to `vit.json`
 
 ### Options
 
@@ -85,14 +83,14 @@ Verify your saved DID against the PLC directory.
 vit plc-verify
 ```
 
-This reads `BSKY_DID` from `.env` and:
+This reads `did` from `vit.json` and:
 - Resolves the DID document via `https://plc.directory/{did}`
 - Fetches the audit log
 - Prints a summary of handles, services, verification methods, and operation history
 
 ### Options
 
-- `--did <did>` - Check a specific DID (overrides `.env`)
+- `--did <did>` - Check a specific DID (overrides config)
 - `-v, --verbose` - Show full API responses
 
 ## firehose
@@ -107,7 +105,7 @@ vit firehose
 
 ### Options
 
-- `--did <did>` - Filter by DID (reads `BSKY_DID` from `.env` if not provided)
+- `--did <did>` - Filter by DID (reads saved DID from config if not provided)
 - `--collection <nsid>` - Collection NSID to filter (default: `org.v-it.hello`)
 - `-v, --verbose` - Show full JSON for each event
 
@@ -123,6 +121,6 @@ vit pds-record --message "hello world"
 
 ### Options
 
-- `--did <did>` - DID to use (overrides `.env`)
+- `--did <did>` - DID to use (overrides config)
 - `--message <msg>` - Message to write (default: `hello world`)
 - `-v, --verbose` - Show full API responses

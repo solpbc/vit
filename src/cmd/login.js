@@ -2,14 +2,13 @@
 // Copyright (c) 2026 sol pbc
 
 import { writeFileSync } from 'node:fs';
-import { saveToEnv } from '../lib/env.js';
+import { loadConfig, saveConfig } from '../lib/config.js';
 import { createOAuthClient, createSessionStore, createStore } from '../lib/oauth.js';
-import { configPath } from '../lib/paths.js';
 
 export default function register(program) {
   program
-    .command('oauth')
-    .description('Obtain an ATProto OAuth access token via browser authorization')
+    .command('login')
+    .description('Log in to Bluesky via browser-based OAuth')
     .option('--handle <handle>', 'Bluesky handle (e.g. alice.bsky.social)')
     .option('-v, --verbose', 'Show discovery details')
     .option('--output <file>', 'Save token JSON to file')
@@ -125,11 +124,12 @@ export default function register(program) {
         console.log(`DID: ${session.did}`);
 
         const sessionData = await sessionStore.get(session.did);
+        const tokens = sessionData?.tokenSet ?? {};
         const outputData = {
           did: session.did,
-          accessToken: sessionData?.tokenSet?.access_token ?? null,
-          refreshToken: sessionData?.tokenSet?.refresh_token ?? null,
-          expiresAt: sessionData?.tokenSet?.expires_at ?? null,
+          accessToken: tokens.access_token ?? null,
+          refreshToken: tokens.refresh_token ?? null,
+          expiresAt: tokens.expires_at ?? null,
         };
 
         console.log(JSON.stringify(outputData, null, 2));
@@ -138,13 +138,13 @@ export default function register(program) {
           writeFileSync(output, `${JSON.stringify(outputData, null, 2)}\n`);
         }
 
-        saveToEnv({
-          BSKY_DID: outputData.did,
-          BSKY_ACCESS_TOKEN: outputData.accessToken ?? '',
-          BSKY_REFRESH_TOKEN: outputData.refreshToken ?? '',
-          BSKY_EXPIRES_AT: outputData.expiresAt ?? '',
-        });
-        console.log(`Saved credentials to ${configPath('.env')}`);
+        const config = loadConfig();
+        config.did = session.did;
+        config.access_token = tokens.access_token;
+        config.refresh_token = tokens.refresh_token;
+        config.expires_at = tokens.expires_at;
+        saveConfig(config);
+        console.log('\nCredentials saved to vit.json');
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;

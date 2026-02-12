@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
-import { loadEnv } from '../lib/env.js';
+import { loadConfig } from '../lib/config.js';
 
 export default function register(program) {
   program
@@ -11,11 +11,11 @@ export default function register(program) {
     .option('--did <did>', 'DID to check (overrides saved credentials)')
     .action(async (opts) => {
       try {
-        const env = loadEnv();
-        const did = opts.did || env.BSKY_DID;
+        const config = loadConfig();
+        const did = opts.did || config.did;
 
         if (!did) {
-          throw new Error('No DID found. Run `vit oauth` first or pass --did <did>.');
+          throw new Error('No DID found. Run `vit login` first or pass --did <did>.');
         }
 
         if (!did.startsWith('did:plc:')) {

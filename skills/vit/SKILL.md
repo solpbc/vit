@@ -12,7 +12,7 @@ CLI toolkit for DID:PLC operations and Bluesky OAuth.
 ```bash
 bun install          # install dependencies
 vit init             # check environment and configure vit
-vit oauth --handle alice.bsky.social  # authenticate with Bluesky
+vit login --handle alice.bsky.social  # authenticate with Bluesky
 ```
 
 ## Subcommands
@@ -22,7 +22,7 @@ vit oauth --handle alice.bsky.social  # authenticate with Bluesky
 | `vit init` | Check environment readiness, configure vit for first use |
 | `vit setup` | Initialize user-level config |
 | `vit doctor` | Check vit setup status (alias for init) |
-| `vit oauth --handle <h>` | Browser-based ATProto OAuth, saves tokens to .env |
+| `vit login --handle <h>` | Browser-based ATProto OAuth, saves tokens to vit.json |
 | `vit config [action]` | Read/write vit.json config (list, set, delete) |
 | `vit plc-register` | Generate and register a DID:PLC genesis operation |
 | `vit plc-verify` | Verify DID document and audit log from PLC directory |
@@ -69,5 +69,5 @@ For complete definitions, see [VOCAB.md](../../VOCAB.md).
 ## Configuration
 
 - **`.vit/`** — local project directory, stores beacon and follows
-- **`.env`** — credentials (`BSKY_DID`, `BSKY_ACCESS_TOKEN`, etc.), written by `vit oauth`
+- **`vit.json`** — credentials (`did`, `access_token`, etc.) and config, written by `vit login` and `vit config`
 - **`vit config`** — read/write `vit.json` user-level config

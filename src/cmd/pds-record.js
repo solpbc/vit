@@ -2,7 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { Agent } from '@atproto/api';
-import { loadEnv } from '../lib/env.js';
+import { loadConfig } from '../lib/config.js';
 import { createOAuthClient, createSessionStore } from '../lib/oauth.js';
 import { configPath } from '../lib/paths.js';
 
@@ -14,18 +14,18 @@ export default function register(program) {
     .option('--message <msg>', 'Message to write', 'hello world')
     .action(async (opts) => {
       try {
-        const env = loadEnv();
-        const did = opts.did || env.BSKY_DID;
+        const config = loadConfig();
+        const did = opts.did || config.did;
 
         if (!did) {
-          throw new Error('No DID found. Run `vit oauth` first or pass --did <did>.');
+          throw new Error('No DID found. Run `vit login` first or pass --did <did>.');
         }
 
         const sessionStore = createSessionStore();
         const sessionData = await sessionStore.get(did);
         if (!sessionData) {
           throw new Error(
-            `No session found for ${did} in ${configPath('bsky_session.json')}. Run \`vit oauth\` first to authenticate.`,
+            `No session found for ${did} in ${configPath('bsky_session.json')}. Run \`vit login\` first to authenticate.`,
           );
         }
 

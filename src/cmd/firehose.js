@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
-import { loadEnv } from '../lib/env.js';
+import { loadConfig } from '../lib/config.js';
 
 const JETSTREAM_URL = 'wss://jetstream2.us-east.bsky.network/subscribe';
 const DEFAULT_COLLECTION = 'org.v-it.hello';
@@ -108,14 +108,14 @@ export default function register(program) {
     .command('firehose')
     .description('Listen to Bluesky Jetstream firehose for custom record events')
     .option('-v, --verbose', 'Show full JSON for each event')
-    .option('--did <did>', 'Filter by DID (reads saved BSKY_DID if not provided)')
+    .option('--did <did>', 'Filter by DID (reads saved DID from config if not provided)')
     .option('--collection <nsid>', 'Collection NSID to filter', DEFAULT_COLLECTION)
     .action(async (opts) => {
       try {
         if (!opts.did) {
-          const env = loadEnv();
-          if (env.BSKY_DID) {
-            opts.did = env.BSKY_DID;
+          const config = loadConfig();
+          if (config.did) {
+            opts.did = config.did;
           }
         }
 
