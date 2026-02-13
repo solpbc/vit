@@ -64,6 +64,11 @@
               "maxGraphemes": 64
             }
           },
+          "beacon": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Beacon URI scoping this cap to a project."
+          },
           "createdAt": {
             "type": "string",
             "format": "datetime",
