@@ -18,8 +18,8 @@ export function readProjectConfig() {
   }
 }
 
-export function writeProjectConfig(obj) {
-  const dir = vitDir();
+export function writeProjectConfig(obj, baseDir) {
+  const dir = baseDir ? join(baseDir, '.vit') : vitDir();
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'config.json'), JSON.stringify(obj, null, 2) + '\n');
 }

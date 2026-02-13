@@ -2,6 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { Command } from 'commander';
+import registerAdopt from './cmd/adopt.js';
 import registerBeacon from './cmd/beacon.js';
 import registerConfig from './cmd/config.js';
 import registerDoctor from './cmd/doctor.js';
@@ -19,6 +20,7 @@ program
   .description('Social toolkit for personalized software')
   .version('0.1.0');
 
+registerAdopt(program);
 registerBeacon(program);
 registerConfig(program);
 registerDoctor(program);
