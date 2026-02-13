@@ -64,7 +64,7 @@ Key terms: **beacon** (canonical project identity), **cap** (atomic social capab
 
 Key verbs: **init**, **adopt**, **follow**, **skim**, **vet**, **vouch**, **remix**, **ship**.
 
-For complete definitions, see [VOCAB.md](../../VOCAB.md).
+For complete definitions, see [VOCAB.md](../../docs/VOCAB.md).
 
 ## Configuration
 
