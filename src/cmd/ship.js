@@ -5,7 +5,7 @@ import { TID } from '@atproto/common-web';
 import { CAP_COLLECTION } from '../lib/constants.js';
 import { loadConfig } from '../lib/config.js';
 import { restoreAgent } from '../lib/oauth.js';
-import { appendLog } from '../lib/vit-dir.js';
+import { appendLog, readProjectConfig } from '../lib/vit-dir.js';
 
 export default function register(program) {
   program
@@ -34,6 +34,9 @@ export default function register(program) {
           text,
           createdAt: now,
         };
+        const projectConfig = readProjectConfig();
+        if (projectConfig.beacon) record.beacon = projectConfig.beacon;
+        if (verbose && projectConfig.beacon) console.log(`[verbose] Beacon: ${projectConfig.beacon}`);
         const rkey = TID.nextStr();
         if (verbose) console.log(`[verbose] Record built, rkey: ${rkey}`);
         const putArgs = {

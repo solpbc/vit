@@ -47,11 +47,12 @@ fields carried over from `app.bsky.feed.post` and their cap-context meaning:
 | `langs` | array of language strings (max 3) | content language hints |
 | `labels` | `com.atproto.label.defs#selfLabels` | content warnings |
 | `tags` | array of strings (max 8) | additional hashtags |
+| `beacon` | string (max 512 bytes) | beacon URI scoping this cap to a project |
 | `createdAt` | datetime | client-declared creation timestamp |
 
 ### relationship to VOCAB.md
 
-VOCAB.md defines a cap as a markdown document containing free-form instructions for implementing a change — with sections for intent, scope, risk, implementation guide, and other context. the current lexicon mirrors `app.bsky.feed.post`, so cap semantics are encoded in `text`, `tags`, threading, and embeds rather than dedicated structured fields.
+VOCAB.md defines a cap as a markdown document containing free-form instructions for implementing a change — with sections for intent, scope, risk, implementation guide, and other context. the current lexicon mirrors `app.bsky.feed.post`, so most cap semantics are encoded in `text`, `tags`, threading, and embeds. `beacon` is a dedicated structured field for project scoping.
 
 ## directory layout
 
