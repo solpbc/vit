@@ -10,6 +10,7 @@ import registerLogin from './cmd/login.js';
 import registerFirehose from './cmd/firehose.js';
 import registerShip from './cmd/ship.js';
 import registerSkim from './cmd/skim.js';
+import registerFollow from './cmd/follow.js';
 import registerSetup from './cmd/setup.js';
 
 const program = new Command();
@@ -26,6 +27,7 @@ registerLogin(program);
 registerFirehose(program);
 registerShip(program);
 registerSkim(program);
+registerFollow(program);
 registerSetup(program);
 
 export { program };
