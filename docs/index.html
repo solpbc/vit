@@ -30,19 +30,26 @@
       line-height: 1.2;
     }
 
-    header h1 a {
-      color: inherit;
-      text-decoration: none;
-    }
-
     .tagline {
       margin: 6px 0 0;
       color: #4b5563;
       font-size: 1rem;
     }
 
+    .header-bar {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    header {
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+
     nav {
-      margin: 20px 0 24px;
       display: flex;
       flex-wrap: wrap;
       gap: 14px;
@@ -64,6 +71,10 @@
 
     main {
       min-height: 240px;
+    }
+
+    #doc-content {
+      transition: opacity 150ms ease;
     }
 
     main h1,
@@ -130,16 +141,18 @@
 <body>
   <div class="container">
     <header>
-      <h1><a href="#">vit</a></h1>
-      <p class="tagline">Social toolkit for personalized software</p>
+      <div class="header-bar">
+        <h1>vit</h1>
+        <nav>
+          <a href="#">home</a>
+          <a href="#doctrine">doctrine</a>
+          <a href="#vocab">vocab</a>
+          <a href="#architecture">architecture</a>
+          <a href="https://github.com/solpbc/vit">github</a>
+        </nav>
+      </div>
+      <p class="tagline">social toolkit for personalized software</p>
     </header>
-
-    <nav>
-      <a href="#doctrine">Doctrine</a>
-      <a href="#vocab">Vocab</a>
-      <a href="#architecture">Architecture</a>
-      <a href="https://github.com/solpbc/vit">GitHub</a>
-    </nav>
 
     <main id="content">
       <div id="landing">
@@ -156,6 +169,7 @@
         </section>
         <p><a href="#doctrine">Read the full doctrine &rarr;</a></p>
       </div>
+      <div id="doc-content" style="display:none"></div>
     </main>
 
     <footer>
@@ -171,35 +185,48 @@
       architecture: 'ARCHITECTURE.md'
     };
 
+    const cache = {};
+
     function navigate() {
       const hash = location.hash.slice(1);
-      const content = document.getElementById('content');
       const landing = document.getElementById('landing');
+      const docDiv = document.getElementById('doc-content');
+
+      // Update active nav link
+      document.querySelectorAll('nav a').forEach((a) => {
+        const href = a.getAttribute('href');
+        if (href.startsWith('#')) {
+          a.classList.toggle('active', docs[hash] ? href === '#' + hash : href === '#');
+        } else {
+          a.classList.remove('active');
+        }
+      });
 
       if (docs[hash]) {
         landing.style.display = 'none';
-        content.querySelector('.doc-content')?.remove();
-        const div = document.createElement('div');
-        div.className = 'doc-content';
-        div.textContent = 'Loading…';
-        content.appendChild(div);
+        docDiv.style.display = '';
 
-        fetch(docs[hash])
-          .then((r) => r.text())
-          .then((md) => {
-            div.innerHTML = marked.parse(md);
-          })
-          .catch(() => {
-            div.textContent = 'Failed to load document.';
-          });
-
-        document.querySelectorAll('nav a').forEach((a) => {
-          a.classList.toggle('active', a.getAttribute('href') === '#' + hash);
-        });
+        if (cache[hash]) {
+          docDiv.innerHTML = cache[hash];
+          docDiv.style.opacity = '1';
+        } else {
+          docDiv.style.opacity = '0';
+          docDiv.innerHTML = '';
+          fetch(docs[hash])
+            .then((r) => r.text())
+            .then((md) => {
+              cache[hash] = marked.parse(md);
+              docDiv.innerHTML = cache[hash];
+              docDiv.style.opacity = '1';
+            })
+            .catch(() => {
+              docDiv.textContent = 'Failed to load document.';
+              docDiv.style.opacity = '1';
+            });
+        }
       } else {
         landing.style.display = '';
-        content.querySelector('.doc-content')?.remove();
-        document.querySelectorAll('nav a').forEach((a) => a.classList.remove('active'));
+        docDiv.style.display = 'none';
       }
     }
 

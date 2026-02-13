@@ -1,4 +1,4 @@
-# Vit Manifesto
+# Vit Doctrine
 
 Vit is a **social system for personalized software** where the unit of exchange is not pull requests, not screenshots, not diffs, not even git.
 
