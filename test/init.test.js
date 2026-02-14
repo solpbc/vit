@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execSync } from 'node:child_process';
 
-describe('vit init --beacon', () => {
+describe('vit init', () => {
   let tmpDir;
 
   beforeEach(() => {
@@ -72,20 +72,93 @@ describe('vit init --beacon', () => {
     run('init --beacon https://github.com/solpbc/vit.git', tmpDir, { CLAUDECODE: '1' });
     const result = run('init', tmpDir, { CLAUDECODE: '1' });
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toBe('beacon: vit:github.com/solpbc/vit');
+    expect(result.stdout).toContain('beacon: vit:github.com/solpbc/vit');
+    expect(result.stdout).toContain('hint: to change the beacon, run: vit init --beacon <git-url>');
   });
 
-  test('reports not set when no flag and .vit exists but no beacon', () => {
+  test('reports no beacon when .vit exists but directory is not a git repo', () => {
     mkdirSync(join(tmpDir, '.vit'), { recursive: true });
     const result = run('init', tmpDir, { CLAUDECODE: '1' });
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toBe('beacon: not set');
+    expect(result.stdout).toContain('status: no beacon');
+    expect(result.stdout).toContain('git: false');
+    expect(result.stdout).toContain('hint: run: vit init --beacon <canonical-git-url>');
   });
 
   test('reports .vit not found when no flag and no .vit dir', () => {
     const result = run('init', tmpDir, { CLAUDECODE: '1' });
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toBe('.vit directory not found');
+    expect(result.stdout).toContain('status: not initialized');
+    expect(result.stdout).toContain('git: false');
+    expect(result.stdout).toContain('hint: run vit init from inside a git repository');
+  });
+
+  test('guides agent in fork repo with upstream and origin remotes', () => {
+    execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
+    execSync('git remote add origin https://github.com/agent/vit.git', { cwd: tmpDir, stdio: 'pipe' });
+    execSync('git remote add upstream https://github.com/solpbc/vit.git', { cwd: tmpDir, stdio: 'pipe' });
+
+    const result = run('init', tmpDir, { CLAUDECODE: '1' });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('status: not initialized');
+    expect(result.stdout).toContain('git: true');
+    expect(result.stdout).toContain('origin=');
+    expect(result.stdout).toContain('upstream=');
+    expect(result.stdout).toContain('hint: detected upstream remote');
+    expect(result.stdout).toContain('vit init --beacon https://github.com/solpbc/vit.git');
+  });
+
+  test('guides agent in repo with only origin remote', () => {
+    execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
+    execSync('git remote add origin https://github.com/solpbc/vit.git', { cwd: tmpDir, stdio: 'pipe' });
+
+    const result = run('init', tmpDir, { CLAUDECODE: '1' });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('status: not initialized');
+    expect(result.stdout).toContain('git: true');
+    expect(result.stdout).toContain('origin=');
+    expect(result.stdout).toContain('vit init --beacon https://github.com/solpbc/vit.git');
+  });
+
+  test('guides agent in git repo with no remotes', () => {
+    execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
+
+    const result = run('init', tmpDir, { CLAUDECODE: '1' });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('status: not initialized');
+    expect(result.stdout).toContain('git: true');
+    expect(result.stdout).toContain('remotes: none');
+    expect(result.stdout).toContain('hint: no git remotes found');
+  });
+
+  test('guides agent in git repo with .vit but no beacon', () => {
+    execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
+    mkdirSync(join(tmpDir, '.vit'), { recursive: true });
+
+    const result = run('init', tmpDir, { CLAUDECODE: '1' });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('status: no beacon');
+    expect(result.stdout).toContain('git: true');
+    expect(result.stdout).toContain('remotes: none');
+    expect(result.stdout).toContain('hint: no git remotes found');
+  });
+
+  test('--beacon . prefers upstream over origin in fork', () => {
+    execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
+    execSync('git remote add origin https://github.com/agent/fork.git', { cwd: tmpDir, stdio: 'pipe' });
+    execSync('git remote add upstream https://github.com/solpbc/vit.git', { cwd: tmpDir, stdio: 'pipe' });
+
+    const result = run('init --beacon .', tmpDir, { CLAUDECODE: '1' });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe('beacon: vit:github.com/solpbc/vit');
+  });
+
+  test('shows guidance for already initialized repo', () => {
+    run('init --beacon https://github.com/solpbc/vit.git', tmpDir, { CLAUDECODE: '1' });
+    const result = run('init', tmpDir, { CLAUDECODE: '1' });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('beacon: vit:github.com/solpbc/vit');
+    expect(result.stdout).toContain('hint: to change the beacon');
   });
 
   test('errors on invalid git URL', () => {
