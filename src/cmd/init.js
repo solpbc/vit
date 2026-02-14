@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { toBeacon } from '../lib/beacon.js';
 import { vitDir, readProjectConfig, writeProjectConfig } from '../lib/vit-dir.js';
+import { requireAgent } from '../lib/agent.js';
 
 export default function register(program) {
   program
@@ -14,6 +15,14 @@ export default function register(program) {
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (opts) => {
       try {
+        const gate = requireAgent();
+        if (!gate.ok) {
+          console.error('vit init should be run by a coding agent (e.g. claude code, gemini cli).');
+          console.error("open your agent and ask it to run 'vit init' for you.");
+          process.exitCode = 1;
+          return;
+        }
+
         const { verbose } = opts;
         const dir = vitDir();
         if (verbose) console.log(`[verbose] .vit dir: ${dir}`);

@@ -2,6 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { loadConfig, saveConfig } from '../lib/config.js';
+import { requireNotAgent } from '../lib/agent.js';
 
 export default function register(program) {
   program
@@ -9,6 +10,14 @@ export default function register(program) {
     .description('Initialize user-level vit setup')
     .action(async () => {
       try {
+        const gate = requireNotAgent();
+        if (!gate.ok) {
+          console.error(`vit setup cannot run inside ${gate.name} (detected ${gate.envVar}=1).`);
+          console.error('run vit setup from your own terminal instead.');
+          process.exitCode = 1;
+          return;
+        }
+
         const config = loadConfig();
         if (config.setup_at) {
           const when = new Date(config.setup_at * 1000).toISOString();

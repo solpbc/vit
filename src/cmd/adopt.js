@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { parseGitUrl, toBeacon, beaconToHttps } from '../lib/beacon.js';
 import { writeProjectConfig } from '../lib/vit-dir.js';
+import { requireNotAgent } from '../lib/agent.js';
 
 export default function register(program) {
   program
@@ -16,6 +17,14 @@ export default function register(program) {
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (beacon, name, opts) => {
       try {
+        const gate = requireNotAgent();
+        if (!gate.ok) {
+          console.error(`vit adopt cannot run inside ${gate.name} (detected ${gate.envVar}=1).`);
+          console.error('run vit adopt from your own terminal instead.');
+          process.exitCode = 1;
+          return;
+        }
+
         const { verbose } = opts;
 
         // resolve beacon

@@ -5,6 +5,7 @@ import { loadConfig } from '../lib/config.js';
 import { CAP_COLLECTION, FOLLOW_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { readProjectConfig } from '../lib/vit-dir.js';
+import { requireAgent } from '../lib/agent.js';
 
 export default function register(program) {
   program
@@ -17,6 +18,14 @@ export default function register(program) {
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (opts) => {
       try {
+        const gate = requireAgent();
+        if (!gate.ok) {
+          console.error('vit skim should be run by a coding agent (e.g. claude code, gemini cli).');
+          console.error("open your agent and ask it to run 'vit skim' for you.");
+          process.exitCode = 1;
+          return;
+        }
+
         const { verbose } = opts;
         const did = opts.did || loadConfig().did;
         if (!did) {

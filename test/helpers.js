@@ -6,10 +6,16 @@ import { execSync } from 'node:child_process';
 
 const vitBin = join(import.meta.dir, '..', 'bin', 'vit.js');
 
-export function run(args, cwd) {
+export function run(args, cwd, env) {
   try {
     return {
-      stdout: execSync(`bun ${vitBin} ${args}`, { cwd, encoding: 'utf-8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }).trim(),
+      stdout: execSync(`bun ${vitBin} ${args}`, {
+        cwd,
+        encoding: 'utf-8',
+        timeout: 30000,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: env ? { ...process.env, ...env } : undefined,
+      }).trim(),
       exitCode: 0,
     };
   } catch (err) {
