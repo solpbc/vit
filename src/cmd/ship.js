@@ -14,6 +14,9 @@ export default function register(program) {
     .description('Publish a cap to your feed')
     .option('-v, --verbose', 'Show step-by-step details')
     .option('--did <did>', 'DID to use (reads saved DID from config if not provided)')
+    .requiredOption('--title <title>', 'Short title for the cap')
+    .requiredOption('--description <description>', 'Description of the cap')
+    .requiredOption('--ref <ref>', 'Three lowercase words with dashes (e.g. fast-cache-invalidation)')
     .action(async (text, opts) => {
       try {
         const { verbose } = opts;
@@ -24,16 +27,19 @@ export default function register(program) {
           return;
         }
         if (verbose) console.log(`[verbose] DID: ${did}`);
+
+        const REF_PATTERN = /^[a-z]+-[a-z]+-[a-z]+$/;
+        if (!REF_PATTERN.test(opts.ref)) {
+          console.error('error: --ref must be exactly three lowercase words separated by dashes (e.g. fast-cache-invalidation)');
+          process.exitCode = 1;
+          return;
+        }
         const now = new Date().toISOString();
 
         const { agent, session } = await restoreAgent(did);
         if (verbose) console.log(`[verbose] Session restored, PDS: ${session.serverMetadata?.issuer}`);
 
-        const record = {
-          $type: CAP_COLLECTION,
-          text,
-          createdAt: now,
-        };
+        const record = { $type: CAP_COLLECTION, text, title: opts.title, description: opts.description, ref: opts.ref, createdAt: now };
         const projectConfig = readProjectConfig();
         if (projectConfig.beacon) record.beacon = projectConfig.beacon;
         if (verbose && projectConfig.beacon) console.log(`[verbose] Beacon: ${projectConfig.beacon}`);

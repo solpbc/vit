@@ -8,8 +8,26 @@
       "key": "tid",
       "record": {
         "type": "object",
-        "required": ["text", "createdAt"],
+        "required": ["text", "createdAt", "title", "description", "ref"],
         "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 512,
+            "maxGraphemes": 64,
+            "description": "Short title for the capability"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 3000,
+            "maxGraphemes": 300,
+            "description": "Longer description of the capability"
+          },
+          "ref": {
+            "type": "string",
+            "maxLength": 128,
+            "maxGraphemes": 64,
+            "description": "Three lowercase words separated by dashes, e.g. fast-cache-invalidation"
+          },
           "text": {
             "type": "string",
             "maxLength": 3000,

@@ -33,6 +33,11 @@ caps are not raw diffs. they are markdown documents containing details on how to
 - evidence
 - artifacts
 
+caps also include structured fields:
+- `title` (short capability title)
+- `description` (longer capability summary)
+- `ref` (three lowercase words separated by dashes)
+
 **kinds**
 (examples)
 - `feat`
@@ -183,12 +188,14 @@ vouch is reputational and visible.
 publish (posts) a new cap to your feed.
 
 ```bash
-vit ship
+vit ship "<text>" --title "<title>" --description "<description>" --ref "<one-two-three>"
 ```
 
 ship creates:
 - a new cap
 - or a recap (quote post) if remixed from another cap
+
+required flags for ship are `--title`, `--description`, and `--ref`.
 
 ship is the outward publishing and sharing act.
 

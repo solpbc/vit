@@ -101,13 +101,27 @@ export default function register(program) {
             console.log('no caps found for this beacon.');
           }
           for (const rec of capped) {
-            // extract author DID from URI: at://did:plc:xxx/org.v-it.cap/tid
             const author = rec.uri.split('/')[2];
             const short = author.length > 20 ? author.slice(0, 20) + '…' : author;
             const time = rec.value.createdAt || 'unknown';
+            const title = rec.value.title || '';
+            const description = rec.value.description || '';
+            const ref = rec.value.ref || '';
             const text = rec.value.text || '';
             console.log(`[${short}] ${time}`);
-            console.log(`  ${text}`);
+            if (title || ref) {
+              const parts = [title, ref ? `(${ref})` : ''].filter(Boolean).join(' ');
+              console.log(`  ${parts}`);
+            }
+            if (description) {
+              console.log(`  ${description}`);
+            }
+            if ((title || ref || description) && text) {
+              console.log('  ---');
+            }
+            if (text) {
+              console.log(`  ${text}`);
+            }
             console.log();
           }
         }

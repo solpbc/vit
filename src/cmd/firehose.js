@@ -35,7 +35,7 @@ function formatEvent(event) {
       return `[${time}] ${operation} ${collection} from ${didShort} rkey=${rkey}`;
     }
 
-    const message = event.commit?.record?.text;
+    const message = event.commit?.record?.title || event.commit?.record?.text;
     if (typeof message === 'string') {
       return `[${time}] ${operation} ${collection} from ${didShort} rkey=${rkey} — "${message}"`;
     }
