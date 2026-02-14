@@ -11,7 +11,7 @@ export default function register(program) {
   program
     .command('init')
     .description('Initialize .vit directory and set project beacon. Use the most official upstream or well-known git URL so all contributors converge on the same beacon.')
-    .option('--beacon <url>', 'Git URL (or "." to read from git remote origin) to derive the beacon URI')
+    .option('--beacon <url>', 'Git URL (or "." to read from git remote upstream/origin) to derive the beacon URI')
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (opts) => {
       try {
@@ -31,32 +31,113 @@ export default function register(program) {
           const config = readProjectConfig();
           if (config.beacon) {
             console.log(`beacon: ${config.beacon}`);
-          } else if (existsSync(dir)) {
-            console.log('beacon: not set');
+            console.log('hint: to change the beacon, run: vit init --beacon <git-url>');
+            return;
+          }
+
+          let isGitRepo = false;
+          try {
+            execSync('git rev-parse --is-inside-work-tree', {
+              encoding: 'utf-8',
+              stdio: ['pipe', 'pipe', 'pipe'],
+            });
+            isGitRepo = true;
+          } catch {}
+          if (verbose) console.log(`[verbose] in git repo: ${isGitRepo ? 'yes' : 'no'}`);
+
+          const hasVitDir = existsSync(dir);
+          if (!isGitRepo) {
+            console.log(hasVitDir ? 'status: no beacon' : 'status: not initialized');
+            console.log('git: false');
+            if (hasVitDir) {
+              console.log('hint: run: vit init --beacon <canonical-git-url>');
+            } else {
+              console.log('hint: run vit init from inside a git repository.');
+            }
+            return;
+          }
+
+          console.log(hasVitDir ? 'status: no beacon' : 'status: not initialized');
+          console.log('git: true');
+
+          let remoteNames = [];
+          try {
+            remoteNames = execSync('git remote', {
+              encoding: 'utf-8',
+              stdio: ['pipe', 'pipe', 'pipe'],
+            })
+              .trim()
+              .split('\n')
+              .filter(Boolean);
+          } catch {
+            remoteNames = [];
+          }
+          if (verbose) console.log(`[verbose] remotes detected: ${remoteNames.length > 0 ? remoteNames.join(', ') : 'none'}`);
+
+          const remotes = [];
+          for (const name of remoteNames) {
+            try {
+              const url = execSync(`git config --get remote.${name}.url`, {
+                encoding: 'utf-8',
+                stdio: ['pipe', 'pipe', 'pipe'],
+              }).trim();
+              if (url) remotes.push({ name, url });
+            } catch {}
+          }
+          if (verbose && remotes.length > 0) {
+            console.log(`[verbose] remote urls: ${remotes.map(r => `${r.name}=${r.url}`).join(' ')}`);
+          }
+
+          const remotesDisplay = remotes.length > 0
+            ? remotes.map(remote => `${remote.name}=${remote.url}`).join(' ')
+            : 'none';
+          console.log(`remotes: ${remotesDisplay}`);
+
+          const upstream = remotes.find(remote => remote.name === 'upstream');
+          const origin = remotes.find(remote => remote.name === 'origin');
+          if (upstream) {
+            console.log('hint: detected upstream remote. upstream points to the canonical repo.');
+            console.log(`hint: run: vit init --beacon ${upstream.url}`);
+          } else if (origin) {
+            console.log(`hint: run: vit init --beacon ${origin.url}`);
           } else {
-            console.log('.vit directory not found');
+            console.log('hint: no git remotes found. run: vit init --beacon <canonical-git-url>');
           }
           return;
         }
 
         let gitUrl = opts.beacon;
         if (gitUrl === '.') {
+          if (verbose) console.log('[verbose] resolving --beacon . via remote.upstream.url then remote.origin.url');
+          let usedRemote = '';
           try {
-            gitUrl = execSync('git config --get remote.origin.url', {
+            gitUrl = execSync('git config --get remote.upstream.url', {
               encoding: 'utf-8',
               stdio: ['pipe', 'pipe', 'pipe'],
             }).trim();
-            if (verbose) console.log(`[verbose] Read git remote origin: ${gitUrl}`);
+            if (gitUrl) usedRemote = 'upstream';
           } catch {
-            console.error('No git remote origin found. Set a remote or provide a git URL directly.');
-            process.exitCode = 1;
-            return;
+            gitUrl = '';
           }
+
           if (!gitUrl) {
-            console.error('No git remote origin found. Set a remote or provide a git URL directly.');
+            try {
+              gitUrl = execSync('git config --get remote.origin.url', {
+                encoding: 'utf-8',
+                stdio: ['pipe', 'pipe', 'pipe'],
+              }).trim();
+              if (gitUrl) usedRemote = 'origin';
+            } catch {
+              gitUrl = '';
+            }
+          }
+
+          if (!gitUrl) {
+            console.error('No git remote found. Set a remote or provide a git URL directly.');
             process.exitCode = 1;
             return;
           }
+          if (verbose) console.log(`[verbose] Read git remote ${usedRemote}: ${gitUrl}`);
         }
 
         const beacon = 'vit:' + toBeacon(gitUrl);
