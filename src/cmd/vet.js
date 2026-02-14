@@ -1,99 +1,137 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
-import { loadConfig } from '../lib/config.js';
+import { requireDid } from '../lib/config.js';
+import { CAP_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
-import { appendLog } from '../lib/vit-dir.js';
+import { appendLog, readProjectConfig, readFollowing } from '../lib/vit-dir.js';
 import { requireNotAgent } from '../lib/agent.js';
-import { resolveRef } from '../lib/cap-ref.js';
+import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
 
 export default function register(program) {
   program
     .command('vet')
-    .argument('<cap-ref>', 'AT URI of the cap to review (e.g. at://did:plc:.../org.v-it.cap/...)')
+    .argument('<ref>', 'Three-word cap reference (e.g. fast-cache-invalidation)')
     .description('Review a cap before trusting it')
-    .option('--did <did>', 'DID to use (reads saved DID from config if not provided)')
+    .option('--did <did>', 'DID to use')
     .option('--trust', 'Mark the cap as locally trusted')
     .option('-v, --verbose', 'Show step-by-step details')
-    .action(async (capRef, opts) => {
+    .action(async (ref, opts) => {
       try {
         const gate = requireNotAgent();
         if (!gate.ok) {
-          console.error(`vit vet cannot run inside ${gate.name} (detected ${gate.envVar}=1).`);
+          console.error('vit vet must be run by a human. run it in your own terminal.');
           console.error('');
-          console.error('Cap vetting requires human review for safety.');
-          console.error('Ask your user to run this command in their terminal:');
+          console.error('cap vetting requires human review for safety.');
+          console.error('ask your user to run this command in their terminal:');
           console.error('');
-          console.error(`  vit vet ${capRef}`);
+          console.error(`  vit vet ${ref}`);
           console.error('');
-          console.error('After reviewing, they can trust it with:');
+          console.error('after reviewing, they can trust it with:');
           console.error('');
-          console.error(`  vit vet ${capRef} --trust`);
+          console.error(`  vit vet ${ref} --trust`);
           console.error('');
-          console.error('Once trusted, ask your user to confirm and you can proceed.');
+          console.error('once trusted, ask your user to confirm and you can proceed.');
           process.exitCode = 1;
           return;
         }
 
         const { verbose } = opts;
 
-        const parts = capRef.split('/');
-        // at://did:plc:xxx/org.v-it.cap/tid -> ['at:', '', 'did:plc:xxx', 'org.v-it.cap', 'tid']
-        if (parts.length < 5 || parts[0] !== 'at:' || !parts[2] || !parts[3] || !parts[4]) {
-          console.error('Invalid cap reference. Expected AT URI: at://did:plc:.../org.v-it.cap/...');
+        if (!REF_PATTERN.test(ref)) {
+          console.error('invalid ref. expected three lowercase words with dashes (e.g. fast-cache-invalidation)');
           process.exitCode = 1;
           return;
         }
-        const repo = parts[2];
-        const collection = parts[3];
-        const rkey = parts[4];
-        if (verbose) console.log(`[verbose] Parsed URI repo=${repo} collection=${collection} rkey=${rkey}`);
 
-        const did = opts.did || loadConfig().did;
-        if (!did) {
-          console.error("No DID configured. Run 'vit login <handle>' first or pass --did.");
-          process.exitCode = 1;
-          return;
-        }
+        const did = requireDid(opts);
+        if (!did) return;
         if (verbose) console.log(`[verbose] DID: ${did}`);
 
-        const { agent, session } = await restoreAgent(did);
-        if (verbose) console.log(`[verbose] Session restored, PDS: ${session.serverMetadata?.issuer}`);
+        const projectConfig = readProjectConfig();
+        const beacon = projectConfig.beacon;
+        if (!beacon) {
+          console.error("no beacon set. run 'vit init' in a project directory first.");
+          process.exitCode = 1;
+          return;
+        }
+        if (verbose) console.log(`[verbose] beacon: ${beacon}`);
 
-        if (verbose) console.log(`[verbose] Fetching ${collection} from ${repo} rkey=${rkey}`);
-        const res = await agent.com.atproto.repo.getRecord({ repo, collection, rkey });
-        const record = res.data.value;
+        const { agent } = await restoreAgent(did);
+        if (verbose) console.log('[verbose] session restored');
+
+        // build DID list from following + self
+        const following = readFollowing();
+        const dids = following.map(e => e.did);
+        dids.push(did);
+        if (verbose) console.log(`[verbose] querying ${dids.length} accounts`);
+
+        // fetch caps from each DID, find matching ref
+        let match = null;
+        for (const repoDid of dids) {
+          try {
+            const res = await agent.com.atproto.repo.listRecords({
+              repo: repoDid,
+              collection: CAP_COLLECTION,
+              limit: 50,
+            });
+            for (const rec of res.data.records) {
+              if (rec.value.beacon !== beacon) continue;
+              const recRef = resolveRef(rec.value, rec.cid);
+              if (recRef === ref) {
+                if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {
+                  match = rec;
+                }
+              }
+            }
+          } catch (err) {
+            if (verbose) console.log(`[verbose] ${repoDid}: error fetching caps: ${err.message}`);
+          }
+        }
+
+        if (!match) {
+          console.error(`no cap found with ref '${ref}' for this beacon.`);
+          process.exitCode = 1;
+          return;
+        }
+
+        const record = match.value;
 
         if (opts.trust) {
           appendLog('trusted.jsonl', {
-            uri: capRef,
+            ref,
+            uri: match.uri,
             trustedAt: new Date().toISOString(),
           });
-          console.log(`Trusted: ${capRef}`);
+          console.log(`trusted: ${ref}`);
           return;
         }
 
-        const author = repo;
-        const time = record.createdAt || 'unknown';
-        const beacon = record.beacon || 'none';
+        const author = match.uri.split('/')[2];
+        const title = record.title || '';
+        const description = record.description || '';
         const text = record.text || '';
-        const ref = resolveRef(record, res.data.cid);
 
         console.log('=== Cap Review ===');
         console.log('Review this cap carefully before trusting it.');
         console.log('');
-        console.log(`  Author:  ${author}`);
-        console.log(`  Time:    ${time}`);
-        console.log(`  Beacon:  ${beacon}`);
         console.log(`  Ref:     ${ref}`);
-        console.log('');
-        console.log('--- Text ---');
-        console.log(text);
-        console.log('---');
+        if (title) console.log(`  Title:   ${title}`);
+        console.log(`  Author:  ${author}`);
+        if (description) {
+          console.log('');
+          console.log(`  ${description}`);
+        }
+        if (text) {
+          console.log('');
+          console.log('--- Text ---');
+          console.log(text);
+          console.log('---');
+        }
         console.log('');
         console.log('To trust this cap, run:');
         console.log('');
-        console.log(`  vit vet ${capRef} --trust`);
+        console.log(`  vit vet ${ref} --trust`);
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;

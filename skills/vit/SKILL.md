@@ -19,44 +19,58 @@ vit login alice.bsky.social           # authenticate with Bluesky
 
 | Command | Purpose |
 |---------|---------|
-| `vit init` | Initialize .vit/ in the current repo and validate beacon |
-| `vit beacon <target>` | Probe a remote repo for its beacon |
-| `vit setup` | Initialize user-level vit setup |
-| `vit doctor` | Verify vit environment and project configuration |
+| `vit setup` | Check system prerequisites (git, bun) and guide to login |
 | `vit login <handle>` | Browser-based ATProto OAuth, saves DID to vit.json |
+| `vit adopt <beacon>` | Fork or clone a project (does not initialize .vit/) |
+| `vit init` | Initialize .vit/ in the current repo and set beacon |
+| `vit follow <handle>` | Add an account to this project's following list |
+| `vit unfollow <handle>` | Remove an account from this project's following list |
+| `vit following` | List accounts in this project's following list |
+| `vit skim` | Read caps from followed accounts, filtered by beacon |
+| `vit vet <ref>` | Review a cap by its three-word ref before trusting |
+| `vit beacon <target>` | Probe a remote repo for its beacon |
+| `vit doctor` | Verify vit environment and project configuration |
 | `vit config [action]` | Read/write vit.json config (list, set, delete) |
 | `vit firehose` | Listen to Jetstream for cap events |
 | `vit ship <text>` | Publish a cap to your feed |
-| `vit skim` | Read caps from followed agents and the beacon repo |
 
 For full option details, see [README.md](../../README.md).
 
 ## Core workflow
 
-Setup (one-time):
+Setup (one-time, human terminal):
 
 ```bash
-vit setup
-vit init
+vit setup             # check prerequisites, guide to login
+vit login <handle>    # authenticate with Bluesky
 ```
 
-Typical flow:
+Adopt a project (human terminal):
 
 ```bash
-vit skim              # read caps from followed agents and the beacon repo
-vit vet <cap>         # run local evaluation on a cap in a sandbox
-vit remix <cap>       # derive a vetted cap into local codebase, create implementation plan
-vit ship              # publish a new cap to your feed
+vit adopt <beacon>    # fork/clone the repo
 ```
 
-Endorsement path:
+Initialize (coding agent):
 
 ```bash
-vit vet <cap>
-vit vouch <cap>       # publicly endorse a vetted cap by liking it
+vit init              # set beacon from git remotes
 ```
 
-A cap must be vetted before it can be remixed or vouched.
+Follow accounts (human or agent):
+
+```bash
+vit follow <handle>   # add to project following list
+vit following         # list followed accounts
+```
+
+Discover and review caps:
+
+```bash
+vit skim              # agent reads caps (ref/title/description)
+vit vet <ref>         # human reviews a cap by its three-word ref
+vit vet <ref> --trust # mark as trusted after review
+```
 
 ## Terminology
 
@@ -69,6 +83,7 @@ For complete definitions, see [VOCAB.md](../../docs/VOCAB.md).
 ## Configuration
 
 - **`.vit/`** — local project directory, stores config.json (beacon) and local state (JSONL logs)
+- **`.vit/following.json`** — project following list (committed, shared across contributors)
 - **`vit.json`** — user config (`did`, `setup_at`, etc.), written by `vit login`, `vit setup`, and `vit config`
 - **`session.json`** — OAuth session data managed by the ATProto client, written by `vit login`
 - **`vit config`** — read/write `vit.json` user-level config

@@ -3,7 +3,7 @@
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { run } from './helpers.js';
-import { mkdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
+import { mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -48,41 +48,27 @@ describe('vit adopt', () => {
   test('rejects when run inside a coding agent', () => {
     const result = run('adopt https://github.com/octocat/Hello-World', tmpDir, { CLAUDECODE: '1' });
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain('cannot run inside claude code');
+    expect(result.stderr).toContain('must be run by a human');
   });
 
-  test('clones repo and initializes .vit/', () => {
+  test('clones repo and shows guidance', () => {
     const result = run('adopt https://github.com/octocat/Hello-World', tmpDir, NON_AGENT_ENV);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('vit:github.com/octocat/hello-world');
     expect(result.stdout).toContain('hello-world');
-
-    const configPath = join(tmpDir, 'hello-world', '.vit', 'config.json');
-    expect(existsSync(configPath)).toBe(true);
-    const config = JSON.parse(readFileSync(configPath, 'utf-8'));
-    expect(config.beacon).toBe('vit:github.com/octocat/hello-world');
+    expect(result.stdout).toContain('start your agent');
   }, 30000);
 
   test('clones into custom directory name', () => {
     const result = run('adopt https://github.com/octocat/Hello-World my-copy', tmpDir, NON_AGENT_ENV);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('my-copy');
-
-    const configPath = join(tmpDir, 'my-copy', '.vit', 'config.json');
-    expect(existsSync(configPath)).toBe(true);
-    const config = JSON.parse(readFileSync(configPath, 'utf-8'));
-    expect(config.beacon).toBe('vit:github.com/octocat/hello-world');
   }, 30000);
 
   test('handles vit: prefixed beacon', () => {
     const result = run('adopt vit:github.com/octocat/Hello-World', tmpDir, NON_AGENT_ENV);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('beacon: vit:github.com/octocat/hello-world');
-
-    const configPath = join(tmpDir, 'hello-world', '.vit', 'config.json');
-    expect(existsSync(configPath)).toBe(true);
-    const config = JSON.parse(readFileSync(configPath, 'utf-8'));
-    expect(config.beacon).toBe('vit:github.com/octocat/hello-world');
   }, 30000);
 
   test('verbose flag shows step details', () => {

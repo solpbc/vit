@@ -23,6 +23,15 @@ export function saveConfig(obj) {
   writeFileSync(vitJsonPath, JSON.stringify(obj, null, 2) + '\n');
 }
 
+export function requireDid(opts) {
+  const did = opts?.did || loadConfig().did;
+  if (!did) {
+    console.error("no DID configured. run 'vit login <handle>' first or pass --did.");
+    process.exitCode = 1;
+  }
+  return did;
+}
+
 export function getScalars(obj) {
   return Object.entries(obj).filter(
     ([, v]) => typeof v !== 'object' || v === null

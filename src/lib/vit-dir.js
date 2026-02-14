@@ -29,3 +29,19 @@ export function appendLog(filename, record) {
   mkdirSync(dir, { recursive: true });
   appendFileSync(join(dir, filename), JSON.stringify(record) + '\n');
 }
+
+export function readFollowing() {
+  const p = join(vitDir(), 'following.json');
+  if (!existsSync(p)) return [];
+  try {
+    return JSON.parse(readFileSync(p, 'utf-8'));
+  } catch {
+    return [];
+  }
+}
+
+export function writeFollowing(list) {
+  const dir = vitDir();
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'following.json'), JSON.stringify(list, null, 2) + '\n');
+}

@@ -4,32 +4,30 @@
 import { describe, test, expect } from 'bun:test';
 import { run } from './helpers.js';
 
-const FAKE_URI = 'at://did:plc:fake123/org.v-it.cap/fake456';
-
 describe('vit vet', () => {
-  test('shows help with <cap-ref> argument', () => {
+  test('shows help with <ref> argument', () => {
     const result = run('vet --help');
-    expect(result.stdout).toContain('<cap-ref>');
+    expect(result.stdout).toContain('<ref>');
   });
 
   test('rejects when run inside a coding agent', () => {
-    const result = run('vet ' + FAKE_URI, undefined, { CLAUDECODE: '1' });
+    const result = run('vet fast-cache-invalidation', undefined, { CLAUDECODE: '1' });
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain('cannot run inside claude code');
-    expect(result.stderr).toContain(`vit vet ${FAKE_URI}`);
+    expect(result.stderr).toContain('must be run by a human');
+    expect(result.stderr).toContain('vit vet fast-cache-invalidation');
     expect(result.stderr).toContain('--trust');
   });
 
   test('rejects when run inside gemini', () => {
-    const result = run('vet ' + FAKE_URI, undefined, { CLAUDECODE: '', GEMINI_CLI: '1', CODEX_CI: '' });
+    const result = run('vet fast-cache-invalidation', undefined, { CLAUDECODE: '', GEMINI_CLI: '1', CODEX_CI: '' });
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain('cannot run inside gemini cli');
+    expect(result.stderr).toContain('must be run by a human');
   });
 
-  test('rejects invalid AT URI', () => {
-    const result = run('vet not-a-valid-uri', undefined, { CLAUDECODE: '', GEMINI_CLI: '', CODEX_CI: '' });
+  test('rejects invalid ref format', () => {
+    const result = run('vet not-valid', undefined, { CLAUDECODE: '', GEMINI_CLI: '', CODEX_CI: '' });
     expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain('Invalid cap reference');
+    expect(result.stderr).toContain('invalid ref');
   });
 
   test('fails with no arguments', () => {

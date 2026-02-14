@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
-import { loadConfig } from '../lib/config.js';
-import { CAP_COLLECTION, FOLLOW_COLLECTION } from '../lib/constants.js';
+import { requireDid } from '../lib/config.js';
+import { CAP_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
-import { readProjectConfig } from '../lib/vit-dir.js';
+import { readProjectConfig, readFollowing } from '../lib/vit-dir.js';
 import { requireAgent } from '../lib/agent.js';
 import { resolveRef } from '../lib/cap-ref.js';
 
@@ -12,7 +12,7 @@ export default function register(program) {
   program
     .command('skim')
     .description('Read caps from followed accounts, filtered by beacon')
-    .option('--did <did>', 'DID to use (reads saved DID from config if not provided)')
+    .option('--did <did>', 'DID to use')
     .option('--handle <handle>', 'Show caps from a specific handle only')
     .option('--limit <n>', 'Max caps to display', '25')
     .option('--json', 'Output as JSON array')
@@ -28,25 +28,21 @@ export default function register(program) {
         }
 
         const { verbose } = opts;
-        const did = opts.did || loadConfig().did;
-        if (!did) {
-          console.error("No DID configured. Run 'vit login <handle>' first or pass --did.");
-          process.exitCode = 1;
-          return;
-        }
+        const did = requireDid(opts);
+        if (!did) return;
         if (verbose) console.log(`[verbose] DID: ${did}`);
 
         const projectConfig = readProjectConfig();
         const beacon = projectConfig.beacon;
         if (!beacon) {
-          console.error("No beacon set. Run 'vit init' in a project directory first.");
+          console.error("no beacon set. run 'vit init' in a project directory first.");
           process.exitCode = 1;
           return;
         }
-        if (verbose) console.log(`[verbose] Beacon: ${beacon}`);
+        if (verbose) console.log(`[verbose] beacon: ${beacon}`);
 
-        const { agent, session } = await restoreAgent(did);
-        if (verbose) console.log(`[verbose] Session restored, PDS: ${session.serverMetadata?.issuer}`);
+        const { agent } = await restoreAgent(did);
+        if (verbose) console.log('[verbose] session restored');
 
         // build list of DIDs to query
         let dids;
@@ -54,17 +50,12 @@ export default function register(program) {
           const handle = opts.handle.replace(/^@/, '');
           const resolved = await agent.resolveHandle({ handle });
           dids = [resolved.data.did];
-          if (verbose) console.log(`[verbose] Resolved ${handle} to ${resolved.data.did}`);
+          if (verbose) console.log(`[verbose] resolved ${handle} to ${resolved.data.did}`);
         } else {
-          // fetch follow list + include self
-          const followRes = await agent.com.atproto.repo.listRecords({
-            repo: did,
-            collection: FOLLOW_COLLECTION,
-            limit: 100,
-          });
-          dids = followRes.data.records.map(r => r.value.subject);
+          const following = readFollowing();
+          dids = following.map(e => e.did);
           dids.push(did);
-          if (verbose) console.log(`[verbose] Querying ${dids.length} accounts (${dids.length - 1} follows + self)`);
+          if (verbose) console.log(`[verbose] querying ${dids.length} accounts (${dids.length - 1} follows + self)`);
         }
 
         // fetch caps from each DID
@@ -102,29 +93,16 @@ export default function register(program) {
             console.log('no caps found for this beacon.');
           }
           for (const rec of capped) {
-            const author = rec.uri.split('/')[2];
-            const short = author.length > 20 ? author.slice(0, 20) + '…' : author;
-            const time = rec.value.createdAt || 'unknown';
+            const ref = resolveRef(rec.value, rec.cid);
             const title = rec.value.title || '';
             const description = rec.value.description || '';
-            const ref = resolveRef(rec.value, rec.cid);
-            const text = rec.value.text || '';
-            console.log(`[${short}] ${time}`);
-            if (title || ref) {
-              const parts = [title, ref ? `(${ref})` : ''].filter(Boolean).join(' ');
-              console.log(`  ${parts}`);
-            }
-            if (description) {
-              console.log(`  ${description}`);
-            }
-            if ((title || ref || description) && text) {
-              console.log('  ---');
-            }
-            if (text) {
-              console.log(`  ${text}`);
-            }
+            console.log(`ref: ${ref}`);
+            if (title) console.log(`title: ${title}`);
+            if (description) console.log(`description: ${description}`);
             console.log();
           }
+          console.log('---');
+          console.log("hint: tell your user to run 'vit vet <ref>' in another terminal for any cap they want to review.");
         }
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
