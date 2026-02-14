@@ -3,6 +3,7 @@
 
 import { loadConfig } from '../lib/config.js';
 import { CAP_COLLECTION } from '../lib/constants.js';
+import { resolveRef } from '../lib/cap-ref.js';
 
 const JETSTREAM_URL = 'wss://jetstream2.us-east.bsky.network/subscribe';
 
@@ -36,8 +37,10 @@ function formatEvent(event) {
     }
 
     const message = event.commit?.record?.title || event.commit?.record?.text;
+    const ref = event.commit?.cid ? resolveRef(event.commit.record, event.commit.cid) : null;
     if (typeof message === 'string') {
-      return `[${time}] ${operation} ${collection} from ${didShort} rkey=${rkey} — "${message}"`;
+      const refPart = ref ? ` (${ref})` : '';
+      return `[${time}] ${operation} ${collection} from ${didShort} rkey=${rkey}${refPart} — "${message}"`;
     }
 
     return `[${time}] ${operation} ${collection} from ${didShort} rkey=${rkey}`;

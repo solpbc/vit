@@ -5,6 +5,7 @@ import { loadConfig } from '../lib/config.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { appendLog } from '../lib/vit-dir.js';
 import { requireNotAgent } from '../lib/agent.js';
+import { resolveRef } from '../lib/cap-ref.js';
 
 export default function register(program) {
   program
@@ -76,6 +77,7 @@ export default function register(program) {
         const time = record.createdAt || 'unknown';
         const beacon = record.beacon || 'none';
         const text = record.text || '';
+        const ref = resolveRef(record, res.data.cid);
 
         console.log('=== Cap Review ===');
         console.log('Review this cap carefully before trusting it.');
@@ -83,6 +85,7 @@ export default function register(program) {
         console.log(`  Author:  ${author}`);
         console.log(`  Time:    ${time}`);
         console.log(`  Beacon:  ${beacon}`);
+        console.log(`  Ref:     ${ref}`);
         console.log('');
         console.log('--- Text ---');
         console.log(text);

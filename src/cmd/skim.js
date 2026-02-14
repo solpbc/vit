@@ -6,6 +6,7 @@ import { CAP_COLLECTION, FOLLOW_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { readProjectConfig } from '../lib/vit-dir.js';
 import { requireAgent } from '../lib/agent.js';
+import { resolveRef } from '../lib/cap-ref.js';
 
 export default function register(program) {
   program
@@ -106,7 +107,7 @@ export default function register(program) {
             const time = rec.value.createdAt || 'unknown';
             const title = rec.value.title || '';
             const description = rec.value.description || '';
-            const ref = rec.value.ref || '';
+            const ref = resolveRef(rec.value, rec.cid);
             const text = rec.value.text || '';
             console.log(`[${short}] ${time}`);
             if (title || ref) {

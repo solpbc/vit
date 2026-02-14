@@ -6,6 +6,7 @@ import { CAP_COLLECTION } from '../lib/constants.js';
 import { loadConfig } from '../lib/config.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { appendLog, readProjectConfig } from '../lib/vit-dir.js';
+import { REF_PATTERN } from '../lib/cap-ref.js';
 
 export default function register(program) {
   program
@@ -28,7 +29,6 @@ export default function register(program) {
         }
         if (verbose) console.log(`[verbose] DID: ${did}`);
 
-        const REF_PATTERN = /^[a-z]+-[a-z]+-[a-z]+$/;
         if (!REF_PATTERN.test(opts.ref)) {
           console.error('error: --ref must be exactly three lowercase words separated by dashes (e.g. fast-cache-invalidation)');
           process.exitCode = 1;
