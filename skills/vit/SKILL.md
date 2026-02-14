@@ -1,89 +1,129 @@
 ---
 name: using-vit
-description: Operates the vit CLI for discovering, vetting, remixing, and shipping software capabilities. Use when working with beacons, caps, vetting, vouching, remixing, or shipping in a vit project.
+description: >-
+  Helps coding agents use vit to discover, follow, skim, and ship software
+  capabilities (caps) over ATProto. Activates when the user mentions vit,
+  beacons, caps, shipping, skimming, following, vetting, or social coding.
 ---
 
-# vit CLI
+## 1. Overview
 
-Social toolkit for personalized software.
+vit is a Bun CLI for social software capabilities. Agents use it to initialize projects, follow accounts, skim caps from followed accounts, and ship new caps. Some commands (setup, login, adopt, vet) require human interaction - the agent should tell the user to run those in their terminal.
 
-## Quick start
+## 2. Prerequisites
 
-```bash
-make install         # install dependencies
-vit setup            # initialize user-level vit configuration
-vit login alice.bsky.social           # authenticate with Bluesky
-```
+Dependency chain: `setup → login → init → follow → skim/ship`.
 
-## Subcommands
+`setup` and `login` are human-only. The agent starts at `init`. Use `vit doctor` to check setup and beacon status before running discovery or shipping commands.
 
-| Command | Purpose |
-|---------|---------|
-| `vit setup` | Check system prerequisites (git, bun) and guide to login |
-| `vit login <handle>` | Browser-based ATProto OAuth, saves DID to vit.json |
-| `vit adopt <beacon>` | Fork or clone a project (does not initialize .vit/) |
-| `vit init` | Initialize .vit/ in the current repo and set beacon |
-| `vit follow <handle>` | Add an account to this project's following list |
-| `vit unfollow <handle>` | Remove an account from this project's following list |
-| `vit following` | List accounts in this project's following list |
-| `vit skim` | Read caps from followed accounts, filtered by beacon |
-| `vit vet <ref>` | Review a cap by its three-word ref before trusting |
-| `vit beacon <target>` | Probe a remote repo for its beacon |
-| `vit doctor` | Verify vit environment and project configuration |
-| `vit config [action]` | Read/write vit.json config (list, set, delete) |
-| `vit firehose` | Listen to Jetstream for cap events |
-| `vit ship <text>` | Publish a cap to your feed |
+## 3. Agent Workflow
 
-For full option details, see [README.md](../../README.md).
+1. Run `vit init` to initialize `.vit/` directory (derives beacon from git remotes).
+2. Run `vit follow <handle>` to follow accounts whose caps you want to see.
+3. Run `vit skim --json` to read caps from followed accounts filtered by beacon.
+4. Run `vit ship <text> --title <t> --description <d> --ref <ref>` to publish a cap.
 
-## Core workflow
+Handoffs:
+- If no DID is configured, tell the user to run `vit login <handle>`.
+- If the user wants to review a cap, tell them to run `vit vet <ref>` in their terminal.
 
-Setup (one-time, human terminal):
+## 4. Commands the Agent Runs
 
-```bash
-vit setup             # check prerequisites, guide to login
-vit login <handle>    # authenticate with Bluesky
-```
+### Agent-only commands
 
-Adopt a project (human terminal):
+### `vit init`
+- Description: Initialize `.vit/` and set beacon data for the current repo.
+- Usage: `vit init`
+- Key flags: `--beacon <url>`, `--verbose`
+- Output: text, including `beacon: vit:...` on success.
+- Common errors: no git remote.
 
-```bash
-vit adopt <beacon>    # fork/clone the repo
-```
+### `vit skim`
+- Description: Read caps from followed accounts and self, filtered by current beacon.
+- Usage: `vit skim`
+- Key flags: `--handle <handle>`, `--did <did>`, `--limit <n>` (default 25), `--json`, `--verbose`
+- Output: prefer `--json` (JSON array of ATProto records); text mode prints `ref`, `title`, and `description` per cap.
+- Common errors: no DID, no beacon, no following, session expired.
 
-Initialize (coding agent):
+### Agent-usable commands
 
-```bash
-vit init              # set beacon from git remotes
-```
+### `vit doctor`
+- Description: Read-only diagnostic for setup and beacon status.
+- Usage: `vit doctor`
+- Key flags: none.
+- Output: text status lines for setup and beacon.
+- Common errors: generic runtime or config read failures.
 
-Follow accounts (human or agent):
+### `vit config [action] [key] [value]`
+- Description: Read and mutate user config values.
+- Usage: `vit config [action] [key] [value]`
+- Key flags: none.
+- Output: `key=value` lines for `list`; silent success for `set` and `delete`.
+- Common errors: invalid action; missing arguments for `set` or `delete`.
 
-```bash
-vit follow <handle>   # add to project following list
-vit following         # list followed accounts
-```
+### `vit follow <handle>`
+- Description: Add an account to `.vit/following.json`.
+- Usage: `vit follow <handle>`
+- Key flags: `--did <did>`, `-v, --verbose`
+- Output: `following <handle> (<did>)`.
+- Common errors: no DID, duplicate handle, handle resolution failure.
 
-Discover and review caps:
+### `vit unfollow <handle>`
+- Description: Remove an account from `.vit/following.json`.
+- Usage: `vit unfollow <handle>`
+- Key flags: `-v, --verbose`
+- Output: `unfollowed <handle>`.
+- Common errors: not following that handle.
 
-```bash
-vit skim              # agent reads caps (ref/title/description)
-vit vet <ref>         # human reviews a cap by its three-word ref
-vit vet <ref> --trust # mark as trusted after review
-```
+### `vit following`
+- Description: List followed accounts for the current project.
+- Usage: `vit following`
+- Key flags: `-v, --verbose`
+- Output: `handle (did)` lines or `no followings`.
+- Common errors: malformed following file content.
 
-## Terminology
+### `vit ship <text>`
+- Description: Publish a cap to ATProto.
+- Usage: `vit ship <text> --title <title> --description <description> --ref <ref>`
+- Key flags: required `--title <title>`, `--description <description>`, `--ref <ref>`; optional `--did <did>`, `-v, --verbose`
+- Output: JSON object on success.
+- Common errors: no DID, invalid ref, session expired.
 
-Key terms: **beacon** (canonical project identity), **cap** (atomic social capability object), **remix** (local derivative of a vetted cap), **provenance** (lineage chain via vetting, remixing or vouching, and shipping).
+### `vit beacon <target>`
+- Description: Probe a remote repo and report whether its beacon is lit.
+- Usage: `vit beacon <target>`
+- Key flags: `-v, --verbose`
+- Output: `beacon: lit <uri>` or `beacon: unlit`.
+- Common errors: invalid target URL or clone/probe failure.
 
-Key verbs: **init**, **adopt**, **follow**, **skim**, **vet**, **vouch**, **remix**, **ship**.
+## 5. Commands the Agent Must NOT Run
 
-For complete definitions, see [VOCAB.md](../../docs/VOCAB.md).
+These commands require human interaction. Tell the user exactly what to run:
+- `vit setup` - Tell user: "Run `vit setup` in your terminal to check prerequisites (git, bun)."
+- `vit login <handle>` - Tell user: "Run `vit login <handle>` in your terminal to authenticate via browser OAuth."
+- `vit adopt <beacon>` - Tell user: "Run `vit adopt <beacon>` in your terminal to fork and clone a project."
+- `vit vet <ref>` - Tell user: "Run `vit vet <ref>` in your terminal to review a cap." Mention `--trust` flag for approving.
 
-## Configuration
+These are human-only because they call `requireNotAgent()` (or require browser interaction for login) and will fail or be inappropriate when run by an agent.
 
-- **`.vit/`** — local project directory, stores config.json (beacon) and local state (JSONL logs)
-- **`.vit/following.json`** — project following list (committed, shared across contributors)
-- **`vit.json`** — user config (`did`, `setup_at`, etc.), written by `vit login`, `vit setup`, and `vit config`
-- **`session.json`** — OAuth session data managed by the ATProto client, written by `vit login`
-- **`vit config`** — read/write `vit.json` user-level config
+## 6. Error Handling
+
+| Error | Cause | Resolution |
+|-------|-------|------------|
+| `no DID configured` | User hasn't logged in | Tell user to run `vit login <handle>` |
+| `no beacon set` | `.vit/` not initialized or no beacon | Run `vit init` |
+| `no followings` / empty skim results | No accounts followed | Run `vit follow <handle>` |
+| Session errors (deleted/expired) | OAuth session invalid | Tell user to run `vit login <handle> --reset` |
+| Invalid ref format | Ref doesn't match `^[a-z]+-[a-z]+-[a-z]+$` | Use three lowercase words joined by hyphens |
+
+## 7. Data Files
+
+- `.vit/config.json` - `{ "beacon": "vit:host/org/repo" }`
+- `.vit/following.json` - `[{ "handle": "...", "did": "...", "followedAt": "..." }]`
+- `.vit/caps.jsonl` - Append-only shipped cap log
+- `.vit/trusted.jsonl` - Append-only vetted cap log
+- `~/.config/vit/vit.json` - User config with `did`, timestamps
+
+## 8. Reference
+
+See `COMMANDS.md` for full option details and examples.
