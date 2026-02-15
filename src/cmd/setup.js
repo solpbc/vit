@@ -28,6 +28,30 @@ export default function register(program) {
           return;
         }
 
+        // skill installation
+        const npxPath = Bun.which('npx');
+        if (npxPath) {
+          try {
+            const result = Bun.spawnSync(
+              ['npx', 'skills', 'add', 'https://github.com/solpbc/vit/tree/main/skills/vit', '-a', 'claude-code', '-y'],
+              {
+                stdout: 'pipe',
+                stderr: 'pipe',
+              }
+            );
+            if (result.exitCode === 0) {
+              console.log('skill: installed (using-vit)');
+            } else {
+              const errText = result.stderr.toString().trim();
+              console.log(`skill: failed (${errText || 'unknown error'})`);
+            }
+          } catch {
+            console.log('skill: failed (could not run npx skills)');
+          }
+        } else {
+          console.log('skill: skipped (npx not found)');
+        }
+
         const config = loadConfig();
         if (config.did) {
           console.log(`login: ${config.did}`);

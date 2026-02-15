@@ -21,4 +21,9 @@ describe('vit setup', () => {
     const result = run('setup', undefined, { CLAUDECODE: '', GEMINI_CLI: '', CODEX_CI: '' });
     expect(result.stdout).toMatch(/login:/);
   });
+
+  test('reports skill installation status', () => {
+    const result = run('setup', undefined, { CLAUDECODE: '', GEMINI_CLI: '', CODEX_CI: '' });
+    expect(result.stdout).toMatch(/skill:/);
+  });
 });

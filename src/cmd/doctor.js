@@ -3,6 +3,8 @@
 
 import { loadConfig } from '../lib/config.js';
 import { readProjectConfig } from '../lib/vit-dir.js';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 export default function register(program) {
   program
@@ -23,6 +25,13 @@ export default function register(program) {
           console.log(`beacon: ${projConfig.beacon}`);
         } else {
           console.log('beacon: not set');
+        }
+
+        const skillPath = join(process.cwd(), '.claude', 'skills', 'using-vit', 'SKILL.md');
+        if (existsSync(skillPath)) {
+          console.log('skill: ok (using-vit)');
+        } else {
+          console.log('skill: not installed (run vit setup)');
         }
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));

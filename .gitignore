@@ -5,3 +5,7 @@ bun.lock
 
 # Environment
 .env
+
+# Skills
+.agents/
+.claude/skills/
