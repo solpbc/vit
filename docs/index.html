@@ -28,6 +28,21 @@
       margin: 0;
       font-size: 2rem;
       line-height: 1.2;
+      cursor: default;
+    }
+
+    .egg {
+      opacity: 0;
+      transition: opacity 200ms ease;
+      color: #9ca3af;
+    }
+
+    header h1:hover .egg {
+      opacity: 1;
+    }
+
+    header h1.tapped .egg {
+      opacity: 1;
     }
 
     .tagline {
@@ -142,7 +157,7 @@
   <div class="container">
     <header>
       <div class="header-bar">
-        <h1>vit</h1>
+        <h1>vit<span class="egg">ality</span></h1>
         <nav>
           <a href="#">home</a>
           <a href="#doctrine">doctrine</a>
@@ -232,6 +247,18 @@
 
     window.addEventListener('hashchange', navigate);
     navigate();
+
+    // Easter egg tap toggle
+    document.querySelector('header h1').addEventListener('touchstart', function(e) {
+      this.classList.toggle('tapped');
+    });
+
+    document.addEventListener('touchstart', function(e) {
+      const h1 = document.querySelector('header h1');
+      if (!h1.contains(e.target)) {
+        h1.classList.remove('tapped');
+      }
+    });
   </script>
 </body>
 </html>
