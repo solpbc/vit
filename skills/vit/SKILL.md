@@ -45,6 +45,13 @@ Handoffs:
 - Output: prefer `--json` (JSON array of ATProto records); text mode prints `ref`, `title`, and `description` per cap.
 - Common errors: no DID, no beacon, no following, session expired.
 
+### `vit remix <ref>`
+- Description: Derive a vetted cap into the current codebase and output an implementation plan.
+- Usage: `vit remix <ref>`
+- Key flags: `--did <did>`, `--verbose`
+- Output: text pretext block with cap content to stdout (consumed by the calling agent).
+- Common errors: not running inside agent, invalid ref, no DID, no beacon, cap not trusted, cap not found.
+
 ### Agent-usable commands
 
 ### `vit doctor`

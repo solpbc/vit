@@ -30,6 +30,20 @@ export function appendLog(filename, record) {
   appendFileSync(join(dir, filename), JSON.stringify(record) + '\n');
 }
 
+export function readLog(filename) {
+  const p = join(vitDir(), filename);
+  if (!existsSync(p)) return [];
+  try {
+    return readFileSync(p, 'utf-8')
+      .split('\n')
+      .filter(line => line.trim())
+      .map(line => { try { return JSON.parse(line); } catch { return null; } })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 export function readFollowing() {
   const p = join(vitDir(), 'following.json');
   if (!existsSync(p)) return [];
