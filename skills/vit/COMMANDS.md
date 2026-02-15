@@ -136,8 +136,11 @@ Error conditions:
 Example:
 - `vit following`
 
-### `vit ship <text>`
-Usage: `vit ship <text> --title <title> --description <description> --ref <ref>`
+### `vit ship`
+Usage: `vit ship --title <title> --description <description> --ref <ref> [--recap <ref>]`
+
+Input:
+- Body is required on stdin (pipe or heredoc).
 
 Options:
 - `-v, --verbose` - Show step-by-step details
@@ -145,19 +148,30 @@ Options:
 - `--title <title>` (required)
 - `--description <description>` (required)
 - `--ref <ref>` (required) - must match `^[a-z]+-[a-z]+-[a-z]+$`
+- `--recap <ref>` (optional) - ref to derive from; must match `^[a-z]+-[a-z]+-[a-z]+$`
+
+Gate:
+- Agent-only (`requireAgent()`).
 
 Output format:
 - JSON object on success with request/response metadata.
 
 Error conditions:
+- Not running in an agent context (`requireAgent()` gate).
 - No DID configured.
 - Missing required options.
-- Invalid ref format.
+- Missing stdin body.
+- Invalid `--ref` or `--recap` format.
+- `--recap` target not found.
 - Session restore/auth failure.
 
 Examples:
-- `vit ship "add retry helper" --title "Retry helper" --description "Adds bounded retry utility" --ref retry-helper-utility`
-- `vit ship "patch" --title "Patch" --description "Details" --ref fast-cache-invalidation --did did:plc:example`
+- `vit ship --title "Retry helper" --description "Adds bounded retry utility" --ref retry-helper-utility <<'EOF'`
+- `Add bounded retry utility for transient request failures.`
+- `EOF`
+- `vit ship --title "Patch" --description "Details" --ref fast-cache-invalidation --recap original-cache-ref --did did:plc:example <<'EOF'`
+- `Patch details...`
+- `EOF`
 
 ### `vit beacon <target>`
 Usage: `vit beacon <target>`
