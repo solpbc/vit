@@ -13,6 +13,7 @@ import registerRemix from './cmd/remix.js';
 import registerShip from './cmd/ship.js';
 import registerSkim from './cmd/skim.js';
 import registerVet from './cmd/vet.js';
+import registerVouch from './cmd/vouch.js';
 import registerFollow from './cmd/follow.js';
 import registerSetup from './cmd/setup.js';
 
@@ -33,6 +34,7 @@ registerShip(program);
 registerSkim(program);
 registerRemix(program);
 registerVet(program);
+registerVouch(program);
 registerFollow(program);
 registerSetup(program);
 
