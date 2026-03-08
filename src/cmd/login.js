@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
+import { createServer } from 'node:http';
+import { spawn } from 'node:child_process';
 import { loadConfig, saveConfig } from '../lib/config.js';
 import { createOAuthClient, createSessionStore, createStore } from '../lib/oauth.js';
 
@@ -36,37 +38,34 @@ export default function register(program) {
           resolveCallback = resolve;
         });
 
-        server = Bun.serve({
-          hostname: '127.0.0.1',
-          port: 0,
-          fetch(req) {
-            const url = new URL(req.url);
+        server = createServer((req, res) => {
+          const url = new URL(req.url, `http://127.0.0.1`);
 
-            if (req.method === 'GET' && url.pathname === '/callback') {
-              const params = new URLSearchParams(url.searchParams);
+          if (req.method === 'GET' && url.pathname === '/callback') {
+            const params = new URLSearchParams(url.searchParams);
 
-              if (!callbackResolved) {
-                callbackResolved = true;
-                resolveCallback(params);
-              }
-
-              return new Response(
-                '<!doctype html><html><body><h2>Authorization complete, you can close this tab.</h2></body></html>',
-                {
-                  headers: { 'content-type': 'text/html; charset=utf-8' },
-                },
-              );
+            if (!callbackResolved) {
+              callbackResolved = true;
+              resolveCallback(params);
             }
 
-            return new Response('Not found', { status: 404 });
-          },
+            res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+            res.end('<!doctype html><html><body><h2>Authorization complete, you can close this tab.</h2></body></html>');
+            return;
+          }
+
+          res.writeHead(404);
+          res.end('Not found');
         });
 
+        await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+        const port = server.address().port;
+
         if (verbose) {
-          console.log(`[verbose] Server started on port ${server.port}`);
+          console.log(`[verbose] Server started on port ${port}`);
         }
 
-        const redirectUri = `http://127.0.0.1:${server.port}/callback`;
+        const redirectUri = `http://127.0.0.1:${port}/callback`;
 
         if (verbose) {
           console.log(`[verbose] Redirect URI: ${redirectUri}`);
@@ -89,9 +88,8 @@ export default function register(program) {
         const args = platform === 'win32' ? ['/c', 'start', authUrl.toString()] : [authUrl.toString()];
 
         try {
-          Bun.spawn([cmd, ...args], {
-            stdio: ['ignore', 'ignore', 'ignore'],
-          });
+          const child = spawn(cmd, args, { stdio: 'ignore', detached: true });
+          child.unref();
         } catch {
           // Ignore browser-open failures and rely on printed URL.
         }
@@ -144,7 +142,7 @@ export default function register(program) {
         }
 
         if (server) {
-          server.stop(true);
+          server.close();
         }
       }
     });

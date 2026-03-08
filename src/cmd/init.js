@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
+import { join } from 'node:path';
 import { toBeacon } from '../lib/beacon.js';
 import { vitDir, readProjectConfig, writeProjectConfig } from '../lib/vit-dir.js';
 import { requireAgent } from '../lib/agent.js';
+import { mark, brand, DOT_VIT_README } from '../lib/brand.js';
 
 export default function register(program) {
   program
@@ -17,8 +19,8 @@ export default function register(program) {
       try {
         const gate = requireAgent();
         if (!gate.ok) {
-          console.error('vit init should be run by a coding agent (e.g. claude code, gemini cli).');
-          console.error("open your agent and ask it to run 'vit init' for you.");
+          console.error(`${brand} init should be run by a coding agent (e.g. claude code, gemini cli).`);
+          console.error(`open your agent and ask it to run '${brand} init' for you.`);
           process.exitCode = 1;
           return;
         }
@@ -30,8 +32,8 @@ export default function register(program) {
         if (!opts.beacon) {
           const config = readProjectConfig();
           if (config.beacon) {
-            console.log(`beacon: ${config.beacon}`);
-            console.log('hint: to change the beacon, run: vit init --beacon <git-url>');
+            console.log(`${mark} beacon: ${config.beacon}`);
+            console.log(`hint: to change the beacon, run: ${brand} init --beacon <git-url>`);
             return;
           }
 
@@ -50,9 +52,9 @@ export default function register(program) {
             console.log(hasVitDir ? 'status: no beacon' : 'status: not initialized');
             console.log('git: false');
             if (hasVitDir) {
-              console.log('hint: run: vit init --beacon <canonical-git-url>');
+              console.log(`hint: run: ${brand} init --beacon <canonical-git-url>`);
             } else {
-              console.log('hint: run vit init from inside a git repository.');
+              console.log(`hint: run ${brand} init from inside a git repository.`);
             }
             return;
           }
@@ -97,11 +99,11 @@ export default function register(program) {
           const origin = remotes.find(remote => remote.name === 'origin');
           if (upstream) {
             console.log('hint: detected upstream remote. upstream points to the canonical repo.');
-            console.log(`hint: run: vit init --beacon ${upstream.url}`);
+            console.log(`hint: run: ${brand} init --beacon ${upstream.url}`);
           } else if (origin) {
-            console.log(`hint: run: vit init --beacon ${origin.url}`);
+            console.log(`hint: run: ${brand} init --beacon ${origin.url}`);
           } else {
-            console.log('hint: no git remotes found. run: vit init --beacon <canonical-git-url>');
+            console.log(`hint: no git remotes found. run: ${brand} init --beacon <canonical-git-url>`);
           }
           return;
         }
@@ -144,7 +146,12 @@ export default function register(program) {
         if (verbose) console.log(`[verbose] Computed beacon: ${beacon}`);
         writeProjectConfig({ beacon });
         if (verbose) console.log(`[verbose] Wrote config.json`);
-        console.log(`beacon: ${beacon}`);
+        const readmePath = join(vitDir(), 'README.md');
+        if (!existsSync(readmePath)) {
+          writeFileSync(readmePath, DOT_VIT_README);
+          if (verbose) console.log(`[verbose] Wrote .vit/README.md`);
+        }
+        console.log(`${mark} beacon: ${beacon}`);
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;

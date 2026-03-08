@@ -4,6 +4,7 @@
 import { loadConfig } from '../lib/config.js';
 import { CAP_COLLECTION } from '../lib/constants.js';
 import { resolveRef } from '../lib/cap-ref.js';
+import { brand } from '../lib/brand.js';
 
 const JETSTREAM_URL = 'wss://jetstream2.us-east.bsky.network/subscribe';
 
@@ -132,7 +133,7 @@ export default function register(program) {
         }
 
         const url = buildUrl(opts.collection, opts.did, null);
-        console.log('Jetstream Firehose Listener');
+        console.log(`${brand} firehose`);
         console.log(`  Collection: ${opts.collection}`);
         if (opts.did) console.log(`  DID filter: ${opts.did}`);
         console.log(`  Endpoint:   ${url}`);

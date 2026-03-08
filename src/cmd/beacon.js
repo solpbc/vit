@@ -5,6 +5,7 @@ import git from 'isomorphic-git';
 import http from 'isomorphic-git/http/node';
 import { memfs } from 'memfs';
 import { beaconToHttps } from '../lib/beacon.js';
+import { mark } from '../lib/brand.js';
 
 async function readTreeFile(fs, dir, treeOid, pathParts) {
   for (let i = 0; i < pathParts.length; i++) {
@@ -49,9 +50,9 @@ export default function register(program) {
         } catch {}
 
         if (beacon) {
-          console.log('beacon: lit ' + beacon);
+          console.log(`${mark} beacon: lit ${beacon}`);
         } else {
-          console.log('beacon: unlit');
+          console.log(`${mark} beacon: unlit`);
         }
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));

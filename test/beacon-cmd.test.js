@@ -8,7 +8,7 @@ describe('vit beacon', () => {
   test('probes a public repo without .vit/config.json beacon (unlit)', () => {
     const result = run('beacon https://github.com/octocat/Hello-World.git');
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toBe('beacon: unlit');
+    expect(result.stdout).toContain('beacon: unlit');
   }, 30000);
 
   test('errors on invalid URL', () => {

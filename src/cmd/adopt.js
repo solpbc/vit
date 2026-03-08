@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { parseGitUrl, toBeacon, beaconToHttps } from '../lib/beacon.js';
 import { requireNotAgent } from '../lib/agent.js';
+import { which } from '../lib/compat.js';
 
 export default function register(program) {
   program
@@ -46,7 +47,7 @@ export default function register(program) {
         }
 
         // detect gh + github host
-        const ghPath = Bun.which('gh');
+        const ghPath = which('gh');
         const isGitHub = parsed.host === 'github.com';
         if (verbose) console.log(`[verbose] gh available: ${ghPath ? 'yes' : 'no'}, github host: ${isGitHub ? 'yes' : 'no'}`);
 

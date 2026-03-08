@@ -11,3 +11,6 @@ test:
 
 clean:
 	rm -rf node_modules/
+
+publish:
+	npm publish

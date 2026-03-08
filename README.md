@@ -8,16 +8,20 @@ vit is how software becomes *organic* and *yours*.
 
 ## install
 
+```bash
+npx vit doctor
+```
+
+or install globally:
+
+```bash
+npm install -g vit
+```
+
 for development:
 
 ```bash
 make install
-```
-
-for global CLI use:
-
-```bash
-make install-user
 ```
 
 ## terminology

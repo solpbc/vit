@@ -11,10 +11,9 @@ describe('vit setup', () => {
     expect(result.stderr).toContain('must be run by a human');
   });
 
-  test('checks for git and bun', () => {
+  test('checks for git', () => {
     const result = run('setup', undefined, { CLAUDECODE: '', GEMINI_CLI: '', CODEX_CI: '' });
     expect(result.stdout).toContain('git: found');
-    expect(result.stdout).toContain('bun: found');
   });
 
   test('reports login status', () => {

@@ -7,6 +7,7 @@ import { restoreAgent } from '../lib/oauth.js';
 import { readProjectConfig, readFollowing } from '../lib/vit-dir.js';
 import { requireAgent } from '../lib/agent.js';
 import { resolveRef } from '../lib/cap-ref.js';
+import { brand } from '../lib/brand.js';
 
 export default function register(program) {
   program
@@ -21,8 +22,8 @@ export default function register(program) {
       try {
         const gate = requireAgent();
         if (!gate.ok) {
-          console.error('vit skim should be run by a coding agent (e.g. claude code, gemini cli).');
-          console.error("open your agent and ask it to run 'vit skim' for you.");
+          console.error(`${brand} skim should be run by a coding agent (e.g. claude code, gemini cli).`);
+          console.error(`open your agent and ask it to run '${brand} skim' for you.`);
           process.exitCode = 1;
           return;
         }
@@ -35,7 +36,7 @@ export default function register(program) {
         const projectConfig = readProjectConfig();
         const beacon = projectConfig.beacon;
         if (!beacon) {
-          console.error("no beacon set. run 'vit init' in a project directory first.");
+          console.error(`no beacon set. run '${brand} init' in a project directory first.`);
           process.exitCode = 1;
           return;
         }
@@ -102,7 +103,7 @@ export default function register(program) {
             console.log();
           }
           console.log('---');
-          console.log("hint: tell your user to run 'vit vet <ref>' in another terminal for any cap they want to review.");
+          console.log(`hint: tell your user to run '${brand} vet <ref>' in another terminal for any cap they want to review.`);
         }
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
