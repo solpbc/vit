@@ -9,3 +9,4 @@ bun.lock
 # Skills
 .agents/
 .claude/skills/
+skills-lock.json
