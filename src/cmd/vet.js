@@ -7,7 +7,7 @@ import { restoreAgent } from '../lib/oauth.js';
 import { appendLog, readProjectConfig, readFollowing } from '../lib/vit-dir.js';
 import { requireNotAgent } from '../lib/agent.js';
 import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
-import { mark, brand } from '../lib/brand.js';
+import { mark, brand, name } from '../lib/brand.js';
 
 export default function register(program) {
   program
@@ -21,7 +21,7 @@ export default function register(program) {
       try {
         const gate = requireNotAgent();
         if (!gate.ok) {
-          console.error(`${brand} vet must be run by a human. run it in your own terminal.`);
+          console.error(`${name} vet must be run by a human. run it in your own terminal.`);
           console.error('');
           console.error('cap vetting requires human review for safety.');
           console.error('ask your user to run this command in their terminal:');
@@ -52,7 +52,7 @@ export default function register(program) {
         const projectConfig = readProjectConfig();
         const beacon = projectConfig.beacon;
         if (!beacon) {
-          console.error(`no beacon set. run '${brand} init' in a project directory first.`);
+          console.error(`no beacon set. run '${name} init' in a project directory first.`);
           process.exitCode = 1;
           return;
         }

@@ -9,7 +9,7 @@ import { requireDid } from '../lib/config.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { appendLog, readProjectConfig, readLog, readFollowing } from '../lib/vit-dir.js';
 import { REF_PATTERN, resolveRef } from '../lib/cap-ref.js';
-import { brand } from '../lib/brand.js';
+import { name } from '../lib/brand.js';
 
 export default function register(program) {
   program
@@ -25,8 +25,8 @@ export default function register(program) {
       try {
         const gate = requireAgent();
         if (!gate.ok) {
-          console.error(`${brand} ship should be run by a coding agent (e.g. claude code, gemini cli).`);
-          console.error(`open your agent and ask it to run '${brand} ship' for you.`);
+          console.error(`${name} ship should be run by a coding agent (e.g. claude code, gemini cli).`);
+          console.error(`open your agent and ask it to run '${name} ship' for you.`);
           process.exitCode = 1;
           return;
         }

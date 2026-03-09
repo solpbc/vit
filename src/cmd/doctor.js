@@ -5,7 +5,7 @@ import { loadConfig } from '../lib/config.js';
 import { readProjectConfig } from '../lib/vit-dir.js';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { mark, brand } from '../lib/brand.js';
+import { mark, name } from '../lib/brand.js';
 
 export default function register(program) {
   program
@@ -18,7 +18,7 @@ export default function register(program) {
           const when = new Date(config.setup_at * 1000).toISOString();
           console.log(`${mark} setup: ok (${when})`);
         } else {
-          console.log(`${mark} setup: not done (run ${brand} setup)`);
+          console.log(`${mark} setup: not done (run ${name} setup)`);
         }
 
         const projConfig = readProjectConfig();
@@ -32,7 +32,7 @@ export default function register(program) {
         if (existsSync(skillPath)) {
           console.log(`${mark} skill: ok (using-vit)`);
         } else {
-          console.log(`${mark} skill: not installed (run ${brand} setup)`);
+          console.log(`${mark} skill: not installed (run ${name} setup)`);
         }
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));

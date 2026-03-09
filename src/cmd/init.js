@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { toBeacon } from '../lib/beacon.js';
 import { vitDir, readProjectConfig, writeProjectConfig } from '../lib/vit-dir.js';
 import { requireAgent } from '../lib/agent.js';
-import { mark, brand, DOT_VIT_README } from '../lib/brand.js';
+import { mark, name, DOT_VIT_README } from '../lib/brand.js';
 
 export default function register(program) {
   program
@@ -19,8 +19,8 @@ export default function register(program) {
       try {
         const gate = requireAgent();
         if (!gate.ok) {
-          console.error(`${brand} init should be run by a coding agent (e.g. claude code, gemini cli).`);
-          console.error(`open your agent and ask it to run '${brand} init' for you.`);
+          console.error(`${name} init should be run by a coding agent (e.g. claude code, gemini cli).`);
+          console.error(`open your agent and ask it to run '${name} init' for you.`);
           process.exitCode = 1;
           return;
         }
@@ -33,7 +33,7 @@ export default function register(program) {
           const config = readProjectConfig();
           if (config.beacon) {
             console.log(`${mark} beacon: ${config.beacon}`);
-            console.log(`hint: to change the beacon, run: ${brand} init --beacon <git-url>`);
+            console.log(`hint: to change the beacon, run: ${name} init --beacon <git-url>`);
             return;
           }
 
@@ -52,9 +52,9 @@ export default function register(program) {
             console.log(hasVitDir ? 'status: no beacon' : 'status: not initialized');
             console.log('git: false');
             if (hasVitDir) {
-              console.log(`hint: run: ${brand} init --beacon <canonical-git-url>`);
+              console.log(`hint: run: ${name} init --beacon <canonical-git-url>`);
             } else {
-              console.log(`hint: run ${brand} init from inside a git repository.`);
+              console.log(`hint: run ${name} init from inside a git repository.`);
             }
             return;
           }
@@ -99,11 +99,11 @@ export default function register(program) {
           const origin = remotes.find(remote => remote.name === 'origin');
           if (upstream) {
             console.log('hint: detected upstream remote. upstream points to the canonical repo.');
-            console.log(`hint: run: ${brand} init --beacon ${upstream.url}`);
+            console.log(`hint: run: ${name} init --beacon ${upstream.url}`);
           } else if (origin) {
-            console.log(`hint: run: ${brand} init --beacon ${origin.url}`);
+            console.log(`hint: run: ${name} init --beacon ${origin.url}`);
           } else {
-            console.log(`hint: no git remotes found. run: ${brand} init --beacon <canonical-git-url>`);
+            console.log(`hint: no git remotes found. run: ${name} init --beacon <canonical-git-url>`);
           }
           return;
         }

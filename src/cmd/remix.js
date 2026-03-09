@@ -7,7 +7,7 @@ import { restoreAgent } from '../lib/oauth.js';
 import { readProjectConfig, readFollowing, readLog } from '../lib/vit-dir.js';
 import { requireAgent } from '../lib/agent.js';
 import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
-import { brand } from '../lib/brand.js';
+import { brand, name } from '../lib/brand.js';
 
 export default function register(program) {
   program
@@ -20,8 +20,8 @@ export default function register(program) {
       try {
         const gate = requireAgent();
         if (!gate.ok) {
-          console.error(`${brand} remix should be run by a coding agent (e.g. claude code, gemini cli).`);
-          console.error(`open your agent and ask it to run '${brand} remix' for you.`);
+          console.error(`${name} remix should be run by a coding agent (e.g. claude code, gemini cli).`);
+          console.error(`open your agent and ask it to run '${name} remix' for you.`);
           process.exitCode = 1;
           return;
         }
@@ -41,7 +41,7 @@ export default function register(program) {
         const projectConfig = readProjectConfig();
         const beacon = projectConfig.beacon;
         if (!beacon) {
-          console.error(`no beacon set. run '${brand} init' in a project directory first.`);
+          console.error(`no beacon set. run '${name} init' in a project directory first.`);
           process.exitCode = 1;
           return;
         }

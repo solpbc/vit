@@ -7,7 +7,7 @@ import { TID } from '@atproto/common-web';
 import { restoreAgent } from '../lib/oauth.js';
 import { appendLog, readProjectConfig, readFollowing, readLog } from '../lib/vit-dir.js';
 import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
-import { mark, brand } from '../lib/brand.js';
+import { mark, name } from '../lib/brand.js';
 
 export default function register(program) {
   program
@@ -33,7 +33,7 @@ export default function register(program) {
         const projectConfig = readProjectConfig();
         const beacon = projectConfig.beacon;
         if (!beacon) {
-          console.error(`no beacon set. run '${brand} init' in a project directory first.`);
+          console.error(`no beacon set. run '${name} init' in a project directory first.`);
           process.exitCode = 1;
           return;
         }

@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { parseGitUrl, toBeacon, beaconToHttps } from '../lib/beacon.js';
 import { requireNotAgent } from '../lib/agent.js';
 import { which } from '../lib/compat.js';
-import { mark, brand } from '../lib/brand.js';
+import { mark, name } from '../lib/brand.js';
 
 export default function register(program) {
   program
@@ -16,11 +16,11 @@ export default function register(program) {
     .argument('[name]', 'Local directory name (defaults to repo name)')
     .description('Fork or clone a project')
     .option('-v, --verbose', 'Show step-by-step details')
-    .action(async (beacon, name, opts) => {
+    .action(async (beacon, targetName, opts) => {
       try {
         const gate = requireNotAgent();
         if (!gate.ok) {
-          console.error(`${brand} adopt must be run by a human. run it in your own terminal.`);
+          console.error(`${name} adopt must be run by a human. run it in your own terminal.`);
           process.exitCode = 1;
           return;
         }
@@ -36,7 +36,7 @@ export default function register(program) {
         if (verbose) console.log(`[verbose] https: ${httpsUrl}`);
 
         // determine directory name
-        const dirName = name || parsed.repo;
+        const dirName = targetName || parsed.repo;
         const dirPath = resolve(dirName);
         if (verbose) console.log(`[verbose] target directory: ${dirPath}`);
 
@@ -83,7 +83,7 @@ export default function register(program) {
         console.log(`${mark} directory: ${dirName}`);
         console.log(`run: cd ${dirName}`);
         console.log('');
-        console.log(`next: start your agent and ask it to run '${brand} init'`);
+        console.log(`next: start your agent and ask it to run '${name} init'`);
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;

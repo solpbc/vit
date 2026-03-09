@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { loadConfig, saveConfig } from '../lib/config.js';
 import { requireNotAgent } from '../lib/agent.js';
 import { which } from '../lib/compat.js';
-import { mark, brand } from '../lib/brand.js';
+import { mark, brand, name } from '../lib/brand.js';
 
 export default function register(program) {
   program
@@ -15,7 +15,7 @@ export default function register(program) {
       try {
         const gate = requireNotAgent();
         if (!gate.ok) {
-          console.error(`${brand} setup must be run by a human. run it in your own terminal.`);
+          console.error(`${name} setup must be run by a human. run it in your own terminal.`);
           process.exitCode = 1;
           return;
         }
@@ -57,7 +57,7 @@ export default function register(program) {
           console.log(`${mark} login: ${config.did}`);
         } else {
           console.log(`${mark} login: not logged in`);
-          console.log(`next: run '${brand} login <handle>' to authenticate with Bluesky`);
+          console.log(`next: run '${name} login <handle>' to authenticate with Bluesky`);
         }
 
         if (!config.setup_at) {
