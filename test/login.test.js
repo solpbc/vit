@@ -12,10 +12,10 @@ describe('login', () => {
     expect(stdout).toContain('--browser');
   });
 
-  test('--help shows --reset option', () => {
+  test('--help shows --force option', () => {
     const { stdout, exitCode } = run('login --help');
     expect(exitCode).toBe(0);
-    expect(stdout).toContain('--reset');
+    expect(stdout).toContain('--force');
   });
 
   test('requires handle argument', () => {

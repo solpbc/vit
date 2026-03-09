@@ -216,7 +216,7 @@ Usage: `vit login <handle>`
 
 Options:
 - `-v, --verbose` - Show discovery details
-- `--reset` - Force re-authentication
+- `--force` - Force re-login, skip session validation
 
 Output format:
 - Text prompts and login status (`DID`, `Logged in`).
@@ -230,7 +230,7 @@ Notes:
 - Requires browser OAuth interaction.
 
 Example:
-- `vit login alice.bsky.social --reset`
+- `vit login alice.bsky.social --force`
 
 ### `vit adopt <beacon> [name]`
 Usage: `vit adopt <beacon> [name]`

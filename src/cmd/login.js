@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { loadConfig, saveConfig } from '../lib/config.js';
-import { createOAuthClient, createSessionStore, createStore } from '../lib/oauth.js';
+import { createOAuthClient, createSessionStore, createStore, restoreAgent } from '../lib/oauth.js';
 
 export default function register(program) {
   program
@@ -13,21 +13,23 @@ export default function register(program) {
     .description('Log in to Bluesky via browser-based OAuth')
     .argument('<handle>', 'Bluesky handle (e.g. alice.bsky.social)')
     .option('-v, --verbose', 'Show discovery details')
-    .option('--reset', 'Force re-login even if credentials are valid')
+    .option('--force', 'Force re-login, skip session validation')
     .option('--remote', 'Skip browser launch; prompt to paste callback URL (auto-detected over SSH)')
     .option('--browser <command>', 'Browser command to use (e.g. firefox)')
     .action(async (handle, opts) => {
-      const { verbose, reset, remote, browser } = opts;
+      const { verbose, force, remote, browser } = opts;
       const isRemote = remote || !!(process.env.SSH_CONNECTION || process.env.SSH_TTY || process.env.SSH_CLIENT);
       handle = handle.replace(/^@/, '');
 
-      if (!reset) {
+      if (!force) {
         const existing = loadConfig();
         if (existing.did) {
-          const session = await createSessionStore().get(existing.did);
-          if (session) {
+          try {
+            await restoreAgent(existing.did);
             console.log(`Already logged in as ${existing.did}`);
             return;
+          } catch {
+            // session invalid - fall through to OAuth
           }
         }
       }

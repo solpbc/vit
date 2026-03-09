@@ -72,7 +72,7 @@ this will:
 ### options
 
 - `-v, --verbose` - show discovery and protocol details
-- `--reset` - force re-login even if credentials are valid
+- `--force` - force re-login, skip session validation
 
 ## firehose
 

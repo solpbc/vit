@@ -122,7 +122,7 @@ These are human-only because they call `requireNotAgent()` (or require browser i
 | `no DID configured` | User hasn't logged in | Tell user to run `vit login <handle>` |
 | `no beacon set` | `.vit/` not initialized or no beacon | Run `vit init` |
 | `no followings` / empty skim results | No accounts followed | Run `vit follow <handle>` |
-| Session errors (deleted/expired) | OAuth session invalid | Tell user to run `vit login <handle> --reset` |
+| Session errors (deleted/expired) | OAuth session invalid | Tell user to run `vit login <handle>` |
 | Invalid ref format | Ref doesn't match `^[a-z]+-[a-z]+-[a-z]+$` | Use three lowercase words joined by hyphens |
 
 ## 7. Data Files
