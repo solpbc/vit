@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>vit explore</title>
+  <meta name="description" content="vit network explorer — live capability and vouch activity">
+  <style>
+    :root {
+      color-scheme: light;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #111827;
+      background: #ffffff;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 20px 32px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+      line-height: 1.2;
+      cursor: default;
+    }
+
+    .tagline {
+      margin: 6px 0 0;
+      color: #4b5563;
+      font-size: 1rem;
+    }
+
+    .header-bar {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    header {
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    nav a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    nav a.active {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    main {
+      min-height: 240px;
+    }
+
+    main h1,
+    main h2,
+    main h3,
+    main h4 {
+      line-height: 1.25;
+      margin-top: 1.5em;
+      margin-bottom: 0.6em;
+    }
+
+    main p,
+    main ul,
+    main ol,
+    main blockquote,
+    main pre {
+      margin-top: 0;
+      margin-bottom: 1em;
+    }
+
+    pre,
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    pre {
+      background: #f3f4f6;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    code {
+      background: #f3f4f6;
+      padding: 0.1em 0.3em;
+      border-radius: 4px;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+    }
+
+    hr {
+      border: 0;
+      border-top: 1px solid #e5e7eb;
+      margin: 1.5em 0;
+    }
+
+    footer {
+      margin-top: 36px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+
+    footer a {
+      color: #2563eb;
+    }
+
+    .cap-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .cap-item:last-child {
+      border-bottom: none;
+    }
+
+    .cap-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .cap-meta {
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+
+    .cap-meta a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+
+    .cap-meta a:hover {
+      text-decoration: underline;
+    }
+
+    .beacon-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .beacon-item:last-child {
+      border-bottom: none;
+    }
+
+    .beacon-name a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .beacon-name a:hover {
+      text-decoration: underline;
+    }
+
+    .beacon-stats {
+      font-size: 0.85rem;
+      color: #6b7280;
+      text-align: right;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: #f3f4f6;
+      padding: 16px;
+      border-radius: 6px;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    .empty-state {
+      color: #6b7280;
+      padding: 32px 0;
+    }
+
+    .load-more {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-top: 16px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      color: #2563eb;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+
+    .load-more:hover {
+      background: #e5e7eb;
+    }
+
+    .view-title {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    @media (max-width: 480px) {
+      .stat-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .beacon-item {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .beacon-stats {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-bar">
+        <div>
+          <h1><a href="https://v-it.org" style="color: inherit; text-decoration: none;">vit explore</a></h1>
+          <p class="tagline">network explorer</p>
+        </div>
+        <nav>
+          <a href="#">caps</a>
+          <a href="#beacons">beacons</a>
+          <a href="#stats">stats</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="content">
+      <div id="view"></div>
+    </main>
+
+    <footer>
+      part of <a href="https://solpbc.org">sol pbc</a> · <a href="https://v-it.org">v-it.org</a>
+    </footer>
+  </div>
+
+  <script>
+    let capsCursor = null;
+    let capsContainer = null;
+    let currentBeaconFilter = null;
+
+    function timeAgo(dateStr) {
+      const now = Date.now();
+      const then = new Date(dateStr).getTime();
+      const seconds = Math.floor((now - then) / 1000);
+      if (seconds < 60) return 'just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return minutes + (minutes === 1 ? ' minute ago' : ' minutes ago');
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return hours + (hours === 1 ? ' hour ago' : ' hours ago');
+      const days = Math.floor(hours / 24);
+      if (days === 1) return 'yesterday';
+      if (days <= 7) return days + ' days ago';
+      return new Date(dateStr).toISOString().split('T')[0];
+    }
+
+    function displayName(cap) {
+      if (cap.handle) return cap.handle;
+      const did = cap.did;
+      if (did.length > 24) return did.slice(0, 12) + '...' + did.slice(-8);
+      return did;
+    }
+
+    function esc(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function api(path) {
+      const res = await fetch('/api/' + path);
+      return res.json();
+    }
+
+    function getRoute() {
+      const hash = location.hash.slice(1);
+      if (hash.startsWith('beacon/')) return { view: 'beacon', value: decodeURIComponent(hash.slice(7)) };
+      if (hash === 'beacons') return { view: 'beacons' };
+      if (hash === 'stats') return { view: 'stats' };
+      return { view: 'caps' };
+    }
+
+    function updateNav() {
+      const route = getRoute();
+      document.querySelectorAll('nav a').forEach(function(a) {
+        const href = a.getAttribute('href');
+        if (route.view === 'caps') a.classList.toggle('active', href === '#');
+        else if (route.view === 'beacons' || route.view === 'beacon') a.classList.toggle('active', href === '#beacons');
+        else if (route.view === 'stats') a.classList.toggle('active', href === '#stats');
+        else a.classList.remove('active');
+      });
+    }
+
+    function renderCapItem(cap) {
+      const title = esc(cap.title) || 'untitled';
+      const name = esc(displayName(cap));
+      const ref = cap.ref ? '<code>' + esc(cap.ref) + '</code>' : '';
+      const beacon = cap.beacon ? '<a href="#beacon/' + encodeURIComponent(cap.beacon) + '">' + esc(cap.beacon) + '</a>' : '';
+      const time = timeAgo(cap.created_at);
+      const metaParts = [name, beacon, ref, time].filter(Boolean);
+      return '<div class="cap-item"><div class="cap-title">' + title + '</div><div class="cap-meta">' + metaParts.join(' · ') + '</div></div>';
+    }
+
+    function appendLoadMore(el) {
+      const existing = el.querySelector('.load-more');
+      if (existing) existing.remove();
+
+      if (!capsCursor) return;
+
+      const btn = document.createElement('button');
+      btn.className = 'load-more';
+      btn.textContent = 'load more';
+      btn.onclick = async function() {
+        btn.disabled = true;
+        btn.textContent = 'loading...';
+        const path = 'caps?cursor=' + encodeURIComponent(capsCursor) + (currentBeaconFilter ? '&beacon=' + encodeURIComponent(currentBeaconFilter) : '');
+        const data = await api(path);
+        capsCursor = data.cursor;
+        capsContainer.innerHTML += data.caps.map(renderCapItem).join('');
+        btn.remove();
+        appendLoadMore(el);
+      };
+      el.appendChild(btn);
+    }
+
+    async function renderCaps(el) {
+      currentBeaconFilter = null;
+      capsCursor = null;
+      const data = await api('caps');
+      capsCursor = data.cursor;
+
+      if (data.caps.length === 0) {
+        el.innerHTML = '<div class="empty-state"><p>no caps yet — be the first to <code>vit ship</code></p></div>';
+        return;
+      }
+
+      el.innerHTML = '<div id="caps-list"></div>';
+      capsContainer = document.getElementById('caps-list');
+      capsContainer.innerHTML = data.caps.map(renderCapItem).join('');
+      appendLoadMore(el);
+    }
+
+    async function renderBeaconCaps(el, beacon) {
+      currentBeaconFilter = beacon;
+      capsCursor = null;
+      const data = await api('caps?beacon=' + encodeURIComponent(beacon));
+      capsCursor = data.cursor;
+
+      const heading = '<h2 class="view-title">' + esc(beacon) + '</h2>';
+
+      if (data.caps.length === 0) {
+        el.innerHTML = heading + '<div class="empty-state"><p>no caps in this beacon yet</p></div>';
+        return;
+      }
+
+      el.innerHTML = heading + '<div id="caps-list"></div>';
+      capsContainer = document.getElementById('caps-list');
+      capsContainer.innerHTML = data.caps.map(renderCapItem).join('');
+      appendLoadMore(el);
+    }
+
+    async function renderBeacons(el) {
+      const data = await api('beacons');
+
+      if (data.beacons.length === 0) {
+        el.innerHTML = '<div class="empty-state"><p>no beacons yet — create one with <code>vit init</code></p></div>';
+        return;
+      }
+
+      el.innerHTML = data.beacons.map(function(beacon) {
+        const name = esc(beacon.name);
+        const time = beacon.last_activity ? timeAgo(beacon.last_activity) : 'no activity';
+        return '<div class="beacon-item"><div class="beacon-name"><a href="#beacon/' + encodeURIComponent(beacon.name) + '">' + name + '</a></div><div class="beacon-stats">' + beacon.cap_count + ' caps · ' + beacon.vouch_count + ' vouches · ' + time + '</div></div>';
+      }).join('');
+    }
+
+    async function renderStats(el) {
+      const data = await api('stats');
+      el.innerHTML = '<div class="stat-grid">' +
+        '<div class="stat-card"><div class="stat-number">' + data.total_caps + '</div><div class="stat-label">capabilities</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + data.total_vouches + '</div><div class="stat-label">vouches</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + data.total_beacons + '</div><div class="stat-label">beacons</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + data.active_dids + '</div><div class="stat-label">active participants</div></div>' +
+        '</div>';
+    }
+
+    async function navigate() {
+      updateNav();
+      const route = getRoute();
+      const view = document.getElementById('view');
+
+      if (route.view === 'caps') await renderCaps(view);
+      else if (route.view === 'beacons') await renderBeacons(view);
+      else if (route.view === 'beacon') await renderBeaconCaps(view, route.value);
+      else if (route.view === 'stats') await renderStats(view);
+    }
+
+    window.addEventListener('hashchange', navigate);
+    navigate();
+  </script>
+</body>
+</html>
