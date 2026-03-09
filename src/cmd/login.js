@@ -3,6 +3,7 @@
 
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
 import { loadConfig, saveConfig } from '../lib/config.js';
 import { createOAuthClient, createSessionStore, createStore } from '../lib/oauth.js';
 
@@ -13,8 +14,11 @@ export default function register(program) {
     .argument('<handle>', 'Bluesky handle (e.g. alice.bsky.social)')
     .option('-v, --verbose', 'Show discovery details')
     .option('--reset', 'Force re-login even if credentials are valid')
+    .option('--remote', 'Skip browser launch; prompt to paste callback URL (auto-detected over SSH)')
+    .option('--browser <command>', 'Browser command to use (e.g. firefox)')
     .action(async (handle, opts) => {
-      const { verbose, reset } = opts;
+      const { verbose, reset, remote, browser } = opts;
+      const isRemote = remote || !!(process.env.SSH_CONNECTION || process.env.SSH_TTY || process.env.SSH_CLIENT);
       handle = handle.replace(/^@/, '');
 
       if (!reset) {
@@ -30,6 +34,7 @@ export default function register(program) {
 
       let server;
       let timeout;
+      let rl;
 
       try {
         let resolveCallback;
@@ -83,18 +88,39 @@ export default function register(program) {
           console.log(`[verbose] Authorization URL: ${authUrl.toString()}`);
         }
 
-        const platform = process.platform;
-        const cmd = platform === 'darwin' ? 'open' : platform === 'win32' ? 'cmd' : 'xdg-open';
-        const args = platform === 'win32' ? ['/c', 'start', authUrl.toString()] : [authUrl.toString()];
+        if (isRemote) {
+          console.log("You're on a remote system. Open this URL in your local browser:");
+          console.log(`  ${authUrl.toString()}\n`);
+        } else {
+          const platform = process.platform;
+          const cmd = browser || (platform === 'darwin' ? 'open' : platform === 'win32' ? 'cmd' : 'xdg-open');
+          const browserArgs = !browser && platform === 'win32' ? ['/c', 'start', authUrl.toString()] : [authUrl.toString()];
 
-        try {
-          const child = spawn(cmd, args, { stdio: 'ignore', detached: true });
-          child.unref();
-        } catch {
-          // Ignore browser-open failures and rely on printed URL.
+          try {
+            const child = spawn(cmd, browserArgs, { stdio: 'ignore', detached: true });
+            child.unref();
+          } catch {
+            // Ignore browser-open failures and rely on printed URL.
+          }
+
+          console.log(`Open this URL in your browser:\n  ${authUrl.toString()}\n`);
         }
 
-        console.log(`Open this URL in your browser:\n  ${authUrl.toString()}\n`);
+        if (isRemote) {
+          rl = createInterface({ input: process.stdin, output: process.stdout });
+          rl.question('Paste the callback URL from your browser: ', (line) => {
+            try {
+              const url = new URL(line.trim());
+              const params = new URLSearchParams(url.searchParams);
+              if (!callbackResolved) {
+                callbackResolved = true;
+                resolveCallback(params);
+              }
+            } catch {
+              console.error('Invalid URL. Please paste the full callback URL.');
+            }
+          });
+        }
 
         const timeoutMs = 5 * 60 * 1000;
         const timeoutPromise = new Promise((_, reject) => {
@@ -107,6 +133,11 @@ export default function register(program) {
 
         clearTimeout(timeout);
         timeout = undefined;
+        server.closeAllConnections?.();
+        server.close();
+        if (rl) {
+          rl.close();
+        }
 
         if (verbose) {
           console.log(`[verbose] Callback received with params: ${params.toString()}`);
@@ -121,18 +152,17 @@ export default function register(program) {
           throw new Error(`OAuth error: ${oauthError}`);
         }
 
+        console.log('Exchanging token...');
         const { session } = await client.callback(params);
 
         if (verbose) {
           console.log(`[verbose] Token exchange result for DID: ${session.did}`);
         }
 
-        console.log(`DID: ${session.did}`);
-
         const config = loadConfig();
         config.did = session.did;
         saveConfig(config);
-        console.log('Logged in');
+        console.log(`Logged in as ${session.did}`);
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;
@@ -141,7 +171,12 @@ export default function register(program) {
           clearTimeout(timeout);
         }
 
-        if (server) {
+        if (rl) {
+          rl.close();
+        }
+
+        if (server?.listening) {
+          server.closeAllConnections?.();
           server.close();
         }
       }
