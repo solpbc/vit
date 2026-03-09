@@ -3,10 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>vit</title>
+  <title>vit — open source is social</title>
+  <link rel="icon" type="image/svg+xml" href="brand/vit-mark.svg">
   <style>
     :root {
       color-scheme: light;
+      --vit-green: #06D6A0;
+      --vit-green-deep: #059669;
     }
 
     body {
@@ -29,6 +32,7 @@
       font-size: 2rem;
       line-height: 1.2;
       cursor: default;
+      color: var(--vit-green);
     }
 
     .egg {
@@ -59,7 +63,7 @@
     }
 
     header {
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 2px solid var(--vit-green);
       padding-bottom: 16px;
       margin-bottom: 24px;
     }
@@ -71,7 +75,7 @@
     }
 
     nav a {
-      color: #2563eb;
+      color: var(--vit-green-deep);
       text-decoration: none;
     }
 
@@ -80,12 +84,36 @@
     }
 
     nav a.active {
+      color: var(--vit-green-deep);
       text-decoration: underline;
+      text-decoration-color: var(--vit-green);
       text-underline-offset: 3px;
+    }
+
+    a {
+      color: var(--vit-green-deep);
     }
 
     main {
       min-height: 240px;
+    }
+
+    .hero {
+      font-size: 1.8rem;
+      margin-top: 0;
+      margin-bottom: 0.4em;
+      line-height: 1.2;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 20px;
+    }
+
+    .cta-row a {
+      color: var(--vit-green-deep);
+      font-weight: 500;
     }
 
     #doc-content {
@@ -136,7 +164,7 @@
 
     hr {
       border: 0;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid var(--vit-green);
       margin: 1.5em 0;
     }
 
@@ -149,7 +177,7 @@
     }
 
     footer a {
-      color: #2563eb;
+      color: var(--vit-green-deep);
     }
   </style>
 </head>
@@ -160,17 +188,26 @@
         <h1>vit<span class="egg">ality</span></h1>
         <nav>
           <a href="#">home</a>
+          <a href="#get-started">get started</a>
+          <a href="https://explore.v-it.org">explore</a>
           <a href="#doctrine">doctrine</a>
           <a href="#vocab">vocab</a>
           <a href="#architecture">architecture</a>
           <a href="https://github.com/solpbc/vit">github</a>
         </nav>
       </div>
-      <p class="tagline">social toolkit for personalized software</p>
+      <p class="tagline">open source is social</p>
     </header>
 
     <main id="content">
       <div id="landing">
+        <h2 class="hero">open source is social</h2>
+        <p>vit is a social network of capabilities — where builders and their agents discover, remix, vet, and ship improvements across a living bazaar of codebases.</p>
+        <p class="cta-row">
+          <a href="#get-started">get started in 60 seconds &rarr;</a>
+          <a href="https://explore.v-it.org">explore the network &rarr;</a>
+        </p>
+        <hr>
         <section class="doctrine-excerpt">
           <h2>software should live</h2>
           <p>vit is a <strong>social system for personalized software</strong> where the unit of exchange is not pull requests, not screenshots, not diffs, not even git.</p>
@@ -195,6 +232,7 @@
   <script src="marked.min.js"></script>
   <script>
     const docs = {
+      'get-started': 'GET-STARTED.md',
       doctrine: 'DOCTRINE.md',
       vocab: 'VOCAB.md',
       architecture: 'ARCHITECTURE.md'
