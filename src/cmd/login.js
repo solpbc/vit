@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { loadConfig, saveConfig } from '../lib/config.js';
-import { createOAuthClient, createSessionStore, createStore, restoreAgent } from '../lib/oauth.js';
+import { createOAuthClient, createSessionStore, createStore, checkSession } from '../lib/oauth.js';
 
 export default function register(program) {
   program
@@ -24,13 +24,11 @@ export default function register(program) {
       if (!force) {
         const existing = loadConfig();
         if (existing.did) {
-          try {
-            console.log('Checking session...');
-            await restoreAgent(existing.did);
-            console.log(`Already logged in as ${existing.did}`);
+          console.log('Checking session...');
+          const validDid = checkSession(existing.did);
+          if (validDid) {
+            console.log(`Already logged in as ${validDid}`);
             return;
-          } catch {
-            // session invalid - fall through to OAuth
           }
         }
       }

@@ -14,6 +14,18 @@ const noopStore = {
   del: async () => {},
 };
 
+const clientMetadata = {
+  client_id: 'https://v-it.org/client-metadata.json',
+  client_name: 'vit CLI',
+  application_type: 'native',
+  grant_types: ['authorization_code', 'refresh_token'],
+  response_types: ['code'],
+  scope: 'atproto transition:generic',
+  token_endpoint_auth_method: 'none',
+  dpop_bound_access_tokens: true,
+  client_uri: 'https://v-it.org',
+};
+
 export function createStore() {
   const map = new Map();
 
@@ -49,20 +61,24 @@ export function createSessionStore() {
   };
 }
 
+export function checkSession(did) {
+  try {
+    const raw = readFileSync(configPath('session.json'), 'utf-8');
+    const data = JSON.parse(raw);
+    const expiresAt = data[did]?.tokenSet?.expires_at;
+    if (!expiresAt) return null;
+    return new Date(expiresAt) > new Date() ? did : null;
+  } catch {
+    return null;
+  }
+}
+
 export function createOAuthClient({ stateStore, sessionStore, redirectUri }) {
   return new NodeOAuthClient({
     requestLock,
     clientMetadata: {
-      client_id: 'https://v-it.org/client-metadata.json',
-      client_name: 'vit CLI',
-      application_type: 'native',
-      grant_types: ['authorization_code', 'refresh_token'],
-      response_types: ['code'],
+      ...clientMetadata,
       redirect_uris: [redirectUri],
-      scope: 'atproto transition:generic',
-      token_endpoint_auth_method: 'none',
-      dpop_bound_access_tokens: true,
-      client_uri: 'https://v-it.org',
     },
     stateStore,
     sessionStore,
@@ -71,10 +87,15 @@ export function createOAuthClient({ stateStore, sessionStore, redirectUri }) {
 
 export async function restoreAgent(did) {
   const sessionStore = createSessionStore();
-  const client = createOAuthClient({
-    sessionStore,
+  const client = new NodeOAuthClient({
+    handleResolver: { resolve() { throw new Error('handle resolution not needed for restore'); } },
+    requestLock,
+    clientMetadata: {
+      ...clientMetadata,
+      redirect_uris: ['http://127.0.0.1'],
+    },
     stateStore: noopStore,
-    redirectUri: 'http://127.0.0.1',
+    sessionStore,
   });
   const session = await client.restore(did);
   return { agent: new Agent(session), session };
