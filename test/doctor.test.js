@@ -19,4 +19,14 @@ describe('vit doctor', () => {
     const result = run('doctor');
     expect(result.stdout).toMatch(/skill:/);
   });
+
+  test('reports bluesky status', () => {
+    const result = run('doctor');
+    expect(result.stdout).toMatch(/bluesky:/);
+  });
+
+  test('vit status is an alias for doctor', () => {
+    const result = run('status');
+    expect(result.stdout).toMatch(/setup:/);
+  });
 });

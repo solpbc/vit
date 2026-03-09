@@ -2,41 +2,58 @@
 // Copyright (c) 2026 sol pbc
 
 import { loadConfig } from '../lib/config.js';
+import { restoreAgent } from '../lib/oauth.js';
 import { readProjectConfig } from '../lib/vit-dir.js';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { mark, brand } from '../lib/brand.js';
 
 export default function register(program) {
-  program
-    .command('doctor')
-    .description('Verify vit environment and project configuration')
-    .action(async () => {
-      try {
-        const config = loadConfig();
-        if (config.setup_at) {
-          const when = new Date(config.setup_at * 1000).toISOString();
-          console.log(`${mark} setup: ok (${when})`);
-        } else {
-          console.log(`${mark} setup: not done (run ${brand} setup)`);
-        }
-
-        const projConfig = readProjectConfig();
-        if (projConfig.beacon) {
-          console.log(`${mark} beacon: ${projConfig.beacon}`);
-        } else {
-          console.log(`${mark} beacon: not set`);
-        }
-
-        const skillPath = join(process.cwd(), '.claude', 'skills', 'using-vit', 'SKILL.md');
-        if (existsSync(skillPath)) {
-          console.log(`${mark} skill: ok (using-vit)`);
-        } else {
-          console.log(`${mark} skill: not installed (run ${brand} setup)`);
-        }
-      } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
-        process.exitCode = 1;
+  async function checkHealth() {
+    try {
+      const config = loadConfig();
+      if (config.setup_at) {
+        const when = new Date(config.setup_at * 1000).toISOString();
+        console.log(`${mark} setup: ok (${when})`);
+      } else {
+        console.log(`${mark} setup: not done (run ${brand} setup)`);
       }
-    });
+
+      const projConfig = readProjectConfig();
+      if (projConfig.beacon) {
+        console.log(`${mark} beacon: ${projConfig.beacon}`);
+      } else {
+        console.log(`${mark} beacon: not set`);
+      }
+
+      const skillPath = join(process.cwd(), '.claude', 'skills', 'using-vit', 'SKILL.md');
+      if (existsSync(skillPath)) {
+        console.log(`${mark} skill: ok (using-vit)`);
+      } else {
+        console.log(`${mark} skill: not installed (run ${brand} setup)`);
+      }
+
+      if (!config.did) {
+        console.log(`${mark} bluesky: not logged in (run ${brand} login <handle>)`);
+      } else {
+        try {
+          const { session } = await restoreAgent(config.did);
+          const pds = session.serverMetadata?.issuer;
+          console.log(`${mark} bluesky: ok (${session.did}${pds ? ', ' + pds : ''})`);
+        } catch {
+          console.log(`${mark} bluesky: token expired or invalid (run ${brand} login <handle>)`);
+        }
+      }
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exitCode = 1;
+    }
+  }
+
+  program.command('doctor')
+    .description('Verify vit environment and project configuration')
+    .action(checkHealth);
+  program.command('status')
+    .description('Alias for doctor')
+    .action(checkHealth);
 }
