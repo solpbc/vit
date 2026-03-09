@@ -10,3 +10,7 @@ bun.lock
 .agents/
 .claude/skills/
 skills-lock.json
+
+# Explore worker
+explore/node_modules/
+explore/.wrangler/

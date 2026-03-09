@@ -1,0 +1,28 @@
+name = "vit-explore"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+account_id = "3f2c1528c7d4d9685819ea9e9e307c92"
+
+[assets]
+directory = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vit-explore"
+database_id = "placeholder"
+
+[durable_objects]
+bindings = [
+  { name = "CURSOR_STORE", class_name = "CursorStore" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["CursorStore"]
+
+[triggers]
+crons = ["*/1 * * * *"]
+
+[[routes]]
+pattern = "explore.v-it.org"
+custom_domain = true
