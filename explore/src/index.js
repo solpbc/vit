@@ -30,10 +30,14 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    const cursor = await getCursor(env);
-    const result = await streamEvents(env, cursor);
-    if (result.latestCursor) {
-      await saveCursor(env, result.latestCursor);
+    let cursor = await getCursor(env);
+    // On first run, start 24h ago to catch everything in the Jetstream buffer
+    if (!cursor) {
+      cursor = String((Date.now() - 24 * 60 * 60 * 1000) * 1000);
     }
+    const result = await streamEvents(env, cursor);
+    // Always advance cursor — use latest event time, or current time if no events
+    const nextCursor = result.latestCursor || String(Date.now() * 1000);
+    await saveCursor(env, nextCursor);
   },
 };
