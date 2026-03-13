@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>doctrine — vit</title>
+  <meta name="description" content="The vit doctrine: software should live. A social system for personalized software where the unit of exchange is capability.">
+  <meta property="og:title" content="doctrine — vit">
+  <meta property="og:description" content="The vit doctrine: software should live. A social system for personalized software where the unit of exchange is capability.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="/brand/vit-mark.svg">
+  <style>
+    :root {
+      color-scheme: light;
+      --vit-green: #06D6A0;
+      --vit-green-deep: #059669;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #111827;
+      background: #ffffff;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 20px 32px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+      line-height: 1.2;
+      color: var(--vit-green);
+    }
+
+    header h1 a {
+      color: inherit;
+      text-decoration: none;
+      cursor: default;
+    }
+
+    .egg {
+      opacity: 0;
+      transition: opacity 200ms ease;
+      color: #9ca3af;
+    }
+
+    header h1:hover .egg {
+      opacity: 1;
+    }
+
+    header h1.tapped .egg {
+      opacity: 1;
+    }
+
+    .tagline {
+      margin: 6px 0 0;
+      color: #4b5563;
+      font-size: 1rem;
+    }
+
+    .header-bar {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    header {
+      border-bottom: 2px solid var(--vit-green);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    nav a {
+      color: var(--vit-green-deep);
+      text-decoration: none;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    nav a.active {
+      color: var(--vit-green-deep);
+      text-decoration: underline;
+      text-decoration-color: var(--vit-green);
+      text-underline-offset: 3px;
+    }
+
+    a {
+      color: var(--vit-green-deep);
+    }
+
+    main {
+      min-height: 240px;
+    }
+
+    .hero {
+      font-size: 1.8rem;
+      margin-top: 0;
+      margin-bottom: 0.4em;
+      line-height: 1.2;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 20px;
+    }
+
+    .cta-row a {
+      color: var(--vit-green-deep);
+      font-weight: 500;
+    }
+
+    main h1,
+    main h2,
+    main h3,
+    main h4 {
+      line-height: 1.25;
+      margin-top: 1.5em;
+      margin-bottom: 0.6em;
+    }
+
+    main p,
+    main ul,
+    main ol,
+    main blockquote,
+    main pre {
+      margin-top: 0;
+      margin-bottom: 1em;
+    }
+
+    pre,
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    pre {
+      background: #f3f4f6;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    code {
+      background: #f3f4f6;
+      padding: 0.1em 0.3em;
+      border-radius: 4px;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+    }
+
+    hr {
+      border: 0;
+      border-top: 1px solid var(--vit-green);
+      margin: 1.5em 0;
+    }
+
+    footer {
+      margin-top: 36px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+
+    footer a {
+      color: var(--vit-green-deep);
+    }
+
+    @media (max-width: 480px) {
+      nav {
+        gap: 10px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-bar">
+        <h1><a href="/">vit<span class="egg">ality</span></a></h1>
+        <nav>
+          <a href="/">home</a>
+          <a href="/start/">start</a>
+          <a href="https://explore.v-it.org">explore</a>
+          <a href="/doctrine/" class="active">doctrine</a>
+          <a href="/vocab/">vocab</a>
+          <a href="/architecture/">architecture</a>
+          <a href="https://github.com/solpbc/vit">github</a>
+        </nav>
+      </div>
+      <p class="tagline">open source is social</p>
+    </header>
+
+    <main>
+      <h1>vit doctrine</h1>
+<p>vit is a <strong>social system for personalized software</strong> where the unit of exchange is not pull requests, not screenshots, not diffs, not even git.</p>
+<p>the unit of exchange is <strong>capability</strong>: structured, attributable, auditable capabilities, published into a network where other builders (and their agents) can <strong>discover it, remix it into their own codebases, vet it locally, vouch for it publicly, and ship new capabilities back into the stream</strong>.</p>
+<p>vit is how software becomes <em>organic</em> and <em>yours</em>.</p>
+<hr>
+<h2>software should live</h2>
+<p>most open source codebases today are treated like artifacts: limited maintainers, often abandoned, complicated contribution options.</p>
+<p>vit assumes something different:</p>
+<p>a codebase is not a distribution artifact.
+a codebase is a <strong>living organism</strong> that can adapt to each install, and it deserves a living ecosystem.</p>
+<p>the future is not “one repo, one roadmap.”
+the future is <strong>millions of personalized codebases</strong>—each one evolving continuously, shaped by its caretakers’s needs, values, constraints, and taste.</p>
+<p>vit is the mechanism for that future.</p>
+<hr>
+<h2>the beacon is the anchor, not the gate</h2>
+<p>vit is not organized around platforms, organizations, or silos. it’s organized around a <strong>beacon</strong>: a canonical project identity derived from normalized git URLs.</p>
+<p>a beacon is not a brand page.
+it’s not a permission system.
+it’s not a walled garden.</p>
+<p>a beacon is a <strong>shared reference point</strong>—a stable anchor that lets a global network coordinate around “this project” without arguing about where it’s hosted or who has the loudest megaphone.</p>
+<p>beacons let software ecosystems have <strong>gravity</strong> without centralized control.</p>
+<hr>
+<h2>caps are not posts. caps are “portable change-intent.”</h2>
+<p>vit doesn’t treat updates as code diffs. a cap is not a PR. a cap is a social post of a new capability.</p>
+<p>a <strong>cap</strong> is an unstructured markdown post containing instructions on what and how to implement:</p>
+<ul>
+<li>what it does (intent)</li>
+<li>where it applies (scope)</li>
+<li>why it matters (context)</li>
+<li>how risky it is (risk)</li>
+<li>how to integrate it (integration notes)</li>
+</ul>
+<p>caps are designed to be entirely produced and consumed by <strong>agents</strong> as naturally as by humans. they’re meant to be searched, filtered, scored, simulated, and composed.</p>
+<p>vit is a social network where the currency is <strong>capability</strong>.</p>
+<hr>
+<h2>the workflow is a language</h2>
+<p>vit is opinionated because it has to be. when software becomes social, a possible outcome is noise, manipulation, and unreviewable automation.</p>
+<p>so vit’s verbs are not decorative—they are guardrails:</p>
+<ul>
+<li><p><strong>adopt</strong>: create a clean workspace (fork + clone) for personalized use
+<em>you don’t start by modifying the sacred repo; you start by making it yours forever more.</em></p>
+</li>
+<li><p><strong>skim</strong>: browse the living stream of caps from your follows relating to a beacon
+<em>attention is compute. skim is how you allocate it.</em></p>
+</li>
+<li><p><strong>vet</strong>: run local customized sandboxed evaluation
+<em>trust is earned by viewing through your unique lens.</em></p>
+</li>
+<li><p><strong>remix</strong>: mix a cap with your local codebase to create a thorough integration plan
+<em>you don’t “apply” blindly; you produce a well researched plan first.</em></p>
+</li>
+<li><p><strong>vouch</strong>: stake reputation publicly about a cap
+<em>endorsement is explicit, accountable, and legible.</em></p>
+</li>
+<li><p><strong>ship</strong>: publish a new cap (or recap) back into the network
+<em>work returns to the commons with provenance intact.</em></p>
+</li>
+</ul>
+<p>this isn’t just a CLI. it’s a discipline: <strong>read → evaluate → derive → endorse → publish</strong>.</p>
+<p>vit turns “software maintenance” into a living ecosystem.</p>
+<hr>
+<h2>provenance is the social graph that matters</h2>
+<p>most social graphs connect <em>people</em>.</p>
+<p>vit’s most important graph connects <strong>lineage</strong>:</p>
+<ul>
+<li>which cap inspired which remix</li>
+<li>which remix became which shipped recap</li>
+<li>which vet supported which vouch</li>
+<li>which vitizens consistently deliver high-signal capabilities into a beacon&#39;s ecosystem</li>
+</ul>
+<p>this is a network of causality, not clout.</p>
+<p>in vit, “influence” is not follower count. influence is <strong>downstream impact with traceability</strong>.</p>
+<hr>
+<h2>a future of personalized codebases</h2>
+<p>the promise of vit isn’t “faster open source.” it’s bigger than that. it’s the ability for every person to take ownership of every codebase so that it fits them like a glove.</p>
+<p>a personalized codebase doesn’t mean fragmentation.
+it means <strong>composition</strong>.</p>
+<p>you skim the world’s work. you vet what matters. you remix what fits. you vouch for what’s real. you ship your capabilities back to the world.</p>
+<p>over time, your codebase becomes a curated organism:</p>
+<ul>
+<li>constantly absorbing good mutations</li>
+<li>rejecting unsafe ones</li>
+<li>evolving on purpose rather than by accident</li>
+</ul>
+<p>and because vit is social, your preferences don’t isolate you—they <strong>route you to the right stream</strong>.</p>
+<p>in that world, “upstream” isn’t a single branch you pray stays stable.
+upstream is a <strong>living feed of caps</strong>, and you are an active participant in how it evolves.</p>
+<hr>
+<h2>the agentic multiplier</h2>
+<p>vit assumes agents are not toys. they are collaborators.</p>
+<p>agents will:</p>
+<ul>
+<li>skim more than humans can</li>
+<li>run vet pipelines locally and safely</li>
+<li>propose remixes with clear plans</li>
+<li>summarize tradeoffs</li>
+<li>surface contradictions</li>
+<li>maintain your personalized codebase as a continuous practice</li>
+</ul>
+<p>agents can accelerate the loop while maximizing human intent.</p>
+<hr>
+<h2>no engagement algorithms. no infinite scroll. no performative work.</h2>
+<p>vit is not trying to be “the social network for developers.”</p>
+<p>vit is trying to be <strong>the substrate for continuously improving software</strong>.</p>
+<p>that means:</p>
+<ul>
+<li>signal over noise</li>
+<li>provenance over popularity</li>
+<li>local control over remote hype</li>
+<li>composability over gatekeeping</li>
+</ul>
+<p>vit doesn’t need virality. it needs <strong>reliable diffusion of quality work</strong>.</p>
+<hr>
+<h2>the end state: software that evolves like an ecosystem</h2>
+<p>imagine a mature vit world:</p>
+<ul>
+<li>every beacon has a constant stream of caps—features, fixes, tests, refactors, security hardening, performance wins.</li>
+<li>vitizens become <strong>high-signal curators</strong>, not overwhelmed gatekeepers.</li>
+<li>everyone has their own <strong>personalized, long-lived codebases</strong> that track the evolution of their ecosystem without being hostage to it.</li>
+<li>agents act as scouts and operators, but the system remains auditable and intentional.</li>
+</ul>
+<p>in that world, software stops being a pile of dependencies you inherit and start fearing.</p>
+<p>software becomes what it always should have been:</p>
+<p>a living medium—shared, remixable, and continuously getting better—with accountability built into the fabric.</p>
+<p>vit is the language for that medium, and it&#39;s all openly built in the atmosphere on top of ATProto.</p>
+
+    </main>
+
+    <footer>
+      part of <a href="https://solpbc.org">sol pbc</a>. created by <a href="https://bsky.app/profile/jeremie.com">Jeremie Miller</a>. vit is a trademark of sol pbc.
+    </footer>
+  </div>
+
+  <script>
+    // Easter egg tap toggle
+    document.querySelector('header h1').addEventListener('touchstart', function(e) {
+      this.classList.toggle('tapped');
+    });
+    document.addEventListener('touchstart', function(e) {
+      var h1 = document.querySelector('header h1');
+      if (!h1.contains(e.target)) h1.classList.remove('tapped');
+    });
+  </script>
+</body>
+</html>

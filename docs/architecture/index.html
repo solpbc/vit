@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>architecture — vit</title>
+  <meta name="description" content="Technical architecture of vit: ATProto record types, cap lexicons, and system design.">
+  <meta property="og:title" content="architecture — vit">
+  <meta property="og:description" content="Technical architecture of vit: ATProto record types, cap lexicons, and system design.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="/brand/vit-mark.svg">
+  <style>
+    :root {
+      color-scheme: light;
+      --vit-green: #06D6A0;
+      --vit-green-deep: #059669;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #111827;
+      background: #ffffff;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 20px 32px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+      line-height: 1.2;
+      color: var(--vit-green);
+    }
+
+    header h1 a {
+      color: inherit;
+      text-decoration: none;
+      cursor: default;
+    }
+
+    .egg {
+      opacity: 0;
+      transition: opacity 200ms ease;
+      color: #9ca3af;
+    }
+
+    header h1:hover .egg {
+      opacity: 1;
+    }
+
+    header h1.tapped .egg {
+      opacity: 1;
+    }
+
+    .tagline {
+      margin: 6px 0 0;
+      color: #4b5563;
+      font-size: 1rem;
+    }
+
+    .header-bar {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    header {
+      border-bottom: 2px solid var(--vit-green);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    nav a {
+      color: var(--vit-green-deep);
+      text-decoration: none;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    nav a.active {
+      color: var(--vit-green-deep);
+      text-decoration: underline;
+      text-decoration-color: var(--vit-green);
+      text-underline-offset: 3px;
+    }
+
+    a {
+      color: var(--vit-green-deep);
+    }
+
+    main {
+      min-height: 240px;
+    }
+
+    .hero {
+      font-size: 1.8rem;
+      margin-top: 0;
+      margin-bottom: 0.4em;
+      line-height: 1.2;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 20px;
+    }
+
+    .cta-row a {
+      color: var(--vit-green-deep);
+      font-weight: 500;
+    }
+
+    main h1,
+    main h2,
+    main h3,
+    main h4 {
+      line-height: 1.25;
+      margin-top: 1.5em;
+      margin-bottom: 0.6em;
+    }
+
+    main p,
+    main ul,
+    main ol,
+    main blockquote,
+    main pre {
+      margin-top: 0;
+      margin-bottom: 1em;
+    }
+
+    pre,
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    pre {
+      background: #f3f4f6;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    code {
+      background: #f3f4f6;
+      padding: 0.1em 0.3em;
+      border-radius: 4px;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+    }
+
+    hr {
+      border: 0;
+      border-top: 1px solid var(--vit-green);
+      margin: 1.5em 0;
+    }
+
+    footer {
+      margin-top: 36px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+
+    footer a {
+      color: var(--vit-green-deep);
+    }
+
+    @media (max-width: 480px) {
+      nav {
+        gap: 10px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-bar">
+        <h1><a href="/">vit<span class="egg">ality</span></a></h1>
+        <nav>
+          <a href="/">home</a>
+          <a href="/start/">start</a>
+          <a href="https://explore.v-it.org">explore</a>
+          <a href="/doctrine/">doctrine</a>
+          <a href="/vocab/">vocab</a>
+          <a href="/architecture/" class="active">architecture</a>
+          <a href="https://github.com/solpbc/vit">github</a>
+        </nav>
+      </div>
+      <p class="tagline">open source is social</p>
+    </header>
+
+    <main>
+      <h1>architecture</h1>
+<h2>record types</h2>
+<p>vit uses ATProto records stored in each user&#39;s PDS repository. three record types are used:</p>
+<table>
+<thead>
+<tr>
+<th>record type</th>
+<th>NSID</th>
+<th>custom?</th>
+<th>key</th>
+<th>purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>cap</td>
+<td><code>org.v-it.cap</code></td>
+<td>yes</td>
+<td><code>tid</code></td>
+<td>structured change description</td>
+</tr>
+<tr>
+<td>vouch</td>
+<td><code>org.v-it.vouch</code></td>
+<td>yes</td>
+<td><code>tid</code></td>
+<td>endorse a cap</td>
+</tr>
+<tr>
+<td>follow</td>
+<td><code>app.bsky.graph.follow</code></td>
+<td>no (reused)</td>
+<td><code>tid</code></td>
+<td>subscribe to a handle</td>
+</tr>
+</tbody></table>
+<h3>why caps use a custom NSID</h3>
+<p>caps are structurally similar to Bluesky posts (<code>app.bsky.feed.post</code>) but serve a different purpose. using a custom NSID (<code>org.v-it.cap</code>) ensures:</p>
+<ul>
+<li>caps live in their own collection (<code>org.v-it.cap</code>) and never appear in a user&#39;s Bluesky post feed.</li>
+<li>Bluesky AppViews and feed generators ignore cap records (unknown collection).</li>
+<li>vit tooling can query caps independently without filtering out posts.</li>
+<li>the cap schema can evolve independently of <code>app.bsky.feed.post</code>.</li>
+</ul>
+<h3>why follows are reused</h3>
+<p><code>app.bsky.graph.follow</code> is generic enough to use as-is:</p>
+<ul>
+<li>a follow&#39;s <code>subject</code> is a DID — it works regardless of what record types the followed account publishes.</li>
+<li>reusing the official follow lexicon means follows are visible in Bluesky clients, which is useful for cross-network discoverability.</li>
+</ul>
+<h2>cap lexicon</h2>
+<p>the cap lexicon (<code>lexicons/org/v-it/cap.json</code>) mirrors <code>app.bsky.feed.post</code> with these differences:</p>
+<ul>
+<li><strong>NSID</strong>: <code>org.v-it.cap</code> instead of <code>app.bsky.feed.post</code>.</li>
+<li><strong>deprecated fields removed</strong>: <code>entities</code> and <code>textSlice</code> are not carried over.</li>
+<li><strong>self-referencing replies</strong>: <code>reply</code> references <code>org.v-it.cap#replyRef</code>, so cap threads are self-contained.</li>
+<li><strong>descriptions updated</strong>: all description strings reference &quot;cap&quot; instead of &quot;post&quot;.</li>
+</ul>
+<p>fields carried over from <code>app.bsky.feed.post</code> and their cap-context meaning:</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>cap meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>text</code></td>
+<td>string (max 3000 bytes / 300 graphemes)</td>
+<td>primary cap content</td>
+</tr>
+<tr>
+<td><code>facets</code></td>
+<td>array of <code>app.bsky.richtext.facet</code></td>
+<td>rich text annotations (mentions, URLs, hashtags)</td>
+</tr>
+<tr>
+<td><code>reply</code></td>
+<td><code>org.v-it.cap#replyRef</code></td>
+<td>thread structure (parent + root refs)</td>
+</tr>
+<tr>
+<td><code>embed</code></td>
+<td>union of <code>app.bsky.embed.*</code></td>
+<td>attached media, links, or record embeds</td>
+</tr>
+<tr>
+<td><code>langs</code></td>
+<td>array of language strings (max 3)</td>
+<td>content language hints</td>
+</tr>
+<tr>
+<td><code>labels</code></td>
+<td><code>com.atproto.label.defs#selfLabels</code></td>
+<td>content warnings</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td>array of strings (max 8)</td>
+<td>additional hashtags</td>
+</tr>
+<tr>
+<td><code>beacon</code></td>
+<td>string (max 512 bytes)</td>
+<td>beacon URI scoping this cap to a project</td>
+</tr>
+<tr>
+<td><code>createdAt</code></td>
+<td>datetime</td>
+<td>client-declared creation timestamp</td>
+</tr>
+</tbody></table>
+<h3>relationship to VOCAB.md</h3>
+<p>VOCAB.md defines a cap as a markdown document containing free-form instructions for implementing a change — with sections for intent, scope, risk, implementation guide, and other context. the current lexicon mirrors <code>app.bsky.feed.post</code>, so most cap semantics are encoded in <code>text</code>, <code>tags</code>, threading, and embeds. <code>beacon</code> is a dedicated structured field for project scoping.</p>
+<h2>directory layout</h2>
+<p>lexicon JSON files follow the NSID-to-path convention:</p>
+<pre><code>lexicons/
+  org/
+    v-it/
+      cap.json            # org.v-it.cap
+      vouch.json          # org.v-it.vouch
+</code></pre>
+<p>this mirrors the convention used in the ATProto repository.</p>
+<h2>future work</h2>
+<ul>
+<li>provenance tracking across vet, remix, vouch, and ship lineage.</li>
+<li>runtime lexicon validation (currently <code>validate: false</code> in CLI write commands).</li>
+</ul>
+
+    </main>
+
+    <footer>
+      part of <a href="https://solpbc.org">sol pbc</a>. created by <a href="https://bsky.app/profile/jeremie.com">Jeremie Miller</a>. vit is a trademark of sol pbc.
+    </footer>
+  </div>
+
+  <script>
+    // Easter egg tap toggle
+    document.querySelector('header h1').addEventListener('touchstart', function(e) {
+      this.classList.toggle('tapped');
+    });
+    document.addEventListener('touchstart', function(e) {
+      var h1 = document.querySelector('header h1');
+      if (!h1.contains(e.target)) h1.classList.remove('tapped');
+    });
+  </script>
+</body>
+</html>

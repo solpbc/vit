@@ -65,7 +65,7 @@ that's the cycle. every verb has a purpose:
 - **vouch** — stake your reputation on a cap
 - **ship** — publish a capability back to the network
 
-read the [doctrine](#doctrine) for why it works this way.
+read the [doctrine](/doctrine/) for why it works this way.
 
 ---
 
@@ -73,7 +73,7 @@ read the [doctrine](#doctrine) for why it works this way.
 
 most open source today is treated like artifacts — limited maintainers, often abandoned. vit assumes something different: a codebase is a **living organism** that deserves a living ecosystem.
 
-vit is how software becomes social. [read the full story](#doctrine).
+vit is how software becomes social. [read the full story](/doctrine/).
 
 ---
 

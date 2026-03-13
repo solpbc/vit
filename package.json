@@ -11,6 +11,9 @@
     "src/"
   ],
   "type": "module",
+  "scripts": {
+    "build": "node build.js"
+  },
   "engines": {
     "node": ">=20.0.0"
   },
@@ -27,5 +30,8 @@
     "env-paths": "4.0.0",
     "isomorphic-git": "1.37.0",
     "memfs": "4.56.10"
+  },
+  "devDependencies": {
+    "marked": "^17.0.4"
   }
 }
