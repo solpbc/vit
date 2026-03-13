@@ -284,7 +284,7 @@ function template({ title, description, activeSlug, content, hashRedirect }) {
         flex-wrap: wrap;
       }
 
-      nav {
+      .header-bar > nav {
         display: none;
         width: 100%;
         flex-direction: column;
@@ -292,7 +292,7 @@ function template({ title, description, activeSlug, content, hashRedirect }) {
         padding-top: 12px;
       }
 
-      nav.open {
+      .header-bar > nav.open {
         display: flex;
       }
     }
