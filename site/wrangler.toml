@@ -1,0 +1,10 @@
+name = "vit-site"
+compatibility_date = "2024-12-01"
+account_id = "3f2c1528c7d4d9685819ea9e9e307c92"
+
+[assets]
+directory = "../docs"
+
+[[routes]]
+pattern = "v-it.org/*"
+zone_name = "v-it.org"
