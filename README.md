@@ -1,13 +1,27 @@
-[![v̇it](https://v-it.org/badge/vit-enabled.svg)](https://v-it.org)
-[![open source is social](https://v-it.org/badge/social-open-source.svg)](https://v-it.org)
+<p align="center">
+  <a href="https://v-it.org">
+    <img src="docs/brand/vit-wordmark.svg" alt="vit" height="48">
+  </a>
+</p>
 
-# v̇it manifesto
+<p align="center">
+  <strong>open source is social</strong>
+</p>
+
+<p align="center">
+  <a href="https://v-it.org"><img src="https://v-it.org/badge/vit-enabled.svg" alt="vit enabled"></a>
+  <a href="https://v-it.org"><img src="https://v-it.org/badge/social-open-source.svg" alt="open source is social"></a>
+</p>
+
+---
 
 vit is a **social system for personalized software** where the unit of exchange is not pull requests, not screenshots, not diffs, not even git.
 
 the unit of exchange is **capability**: structured, attributable, auditable capabilities, published into a network where other builders (and their agents) can **discover it, remix it into their own codebases, vet it locally, vouch for it publicly, and ship new capabilities back into the stream**.
 
 vit is how software becomes *organic* and *yours*.
+
+**[read the doctrine](https://v-it.org/doctrine/)** · **[get started](https://v-it.org/start/)** · **[explore the network](https://explore.v-it.org)**
 
 ## install
 
@@ -30,6 +44,7 @@ make install
 ## terminology
 
 - **beacon** — canonical project identity derived from normalized git URLs; anchors all project-scoped vit activity; stored in `.vit/config.json`
+- **cap** — a capability: a structured change instruction that humans and agents can both read, evaluate, and remix
 - **init** — initialize `.vit/` in the current repo and validate beacon configuration
 - **doctor** — verify system environment and project configuration
 - **adopt** — adopt an existing project by its beacon; forks or clones and initializes locally
@@ -40,7 +55,9 @@ make install
 - **remix** — derive a vetted cap into the local codebase and create an implementation plan
 - **ship** — publish a new cap to your feed (or a recap when sourced from a remix)
 
-## beacon
+## commands
+
+### beacon
 
 probe a remote repo for its beacon.
 
@@ -53,11 +70,9 @@ vit beacon vit:github.com/solpbc/vit
 |---|---|
 | `-v, --verbose` | show step-by-step details |
 
-## login
+### login
 
 log in to Bluesky via browser-based OAuth.
-
-### usage
 
 ```bash
 vit login alice.bsky.social
@@ -69,28 +84,12 @@ this will:
 3. after you approve, print your DID
 4. save your DID to `vit.json` and OAuth session to `session.json`
 
-### options
+| option | description |
+|---|---|
+| `-v, --verbose` | show discovery and protocol details |
+| `--force` | force re-login, skip session validation |
 
-- `-v, --verbose` - show discovery and protocol details
-- `--force` - force re-login, skip session validation
-
-## firehose
-
-listen to Bluesky Jetstream for custom record events.
-
-### usage
-
-```bash
-vit firehose
-```
-
-### options
-
-- `--did <did>` - filter by DID (reads saved DID from config if not provided)
-- `--collection <nsid>` - collection NSID to filter (default: `org.v-it.cap`)
-- `-v, --verbose` - show full JSON for each event
-
-## ship
+### ship
 
 write a cap (org.v-it.cap record) to the authenticated PDS.
 
@@ -102,7 +101,7 @@ vit ship "hello from caps"
 |---|---|
 | `--did <did>` | DID to use (default: from config) |
 
-## skim
+### skim
 
 list caps from the authenticated PDS.
 
@@ -114,3 +113,21 @@ vit skim
 |---|---|
 | `--did <did>` | DID to use (default: from config) |
 | `--limit <n>` | max records to return (default: 25) |
+
+### firehose
+
+listen to Bluesky Jetstream for custom record events.
+
+```bash
+vit firehose
+```
+
+| option | description |
+|---|---|
+| `--did <did>` | filter by DID (reads saved DID from config if not provided) |
+| `--collection <nsid>` | collection NSID to filter (default: `org.v-it.cap`) |
+| `-v, --verbose` | show full JSON for each event |
+
+## license
+
+[AGPL-3.0](LICENSE) — built by [sol pbc](https://solpbc.org), a public benefit corporation.

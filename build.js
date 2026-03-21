@@ -11,7 +11,7 @@ const pages = [
   {
     slug: '',
     title: 'vit — open source is social',
-    description: 'vit is a social network of capabilities — where builders and their agents discover, remix, vet, and ship improvements across a living bazaar of codebases.',
+    description: 'software improvements should flow between projects like conversation — not bottleneck through a single maintainer.',
   },
   {
     slug: 'start',
@@ -41,22 +41,19 @@ const pages = [
 
 const landingContent = `
         <h2 class="hero">open source is social</h2>
-        <p>vit is a social network of capabilities — where builders and their agents discover, remix, vet, and ship improvements across a living bazaar of codebases.</p>
+        <p>software improvements should flow between projects like conversation &mdash; not bottleneck through a single maintainer.</p>
+        <div class="hero-visual">
+          <img src="/vit-architecture-contrast.svg" alt="Architecture contrast: today's hub-and-spoke open source model versus vit's distributed capability mesh">
+        </div>
         <p class="cta-row">
           <a href="/start/">get started in 60 seconds &rarr;</a>
           <a href="https://explore.v-it.org">explore the network &rarr;</a>
         </p>
         <hr>
+        <p>a capability is a structured change instruction &mdash; what to do, why it matters, how to integrate it. not a diff. not a PR. a social post that humans and agents can both read, evaluate, and remix.</p>
         <section>
-          <h2>software should live</h2>
-          <p>vit is a <strong>social system for personalized software</strong> where the unit of exchange is not pull requests, not screenshots, not diffs, not even git.</p>
-          <p>the unit of exchange is <strong>capability</strong>: structured, attributable, auditable capabilities, published into a network where other builders (and their agents) can <strong>discover it, remix it into their own codebases, vet it locally, vouch for it publicly, and ship new capabilities back into the stream</strong>.</p>
-          <p>vit is how software becomes <em>organic</em> and <em>yours</em>.</p>
-          <hr>
-          <p>most open source codebases today are treated like artifacts: limited maintainers, often abandoned, complicated contribution options.</p>
-          <p>vit assumes something different:</p>
           <p>a codebase is not a distribution artifact. a codebase is a <strong>living organism</strong> that can adapt to each install, and it deserves a living ecosystem.</p>
-          <p>the future is not &ldquo;one repo, one roadmap.&rdquo; the future is <strong>many codebases</strong>, each personalized, each living, and all sharing capabilities with each other through a social network that rewards provenance and trust.</p>
+          <p>the future is not &ldquo;one repo, one roadmap.&rdquo; the future is <strong>many codebases</strong>, each living, all sharing capabilities with each other through a social network that rewards provenance and trust.</p>
         </section>
         <p><a href="/doctrine/">read the full doctrine &rarr;</a></p>`;
 
@@ -97,7 +94,7 @@ function template({ title, description, activeSlug, content, hashRedirect }) {
   <meta name="description" content="${description}">
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${description}">
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="website">${activeSlug === '' ? '\n  <meta property="og:image" content="https://v-it.org/vit-architecture-contrast.png">' : ''}
   <link rel="icon" type="image/svg+xml" href="/brand/vit-mark.svg">
   <style>
     :root {
@@ -140,14 +137,38 @@ function template({ title, description, activeSlug, content, hashRedirect }) {
     }
 
     header h1 a {
-      display: inline-block;
+      display: inline-flex;
+      align-items: flex-end;
       text-decoration: none;
+      cursor: pointer;
     }
 
     header h1 svg {
-      display: block;
+      display: inline-block;
       height: 28px;
       width: auto;
+    }
+
+    .ality {
+      display: inline-block;
+      color: var(--vit-green);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      line-height: 1;
+      opacity: 0;
+      max-width: 0;
+      overflow: hidden;
+      transition: opacity 0.3s ease, max-width 0.4s ease, margin 0.4s ease;
+      white-space: nowrap;
+      margin-left: 0;
+      padding-bottom: 5px;
+    }
+
+    .ality.show {
+      opacity: 1;
+      max-width: 50px;
+      margin-left: 1px;
     }
 
     .tagline {
@@ -202,6 +223,23 @@ function template({ title, description, activeSlug, content, hashRedirect }) {
       margin-top: 0;
       margin-bottom: 0.4em;
       line-height: 1.2;
+    }
+
+    .hero-visual {
+      margin: 1.2em -80px;
+    }
+
+    .hero-visual img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    @media (max-width: 880px) {
+      .hero-visual {
+        margin-left: -20px;
+        margin-right: -20px;
+      }
     }
 
     .cta-row {
@@ -302,15 +340,15 @@ function template({ title, description, activeSlug, content, hashRedirect }) {
   <div class="container">
     <header>
       <div class="header-bar">
-        <h1><a href="/" aria-label="vit">
-        ${wordmark}
+        <h1><a href="/" aria-label="vit" id="vit-mark">
+        ${wordmark}<span class="ality">ality</span>
         </a></h1>
         <button class="nav-toggle" aria-label="Menu" aria-expanded="false">&#9776;</button>
         <nav>
           ${nav(activeSlug)}
         </nav>
       </div>
-      <p class="tagline">open source is social</p>
+${activeSlug !== '' ? '      <p class="tagline">open source is social</p>' : ''}
     </header>
 
     <main>
@@ -338,6 +376,12 @@ ${hashRedirect ? `
       var open = nav.classList.toggle('open');
       this.setAttribute('aria-expanded', open);
       this.textContent = open ? '\\u2715' : '\\u2630';
+    });
+
+    // Vitality easter egg — click the vit mark to reveal the full word
+    document.getElementById('vit-mark').addEventListener('click', function(e) {
+      e.preventDefault();
+      this.querySelector('.ality').classList.toggle('show');
     });
   </script>
 </body>

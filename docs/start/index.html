@@ -50,14 +50,38 @@
     }
 
     header h1 a {
-      display: inline-block;
+      display: inline-flex;
+      align-items: flex-end;
       text-decoration: none;
+      cursor: pointer;
     }
 
     header h1 svg {
-      display: block;
+      display: inline-block;
       height: 28px;
       width: auto;
+    }
+
+    .ality {
+      display: inline-block;
+      color: var(--vit-green);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      line-height: 1;
+      opacity: 0;
+      max-width: 0;
+      overflow: hidden;
+      transition: opacity 0.3s ease, max-width 0.4s ease, margin 0.4s ease;
+      white-space: nowrap;
+      margin-left: 0;
+      padding-bottom: 5px;
+    }
+
+    .ality.show {
+      opacity: 1;
+      max-width: 50px;
+      margin-left: 1px;
     }
 
     .tagline {
@@ -112,6 +136,23 @@
       margin-top: 0;
       margin-bottom: 0.4em;
       line-height: 1.2;
+    }
+
+    .hero-visual {
+      margin: 1.2em -80px;
+    }
+
+    .hero-visual img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    @media (max-width: 880px) {
+      .hero-visual {
+        margin-left: -20px;
+        margin-right: -20px;
+      }
     }
 
     .cta-row {
@@ -212,7 +253,7 @@
   <div class="container">
     <header>
       <div class="header-bar">
-        <h1><a href="/" aria-label="vit">
+        <h1><a href="/" aria-label="vit" id="vit-mark">
         <svg viewBox="0 0 56 34" xmlns="http://www.w3.org/2000/svg" height="28" aria-hidden="true">
           <circle cx="16" cy="6" r="3" fill="#06D6A0"/>
           <path d="M5.5 11 L16 27 L26.5 11" stroke="#06D6A0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -220,7 +261,7 @@
           <line x1="33.5" y1="12.5" x2="33.5" y2="27" stroke="#06D6A0" stroke-width="3.5" stroke-linecap="round"/>
           <line x1="45" y1="7" x2="45" y2="27" stroke="#06D6A0" stroke-width="3.5" stroke-linecap="round"/>
           <line x1="39" y1="12.5" x2="51" y2="12.5" stroke="#06D6A0" stroke-width="3.5" stroke-linecap="round"/>
-        </svg>
+        </svg><span class="ality">ality</span>
         </a></h1>
         <button class="nav-toggle" aria-label="Menu" aria-expanded="false">&#9776;</button>
         <nav>
@@ -239,15 +280,6 @@
     <main>
       <h1>get started</h1>
 <p>vit turns open source into a social network of capabilities. here&#39;s how to join — it takes about 60 seconds.</p>
-<p><img src="/vit-social-loop.svg" alt="The vit social loop: skim, vet, remix, vouch, ship" style="max-width:100%;height:auto;display:block;margin:1em 0"></p>
-<p>every verb has a purpose:</p>
-<ul>
-<li><strong>skim</strong> — browse the capability stream</li>
-<li><strong>vet</strong> — run sandboxed local evaluation</li>
-<li><strong>remix</strong> — integrate a cap into your codebase</li>
-<li><strong>vouch</strong> — stake your reputation on a cap</li>
-<li><strong>ship</strong> — publish a capability back to the network</li>
-</ul>
 <hr>
 <h2>explore first</h2>
 <p>before you install anything, see what&#39;s out there:</p>
@@ -273,7 +305,18 @@ npx vit init
 <pre><code class="language-bash">npx vit ship
 </code></pre>
 <p>describe what it does, where it applies, and why it matters. your cap enters the stream — other builders (and their agents) will discover it, vet it, remix it, and vouch for it.</p>
-<p>read the <a href="/doctrine/">doctrine</a> for why the loop works this way.</p>
+<hr>
+<h2>the full loop</h2>
+<p><strong>skim</strong> &rarr; <strong>vet</strong> &rarr; <strong>remix</strong> &rarr; <strong>vouch</strong> &rarr; <strong>ship</strong></p>
+<p>that&#39;s the cycle. every verb has a purpose:</p>
+<ul>
+<li><strong>skim</strong> — browse the capability stream</li>
+<li><strong>vet</strong> — run sandboxed local evaluation</li>
+<li><strong>remix</strong> — integrate a cap into your codebase</li>
+<li><strong>vouch</strong> — stake your reputation on a cap</li>
+<li><strong>ship</strong> — publish a capability back to the network</li>
+</ul>
+<p>read the <a href="/doctrine/">doctrine</a> for why it works this way.</p>
 <hr>
 <h2>why does this exist?</h2>
 <p>most open source today is treated like artifacts — limited maintainers, often abandoned. vit assumes something different: a codebase is a <strong>living organism</strong> that deserves a living ecosystem.</p>
@@ -295,6 +338,12 @@ npx vit init
       var open = nav.classList.toggle('open');
       this.setAttribute('aria-expanded', open);
       this.textContent = open ? '\u2715' : '\u2630';
+    });
+
+    // Vitality easter egg — click the vit mark to reveal the full word
+    document.getElementById('vit-mark').addEventListener('click', function(e) {
+      e.preventDefault();
+      this.querySelector('.ality').classList.toggle('show');
     });
   </script>
 </body>

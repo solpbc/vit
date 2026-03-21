@@ -50,14 +50,38 @@
     }
 
     header h1 a {
-      display: inline-block;
+      display: inline-flex;
+      align-items: flex-end;
       text-decoration: none;
+      cursor: pointer;
     }
 
     header h1 svg {
-      display: block;
+      display: inline-block;
       height: 28px;
       width: auto;
+    }
+
+    .ality {
+      display: inline-block;
+      color: var(--vit-green);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      line-height: 1;
+      opacity: 0;
+      max-width: 0;
+      overflow: hidden;
+      transition: opacity 0.3s ease, max-width 0.4s ease, margin 0.4s ease;
+      white-space: nowrap;
+      margin-left: 0;
+      padding-bottom: 5px;
+    }
+
+    .ality.show {
+      opacity: 1;
+      max-width: 50px;
+      margin-left: 1px;
     }
 
     .tagline {
@@ -112,6 +136,23 @@
       margin-top: 0;
       margin-bottom: 0.4em;
       line-height: 1.2;
+    }
+
+    .hero-visual {
+      margin: 1.2em -80px;
+    }
+
+    .hero-visual img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    @media (max-width: 880px) {
+      .hero-visual {
+        margin-left: -20px;
+        margin-right: -20px;
+      }
     }
 
     .cta-row {
@@ -212,7 +253,7 @@
   <div class="container">
     <header>
       <div class="header-bar">
-        <h1><a href="/" aria-label="vit">
+        <h1><a href="/" aria-label="vit" id="vit-mark">
         <svg viewBox="0 0 56 34" xmlns="http://www.w3.org/2000/svg" height="28" aria-hidden="true">
           <circle cx="16" cy="6" r="3" fill="#06D6A0"/>
           <path d="M5.5 11 L16 27 L26.5 11" stroke="#06D6A0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -220,7 +261,7 @@
           <line x1="33.5" y1="12.5" x2="33.5" y2="27" stroke="#06D6A0" stroke-width="3.5" stroke-linecap="round"/>
           <line x1="45" y1="7" x2="45" y2="27" stroke="#06D6A0" stroke-width="3.5" stroke-linecap="round"/>
           <line x1="39" y1="12.5" x2="51" y2="12.5" stroke="#06D6A0" stroke-width="3.5" stroke-linecap="round"/>
-        </svg>
+        </svg><span class="ality">ality</span>
         </a></h1>
         <button class="nav-toggle" aria-label="Menu" aria-expanded="false">&#9776;</button>
         <nav>
@@ -380,6 +421,12 @@
       var open = nav.classList.toggle('open');
       this.setAttribute('aria-expanded', open);
       this.textContent = open ? '\u2715' : '\u2630';
+    });
+
+    // Vitality easter egg — click the vit mark to reveal the full word
+    document.getElementById('vit-mark').addEventListener('click', function(e) {
+      e.preventDefault();
+      this.querySelector('.ality').classList.toggle('show');
     });
   </script>
 </body>
