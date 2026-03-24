@@ -112,22 +112,39 @@
 
       <!-- slide 4: open source is social -->
       <section>
-        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="120" style="margin-bottom:24px;">
-          <circle cx="16" cy="5.5" r="3" fill="#06D6A0"/>
-          <path d="M5.5 10 L16 26 L26.5 10" stroke="#06D6A0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <svg viewBox="0 0 800 490" xmlns="http://www.w3.org/2000/svg" width="620" style="margin-bottom:24px;">
+          <style>text { font-family: system-ui, -apple-system, sans-serif; }</style>
+          <defs>
+            <marker id="arr" markerWidth="10" markerHeight="7" refX="8" refY="3.5" orient="auto">
+              <path d="M1.5,1 L8,3.5 L1.5,6" fill="none" stroke="#06D6A0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </marker>
+          </defs>
+          <g fill="#06D6A0">
+            <circle cx="400" cy="70" r="4.5"/>
+            <circle cx="576" cy="198" r="4.5"/>
+            <circle cx="509" cy="405" r="4.5"/>
+            <circle cx="291" cy="405" r="4.5"/>
+            <circle cx="224" cy="198" r="4.5"/>
+          </g>
+          <g fill="none" stroke="#06D6A0" stroke-width="2.5" stroke-linecap="round">
+            <path d="M442,75 A185,185 0 0 1 559,160" marker-end="url(#arr)"/>
+            <path d="M584,239 A185,185 0 0 1 540,376" marker-end="url(#arr)"/>
+            <path d="M472,425 A185,185 0 0 1 328,425" marker-end="url(#arr)"/>
+            <path d="M260,376 A185,185 0 0 1 216,239" marker-end="url(#arr)"/>
+            <path d="M241,160 A185,185 0 0 1 358,75" marker-end="url(#arr)"/>
+          </g>
+          <text x="400" y="123" text-anchor="middle" font-size="26" font-weight="700" fill="#06D6A0" letter-spacing="1">skim</text>
+          <text x="400" y="143" text-anchor="middle" font-size="13" fill="#888888">browse what others share</text>
+          <text x="524" y="213" text-anchor="middle" font-size="26" font-weight="700" fill="#06D6A0" letter-spacing="1">vet</text>
+          <text x="524" y="233" text-anchor="middle" font-size="13" fill="#888888">check it</text>
+          <text x="476" y="358" text-anchor="middle" font-size="26" font-weight="700" fill="#06D6A0" letter-spacing="1">remix</text>
+          <text x="476" y="378" text-anchor="middle" font-size="13" fill="#888888">make it yours</text>
+          <text x="324" y="358" text-anchor="middle" font-size="26" font-weight="700" fill="#06D6A0" letter-spacing="1">vouch</text>
+          <text x="324" y="378" text-anchor="middle" font-size="13" fill="#888888">endorse what works</text>
+          <text x="276" y="213" text-anchor="middle" font-size="26" font-weight="700" fill="#06D6A0" letter-spacing="1">ship</text>
+          <text x="276" y="233" text-anchor="middle" font-size="13" fill="#888888">share it back</text>
+          <text x="400" y="268" text-anchor="middle" font-size="18" font-weight="600" fill="#06D6A0" letter-spacing="0.5">open source is social</text>
         </svg>
-        <p class="green" style="font-size:56px; margin:0 0 48px 0; font-weight:600;">open source is social.</p>
-        <div style="display:flex; align-items:center; justify-content:center; gap:24px; margin-bottom:40px;">
-          <span class="green" style="font-size:44px; font-weight:500;">skim</span>
-          <span class="dim" style="font-size:36px;">→</span>
-          <span class="green" style="font-size:44px; font-weight:500;">vet</span>
-          <span class="dim" style="font-size:36px;">→</span>
-          <span class="green" style="font-size:44px; font-weight:500;">remix</span>
-          <span class="dim" style="font-size:36px;">→</span>
-          <span class="green" style="font-size:44px; font-weight:500;">vouch</span>
-          <span class="dim" style="font-size:36px;">→</span>
-          <span class="green" style="font-size:44px; font-weight:500;">ship</span>
-        </div>
         <p class="dim" style="font-size:28px; margin:0;">a social capability network on AT Protocol</p>
       </section>
 
