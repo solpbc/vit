@@ -94,9 +94,28 @@ Handoffs:
 - Usage: `vit ship --title <title> --description <description> --ref <ref> [--recap <ref>] <<'EOF' ... EOF`
 - Key flags: required `--title <title>`, `--description <description>`, `--ref <ref>`; optional `--recap <ref>`, `--did <did>`, `-v, --verbose`
 - Input: cap body is required via stdin (pipe or heredoc).
-- Gate: agent-only (`requireAgent()`).
-- Output: JSON object on success.
+- Gate: agent-only (`requireAgent()`). Ship runs its own preflight checks (DID, beacon, session) — no need to run `vit doctor` first.
+- Output: `shipped: <ref>` and `uri:` on success. Use `--verbose` for full JSON.
 - Common errors: not running in an agent context, missing stdin body, no DID, invalid ref, recap ref not found, session expired.
+
+#### Shipping guide
+
+When the user says "ship it", "vit ship", or asks you to publish a cap for work you've done:
+
+1. **Identify what to ship** — summarize the feature or fix you just completed. A cap describes a self-contained capability, not a commit message.
+2. **Craft the fields:**
+   - `--title`: concise noun phrase (2-5 words), e.g. "Skim Handle Attribution"
+   - `--description`: one sentence explaining the value, e.g. "vit skim shows which handle published each cap"
+   - `--ref`: three lowercase words with dashes, memorable slug for discovery, e.g. "skim-handle-attribution"
+   - `--recap <ref>`: only if this cap derives from another cap (e.g. after `vit remix`)
+   - **body (stdin)**: a short paragraph explaining what the cap does and how it works — written for another developer or agent who might adopt it
+3. **Run the command:**
+   ```
+   vit ship --title "..." --description "..." --ref "..." <<'EOF'
+   ... body ...
+   EOF
+   ```
+4. Ship will validate prerequisites (DID, beacon, session) and give actionable errors if anything is missing.
 
 ### `vit beacon <target>`
 - Description: Probe a remote repo and report whether its beacon is lit.

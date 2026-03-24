@@ -27,14 +27,26 @@ export default function register(program) {
         if (!gate.ok) {
           console.error(`${name} ship should be run by a coding agent (e.g. claude code, gemini cli).`);
           console.error(`open your agent and ask it to run '${name} ship' for you.`);
+          console.error(`refer to the using-vit skill (skills/vit/SKILL.md) for a shipping guide.`);
           process.exitCode = 1;
           return;
         }
 
         const { verbose } = opts;
+
+        // preflight: DID
         const did = requireDid(opts);
         if (!did) return;
         if (verbose) console.log(`[verbose] DID: ${did}`);
+
+        // preflight: beacon
+        const projectConfig = readProjectConfig();
+        if (!projectConfig.beacon) {
+          console.error(`no beacon set. run '${name} init' in a project directory first.`);
+          process.exitCode = 1;
+          return;
+        }
+        if (verbose) console.log(`[verbose] beacon: ${projectConfig.beacon}`);
 
         let text;
         try {
@@ -72,7 +84,15 @@ export default function register(program) {
 
         const now = new Date().toISOString();
 
-        const { agent, session } = await restoreAgent(did);
+        // preflight: session
+        let agent, session;
+        try {
+          ({ agent, session } = await restoreAgent(did));
+        } catch {
+          console.error(`session expired or invalid. tell your user to run '${name} login <handle>'.`);
+          process.exitCode = 1;
+          return;
+        }
         if (verbose) console.log(`[verbose] Session restored, PDS: ${session.serverMetadata?.issuer}`);
 
         if (opts.recap && !recapUri) {
@@ -120,10 +140,8 @@ export default function register(program) {
           ref: opts.ref,
           createdAt: now,
         };
-        const projectConfig = readProjectConfig();
         if (projectConfig.beacon) record.beacon = projectConfig.beacon;
         if (opts.recap) record.recap = { uri: recapUri, ref: opts.recap };
-        if (verbose && projectConfig.beacon) console.log(`[verbose] Beacon: ${projectConfig.beacon}`);
         const rkey = TID.nextStr();
         if (verbose) console.log(`[verbose] Record built, rkey: ${rkey}`);
         const putArgs = {
@@ -150,15 +168,19 @@ export default function register(program) {
           console.error('warning: failed to write caps.jsonl:', logErr.message);
         }
         if (verbose) console.log(`[verbose] Log written to caps.jsonl`);
-        console.log(
-          JSON.stringify({
-            ts: now,
-            pds: session.serverMetadata?.issuer,
-            xrpc: 'com.atproto.repo.putRecord',
-            request: putArgs,
-            response: putRes.data,
-          }),
-        );
+        console.log(`shipped: ${opts.ref}`);
+        console.log(`uri: ${putRes.data.uri}`);
+        if (verbose) {
+          console.log(
+            JSON.stringify({
+              ts: now,
+              pds: session.serverMetadata?.issuer,
+              xrpc: 'com.atproto.repo.putRecord',
+              request: putArgs,
+              response: putRes.data,
+            }),
+          );
+        }
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;
@@ -167,6 +189,8 @@ export default function register(program) {
     .addHelpText('after', `
 Authoring guidance (for coding agents):
 
+  Refer to the using-vit skill (skills/vit/SKILL.md) for a complete shipping guide.
+
   Fields:
     --title          Short name for the cap (2-5 words)
     --description    One sentence explaining what this cap does
@@ -174,21 +198,10 @@ Authoring guidance (for coding agents):
     --recap <ref>    Optional. Ref of the cap this derives from (links back to original)
     body (stdin)     Full cap content, piped or via heredoc
 
-  What makes a good cap:
-    - Title is a concise noun phrase: "Fast LRU Cache", "JWT Auth Middleware"
-    - Description explains the value: "Thread-safe LRU cache with O(1) eviction"
-    - Body contains the complete, self-contained capability text
-    - Ref is a memorable three-word slug for discovery
-
-  When to use --recap:
-    Use --recap when this cap is derived from another cap (e.g. after vit remix).
-    It creates a link back to the original, like a quote-post.
-
   Example:
     vit ship --title "Fast LRU Cache" \\
              --description "Thread-safe LRU cache with O(1) eviction" \\
              --ref "fast-lru-cache" \\
-             --recap "original-cache-ref" \\
              <<'EOF'
     ... full cap body text ...
     EOF`);
