@@ -4,16 +4,16 @@
   "defs": {
     "main": {
       "type": "record",
-      "description": "Record endorsing a vit cap.",
+      "description": "Record endorsing a vit cap or skill.",
       "key": "tid",
       "record": {
         "type": "object",
-        "required": ["subject", "createdAt", "ref", "beacon"],
+        "required": ["subject", "createdAt", "ref"],
         "properties": {
           "subject": {
             "type": "ref",
             "ref": "lex:com.atproto.repo.strongRef",
-            "description": "The cap being endorsed."
+            "description": "The cap or skill being endorsed."
           },
           "ref": {
             "type": "string",
@@ -24,7 +24,7 @@
           "beacon": {
             "type": "string",
             "maxLength": 512,
-            "description": "Beacon URI scoping this vouch to a project."
+            "description": "Beacon URI scoping this vouch to a project. Included for cap vouches, omitted for skill vouches."
           },
           "createdAt": {
             "type": "string",

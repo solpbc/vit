@@ -1,0 +1,146 @@
+{
+  "lexicon": 1,
+  "id": "org.v-it.skill",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Record containing an agent skill published over ATProto. Follows the Agent Skills open standard (agentskills.io).",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["name", "description", "text", "createdAt"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 256,
+            "maxGraphemes": 64,
+            "description": "Skill name. Becomes the /slash-command. Lowercase letters, numbers, hyphens only. No leading hyphen, no consecutive hyphens."
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "maxGraphemes": 1024,
+            "description": "What this skill does and when to use it. Agents use this for automatic activation matching."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 50000,
+            "maxGraphemes": 15000,
+            "description": "The complete SKILL.md file content — frontmatter and body, verbatim. This is the source of truth. On learn, this is written directly as SKILL.md with no reconstruction. The other fields (name, description, version, license, compatibility) are copies extracted for discovery and indexing."
+          },
+          "version": {
+            "type": "string",
+            "maxLength": 64,
+            "maxGraphemes": 32,
+            "description": "Semantic version string (e.g. 1.0.0). Author-declared."
+          },
+          "license": {
+            "type": "string",
+            "maxLength": 256,
+            "maxGraphemes": 64,
+            "description": "SPDX license identifier (e.g. MIT, CC-BY-4.0)."
+          },
+          "compatibility": {
+            "type": "string",
+            "maxLength": 2000,
+            "maxGraphemes": 500,
+            "description": "Environment requirements (e.g. 'Requires Python 3.8+')."
+          },
+          "resources": {
+            "type": "array",
+            "description": "Supporting files bundled with the skill (templates, scripts, reference docs). Stored as blobs.",
+            "maxLength": 16,
+            "items": {
+              "type": "ref",
+              "ref": "lex:org.v-it.skill#resource"
+            }
+          },
+          "recap": {
+            "type": "ref",
+            "ref": "lex:org.v-it.skill#recapRef",
+            "description": "Reference to the skill this was derived/forked from."
+          },
+          "tags": {
+            "type": "array",
+            "description": "Discovery tags for categorization and search.",
+            "maxLength": 8,
+            "items": {
+              "type": "string",
+              "maxLength": 640,
+              "maxGraphemes": 64
+            }
+          },
+          "langs": {
+            "type": "array",
+            "description": "Human languages of the skill content.",
+            "maxLength": 3,
+            "items": {
+              "type": "string",
+              "format": "language"
+            }
+          },
+          "facets": {
+            "type": "array",
+            "description": "Rich text annotations in the description.",
+            "items": {
+              "type": "ref",
+              "ref": "lex:app.bsky.richtext.facet"
+            }
+          },
+          "labels": {
+            "type": "union",
+            "description": "Self-label values. Content warnings.",
+            "refs": ["lex:com.atproto.label.defs#selfLabels"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Client-declared creation timestamp."
+          }
+        }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "description": "A supporting file bundled with the skill. Binary content stored as blob.",
+      "required": ["path", "blob"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "maxLength": 512,
+          "maxGraphemes": 128,
+          "description": "Relative file path within the skill directory (e.g. 'scripts/validate.sh', 'reference.md')."
+        },
+        "blob": {
+          "type": "blob",
+          "accept": ["*/*"],
+          "maxSize": 1000000,
+          "description": "File content. Uploaded via com.atproto.repo.uploadBlob."
+        },
+        "mimeType": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "MIME type hint (e.g. 'text/markdown', 'application/x-shellscript')."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000,
+          "maxGraphemes": 256,
+          "description": "What this resource contains. Helps agents with progressive disclosure."
+        }
+      }
+    },
+    "recapRef": {
+      "type": "object",
+      "description": "Reference to a parent skill this was derived from.",
+      "required": ["uri"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "AT URI of the parent skill record."
+        }
+      }
+    }
+  }
+}

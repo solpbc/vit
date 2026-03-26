@@ -3,3 +3,4 @@
 
 export const CAP_COLLECTION = 'org.v-it.cap';
 export const VOUCH_COLLECTION = 'org.v-it.vouch';
+export const SKILL_COLLECTION = 'org.v-it.skill';
