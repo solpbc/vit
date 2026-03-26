@@ -42,29 +42,27 @@ export default function register(program) {
         if (!did) return;
         if (verbose) console.log(`[verbose] DID: ${did}`);
 
-        // Check trusted
-        const trusted = readLog('trusted.jsonl');
-        const trustedEntry = trusted.find(e => e.ref === ref);
-        if (!trustedEntry) {
-          const itemType = isSkill ? 'skill' : 'cap';
-          console.error(`${itemType} '${ref}' is not yet vetted. vet it first:`);
-          console.error('');
-          console.error(`  vit vet ${ref}`);
-          console.error('');
-          console.error('after reviewing, trust it with:');
-          console.error('');
-          console.error(`  vit vet ${ref} --trust`);
-          process.exitCode = 1;
-          return;
-        }
-        if (verbose) console.log(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
-
-        const { agent } = await restoreAgent(did);
-        if (verbose) console.log('[verbose] session restored');
-
         if (isSkill) {
-          // Skill vouch — no beacon required
+          // Skill vouch — no beacon required, check trusted first
+          const trusted = readLog('trusted.jsonl');
+          const trustedEntry = trusted.find(e => e.ref === ref);
+          if (!trustedEntry) {
+            console.error(`skill '${ref}' is not yet vetted. vet it first:`);
+            console.error('');
+            console.error(`  vit vet ${ref}`);
+            console.error('');
+            console.error('after reviewing, trust it with:');
+            console.error('');
+            console.error(`  vit vet ${ref} --trust`);
+            process.exitCode = 1;
+            return;
+          }
+          if (verbose) console.log(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
+
           const skillName = nameFromSkillRef(ref);
+
+          const { agent } = await restoreAgent(did);
+          if (verbose) console.log('[verbose] session restored');
 
           const following = readFollowing();
           const dids = following.map(e => e.did);
@@ -131,7 +129,7 @@ export default function register(program) {
 
           console.log(`${mark} vouched: ${ref} (${match.uri})`);
         } else {
-          // Cap vouch — requires beacon
+          // Cap vouch — requires beacon (check beacon before trusted, matching original behavior)
           const projectConfig = readProjectConfig();
           const beacon = projectConfig.beacon;
           if (!beacon) {
@@ -140,6 +138,24 @@ export default function register(program) {
             return;
           }
           if (verbose) console.log(`[verbose] beacon: ${beacon}`);
+
+          const trusted = readLog('trusted.jsonl');
+          const trustedEntry = trusted.find(e => e.ref === ref);
+          if (!trustedEntry) {
+            console.error(`cap '${ref}' is not yet vetted. vet it first:`);
+            console.error('');
+            console.error(`  vit vet ${ref}`);
+            console.error('');
+            console.error('after reviewing, trust it with:');
+            console.error('');
+            console.error(`  vit vet ${ref} --trust`);
+            process.exitCode = 1;
+            return;
+          }
+          if (verbose) console.log(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
+
+          const { agent } = await restoreAgent(did);
+          if (verbose) console.log('[verbose] session restored');
 
           const following = readFollowing();
           const dids = following.map(e => e.did);

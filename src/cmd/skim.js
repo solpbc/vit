@@ -40,19 +40,15 @@ export default function register(program) {
         const projectConfig = readProjectConfig();
         const beacon = projectConfig.beacon;
 
-        // Caps require a beacon; skills-only mode does not
         const wantCaps = !opts.skills;
         const wantSkills = !opts.caps;
+        const skillsOnly = opts.skills && !opts.caps;
 
-        if (wantCaps && !beacon) {
-          if (!wantSkills) {
-            // Caps-only mode and no beacon
-            console.error(`no beacon set. run '${name} init' in a project directory first.`);
-            process.exitCode = 1;
-            return;
-          }
-          // Mixed mode with no beacon: just show skills
-          if (verbose) console.log('[verbose] no beacon set, showing skills only');
+        // Beacon required unless --skills only mode
+        if (!beacon && !skillsOnly) {
+          console.error(`no beacon set. run '${name} init' in a project directory first.`);
+          process.exitCode = 1;
+          return;
         }
 
         if (verbose && beacon) console.log(`[verbose] beacon: ${beacon}`);
@@ -141,9 +137,9 @@ export default function register(program) {
           console.log(JSON.stringify(capped, null, 2));
         } else {
           if (capped.length === 0) {
-            if (wantSkills && !wantCaps) {
+            if (skillsOnly) {
               console.log('no skills found.');
-            } else if (wantCaps && !wantSkills) {
+            } else if (opts.caps) {
               console.log('no caps found for this beacon.');
             } else {
               console.log('no caps or skills found.');
