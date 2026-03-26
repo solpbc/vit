@@ -5,7 +5,8 @@ import { requireDid } from '../lib/config.js';
 import { CAP_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { readProjectConfig, readFollowing, readLog } from '../lib/vit-dir.js';
-import { requireAgent } from '../lib/agent.js';
+import { requireAgent, detectCodingAgent } from '../lib/agent.js';
+import { shouldBypassVet } from '../lib/trust-gate.js';
 import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
 import { brand, name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds } from '../lib/pds.js';
@@ -51,17 +52,27 @@ export default function register(program) {
         const trusted = readLog('trusted.jsonl');
         const trustedEntry = trusted.find(e => e.ref === ref);
         if (!trustedEntry) {
-          console.error(`cap '${ref}' is not trusted. ask the user to vet it first:`);
-          console.error('');
-          console.error(`  vit vet ${ref}`);
-          console.error('');
-          console.error('after reviewing, they can trust it with:');
-          console.error('');
-          console.error(`  vit vet ${ref} --trust`);
-          process.exitCode = 1;
-          return;
+          const trustGate = shouldBypassVet();
+          if (!trustGate.bypass) {
+            console.error(`cap '${ref}' is not trusted. ask the user to vet it first:`);
+            console.error('');
+            console.error(`  vit vet ${ref}`);
+            console.error('');
+            console.error('after reviewing, they can trust it with:');
+            console.error('');
+            console.error(`  vit vet ${ref} --trust`);
+            if (detectCodingAgent()) {
+              console.error('');
+              console.error('or, to trust all items without review:');
+              console.error('');
+              console.error('  vit vet --dangerous-accept --confirm');
+            }
+            process.exitCode = 1;
+            return;
+          }
+          if (verbose) console.log(`[verbose] vet gate bypassed: ${trustGate.reason}`);
         }
-        if (verbose) console.log(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
+        if (verbose && trustedEntry) console.log(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
 
         const { agent } = await restoreAgent(did);
         if (verbose) console.log('[verbose] session restored');
