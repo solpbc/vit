@@ -217,6 +217,35 @@
       text-decoration: underline;
     }
 
+    .skill-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .skill-item:last-child {
+      border-bottom: none;
+    }
+
+    .skill-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .skill-meta {
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+
+    .skill-tag {
+      display: inline-block;
+      background: #e5e7eb;
+      color: #374151;
+      font-size: 0.75rem;
+      padding: 1px 6px;
+      border-radius: 3px;
+      margin-right: 4px;
+    }
+
     .beacon-item {
       display: flex;
       justify-content: space-between;
@@ -368,6 +397,7 @@
     <main id="content">
       <nav class="sub-nav">
         <a href="#">caps</a>
+        <a href="#skills">skills</a>
         <a href="#beacons">beacons</a>
         <a href="#stats">stats</a>
       </nav>
@@ -391,6 +421,8 @@
     let capsCursor = null;
     let capsContainer = null;
     let currentBeaconFilter = null;
+    let skillsCursor = null;
+    let skillsContainer = null;
 
     function timeAgo(dateStr) {
       const now = Date.now();
@@ -428,6 +460,7 @@
       const hash = location.hash.slice(1);
       if (hash.startsWith('beacon/')) return { view: 'beacon', value: decodeURIComponent(hash.slice(7)) };
       if (hash === 'beacons') return { view: 'beacons' };
+      if (hash === 'skills') return { view: 'skills' };
       if (hash === 'stats') return { view: 'stats' };
       return { view: 'caps' };
     }
@@ -437,6 +470,7 @@
       document.querySelectorAll('.sub-nav a').forEach(function(a) {
         const href = a.getAttribute('href');
         if (route.view === 'caps') a.classList.toggle('active', href === '#');
+        else if (route.view === 'skills') a.classList.toggle('active', href === '#skills');
         else if (route.view === 'beacons' || route.view === 'beacon') a.classList.toggle('active', href === '#beacons');
         else if (route.view === 'stats') a.classList.toggle('active', href === '#stats');
         else a.classList.remove('active');
@@ -451,6 +485,17 @@
       const time = timeAgo(cap.created_at);
       const metaParts = [name, beacon, ref, time].filter(Boolean);
       return '<div class="cap-item"><div class="cap-title">' + title + '</div><div class="cap-meta">' + metaParts.join(' · ') + '</div></div>';
+    }
+
+    function renderSkillItem(skill) {
+      const name = esc(skill.name) || 'unnamed';
+      const desc = skill.description ? '<div>' + esc(skill.description) + '</div>' : '';
+      const author = esc(displayName(skill));
+      const version = skill.version ? 'v' + esc(skill.version) : '';
+      const tags = skill.tags ? skill.tags.split(',').map(function(t) { return '<span class="skill-tag">' + esc(t.trim()) + '</span>'; }).join('') : '';
+      const time = timeAgo(skill.created_at);
+      const metaParts = [author, version, time].filter(Boolean);
+      return '<div class="skill-item"><div class="skill-title">' + name + '</div>' + desc + '<div class="skill-meta">' + metaParts.join(' · ') + (tags ? ' · ' + tags : '') + '</div></div>';
     }
 
     function appendLoadMore(el) {
@@ -475,6 +520,27 @@
       el.appendChild(btn);
     }
 
+    function appendSkillsLoadMore(el) {
+      const existing = el.querySelector('.load-more');
+      if (existing) existing.remove();
+
+      if (!skillsCursor) return;
+
+      const btn = document.createElement('button');
+      btn.className = 'load-more';
+      btn.textContent = 'load more';
+      btn.onclick = async function() {
+        btn.disabled = true;
+        btn.textContent = 'loading...';
+        const data = await api('skills?cursor=' + encodeURIComponent(skillsCursor));
+        skillsCursor = data.cursor;
+        skillsContainer.innerHTML += data.skills.map(renderSkillItem).join('');
+        btn.remove();
+        appendSkillsLoadMore(el);
+      };
+      el.appendChild(btn);
+    }
+
     async function renderCaps(el) {
       currentBeaconFilter = null;
       capsCursor = null;
@@ -490,6 +556,22 @@
       capsContainer = document.getElementById('caps-list');
       capsContainer.innerHTML = data.caps.map(renderCapItem).join('');
       appendLoadMore(el);
+    }
+
+    async function renderSkills(el) {
+      skillsCursor = null;
+      const data = await api('skills');
+      skillsCursor = data.cursor;
+
+      if (data.skills.length === 0) {
+        el.innerHTML = '<div class="empty-state"><p>no skills yet — publish one with <code>vit ship --skill</code></p></div>';
+        return;
+      }
+
+      el.innerHTML = '<div id="skills-list"></div>';
+      skillsContainer = document.getElementById('skills-list');
+      skillsContainer.innerHTML = data.skills.map(renderSkillItem).join('');
+      appendSkillsLoadMore(el);
     }
 
     async function renderBeaconCaps(el, beacon) {
@@ -533,6 +615,8 @@
         '<div class="stat-card"><div class="stat-number">' + data.total_vouches + '</div><div class="stat-label">vouches</div></div>' +
         '<div class="stat-card"><div class="stat-number">' + data.total_beacons + '</div><div class="stat-label">beacons</div></div>' +
         '<div class="stat-card"><div class="stat-number">' + data.active_dids + '</div><div class="stat-label">active participants</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + data.total_skills + '</div><div class="stat-label">skills</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + data.skill_publishers + '</div><div class="stat-label">skill publishers</div></div>' +
         '</div>';
     }
 
@@ -542,6 +626,7 @@
       const view = document.getElementById('view');
 
       if (route.view === 'caps') await renderCaps(view);
+      else if (route.view === 'skills') await renderSkills(view);
       else if (route.view === 'beacons') await renderBeacons(view);
       else if (route.view === 'beacon') await renderBeaconCaps(view, route.value);
       else if (route.view === 'stats') await renderStats(view);

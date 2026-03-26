@@ -5,6 +5,7 @@ import { resolveHandles } from './resolve.js';
 
 const CAP_COLLECTION = 'org.v-it.cap';
 const VOUCH_COLLECTION = 'org.v-it.vouch';
+const SKILL_COLLECTION = 'org.v-it.skill';
 const JETSTREAM_URL = 'wss://jetstream2.us-east.bsky.network/subscribe';
 const STREAM_DURATION_MS = 55_000;
 
@@ -192,10 +193,53 @@ async function processVouchEvent(env, did, commit) {
   }
 }
 
+async function processSkillEvent(env, did, commit) {
+  const { operation, rkey, record, cid } = commit;
+  const uri = `at://${did}/${SKILL_COLLECTION}/${rkey}`;
+
+  if (operation === 'create' || operation === 'update') {
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO skills (did, rkey, uri, cid, name, description, ref, version, tags, record_json, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(did, rkey) DO UPDATE SET
+           cid = excluded.cid,
+           name = excluded.name,
+           description = excluded.description,
+           ref = excluded.ref,
+           version = excluded.version,
+           tags = excluded.tags,
+           record_json = excluded.record_json,
+           created_at = excluded.created_at`,
+      ).bind(
+        did,
+        rkey,
+        uri,
+        cid ?? null,
+        record.name,
+        record.description || '',
+        'skill-' + record.name,
+        record.version || null,
+        (record.tags || []).join(','),
+        JSON.stringify(record),
+        record.createdAt,
+      ),
+    ]);
+    return;
+  }
+
+  if (operation === 'delete') {
+    await env.DB.prepare('DELETE FROM skills WHERE did = ? AND rkey = ?')
+      .bind(did, rkey)
+      .run();
+  }
+}
+
 export async function streamEvents(env, cursor) {
   const url = new URL(JETSTREAM_URL);
   url.searchParams.append('wantedCollections', CAP_COLLECTION);
   url.searchParams.append('wantedCollections', VOUCH_COLLECTION);
+  url.searchParams.append('wantedCollections', SKILL_COLLECTION);
   if (cursor) {
     url.searchParams.set('cursor', cursor);
   }
@@ -251,6 +295,8 @@ export async function streamEvents(env, cursor) {
           await processCapEvent(env, msg.did, commit);
         } else if (commit.collection === VOUCH_COLLECTION) {
           await processVouchEvent(env, msg.did, commit);
+        } else if (commit.collection === SKILL_COLLECTION) {
+          await processSkillEvent(env, msg.did, commit);
         }
       })();
 

@@ -99,12 +99,46 @@ export async function handleRequest(request, env) {
     return json({ beacons: results });
   }
 
+  if (pathname === '/api/skills') {
+    const cursor = parseCursor(searchParams.get('cursor'));
+    const limit = parseLimit(searchParams.get('limit'));
+    const tag = searchParams.get('tag');
+
+    const conditions = [];
+    const bindings = [];
+
+    if (tag) {
+      conditions.push('INSTR(s.tags, ?) > 0');
+      bindings.push(tag);
+    }
+
+    if (cursor) {
+      conditions.push('s.id < ?');
+      bindings.push(cursor);
+    }
+
+    let sql = 'SELECT s.*, h.handle FROM skills s LEFT JOIN handles h ON s.did = h.did';
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(' AND ')}`;
+    }
+    sql += ' ORDER BY s.id DESC LIMIT ?';
+    bindings.push(limit);
+
+    const { results } = await env.DB.prepare(sql).bind(...bindings).all();
+    return json({
+      skills: results,
+      cursor: results.length > 0 ? results[results.length - 1].id : null,
+    });
+  }
+
   if (pathname === '/api/stats') {
-    const [caps, vouches, beacons, dids] = await env.DB.batch([
+    const [caps, vouches, beacons, dids, skills, skillPubs] = await env.DB.batch([
       env.DB.prepare('SELECT COUNT(*) as count FROM caps'),
       env.DB.prepare('SELECT COUNT(*) as count FROM vouches'),
       env.DB.prepare('SELECT COUNT(*) as count FROM beacons'),
       env.DB.prepare('SELECT COUNT(DISTINCT did) as count FROM caps'),
+      env.DB.prepare('SELECT COUNT(*) as count FROM skills'),
+      env.DB.prepare('SELECT COUNT(DISTINCT did) as count FROM skills'),
     ]);
 
     return json({
@@ -112,6 +146,8 @@ export async function handleRequest(request, env) {
       total_vouches: vouches.results[0]?.count ?? 0,
       total_beacons: beacons.results[0]?.count ?? 0,
       active_dids: dids.results[0]?.count ?? 0,
+      total_skills: skills.results[0]?.count ?? 0,
+      skill_publishers: skillPubs.results[0]?.count ?? 0,
     });
   }
 

@@ -48,3 +48,23 @@ CREATE TABLE IF NOT EXISTS handles (
   handle TEXT NOT NULL,
   fetched_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS skills (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  did TEXT NOT NULL,
+  rkey TEXT NOT NULL,
+  uri TEXT NOT NULL UNIQUE,
+  cid TEXT,
+  name TEXT NOT NULL,
+  description TEXT,
+  ref TEXT NOT NULL,
+  version TEXT,
+  tags TEXT,
+  record_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  indexed_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(did, rkey)
+);
+
+CREATE INDEX IF NOT EXISTS idx_skills_created_at ON skills(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_skills_name ON skills(name);
