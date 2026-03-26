@@ -4,10 +4,36 @@
 import { loadConfig } from '../lib/config.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { readProjectConfig } from '../lib/vit-dir.js';
-import { existsSync, lstatSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { homedir } from 'node:os';
 import { mark, name } from '../lib/brand.js';
 import { which } from '../lib/compat.js';
+
+function scanSkillDir(dir) {
+  const skills = [];
+  if (!existsSync(dir)) return skills;
+  try {
+    const entries = readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const skillMd = join(dir, entry.name, 'SKILL.md');
+      if (existsSync(skillMd)) {
+        let version = null;
+        try {
+          const content = readFileSync(skillMd, 'utf-8');
+          const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+          if (match) {
+            const versionMatch = match[1].match(/^version:\s*(.+)$/m);
+            if (versionMatch) version = versionMatch[1].trim();
+          }
+        } catch { /* ignore read errors */ }
+        skills.push({ name: entry.name, version });
+      }
+    }
+  } catch { /* ignore dir read errors */ }
+  return skills;
+}
 
 export default function register(program) {
   async function checkHealth() {
@@ -49,6 +75,27 @@ export default function register(program) {
         console.log(`${mark} skill: ok (using-vit)`);
       } else {
         console.log(`${mark} skill: not installed (run ${name} setup)`);
+      }
+
+      // Report installed skills
+      const projectSkillDir = join(process.cwd(), '.claude', 'skills');
+      const projectSkills = scanSkillDir(projectSkillDir);
+      const userSkillDir = join(homedir(), '.claude', 'skills');
+      const userSkills = scanSkillDir(userSkillDir);
+
+      if (projectSkills.length > 0) {
+        console.log(`${mark} project skills: ${projectSkills.length} installed`);
+        for (const s of projectSkills) {
+          const ver = s.version ? ` v${s.version}` : '';
+          console.log(`    ${s.name}${ver}`);
+        }
+      }
+      if (userSkills.length > 0) {
+        console.log(`${mark} user skills: ${userSkills.length} installed`);
+        for (const s of userSkills) {
+          const ver = s.version ? ` v${s.version}` : '';
+          console.log(`    ${s.name}${ver}`);
+        }
       }
 
       if (!config.did) {

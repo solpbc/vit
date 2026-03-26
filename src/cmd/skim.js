@@ -2,22 +2,25 @@
 // Copyright (c) 2026 sol pbc
 
 import { requireDid } from '../lib/config.js';
-import { CAP_COLLECTION } from '../lib/constants.js';
+import { CAP_COLLECTION, SKILL_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { readProjectConfig, readFollowing } from '../lib/vit-dir.js';
 import { requireAgent } from '../lib/agent.js';
 import { resolveRef } from '../lib/cap-ref.js';
+import { skillRefFromName } from '../lib/skill-ref.js';
 import { name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds } from '../lib/pds.js';
 
 export default function register(program) {
   program
     .command('skim')
-    .description('Read caps from followed accounts, filtered by beacon')
+    .description('Read caps and skills from followed accounts')
     .option('--did <did>', 'DID to use')
-    .option('--handle <handle>', 'Show caps from a specific handle only')
-    .option('--limit <n>', 'Max caps to display', '25')
+    .option('--handle <handle>', 'Show items from a specific handle only')
+    .option('--limit <n>', 'Max items to display', '25')
     .option('--json', 'Output as JSON array')
+    .option('--caps', 'Show only caps')
+    .option('--skills', 'Show only skills')
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (opts) => {
       try {
@@ -36,12 +39,23 @@ export default function register(program) {
 
         const projectConfig = readProjectConfig();
         const beacon = projectConfig.beacon;
-        if (!beacon) {
-          console.error(`no beacon set. run '${name} init' in a project directory first.`);
-          process.exitCode = 1;
-          return;
+
+        // Caps require a beacon; skills-only mode does not
+        const wantCaps = !opts.skills;
+        const wantSkills = !opts.caps;
+
+        if (wantCaps && !beacon) {
+          if (!wantSkills) {
+            // Caps-only mode and no beacon
+            console.error(`no beacon set. run '${name} init' in a project directory first.`);
+            process.exitCode = 1;
+            return;
+          }
+          // Mixed mode with no beacon: just show skills
+          if (verbose) console.log('[verbose] no beacon set, showing skills only');
         }
-        if (verbose) console.log(`[verbose] beacon: ${beacon}`);
+
+        if (verbose && beacon) console.log(`[verbose] beacon: ${beacon}`);
 
         const { agent } = await restoreAgent(did);
         if (verbose) console.log('[verbose] session restored');
@@ -73,24 +87,47 @@ export default function register(program) {
           }
         }
 
-        // fetch caps from each DID
-        const allCaps = [];
+        // fetch from each DID
+        const allItems = [];
+
         for (const repoDid of dids) {
           try {
             const pds = await resolvePds(repoDid);
             if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
-            const res = await listRecordsFromPds(pds, repoDid, CAP_COLLECTION, 50);
-            const caps = res.records.filter(r => r.value.beacon === beacon);
-            if (verbose) console.log(`[verbose] ${repoDid}: ${res.records.length} caps, ${caps.length} matching beacon`);
-            for (const cap of caps) cap._handle = handleMap.get(repoDid) || repoDid;
-            allCaps.push(...caps);
+
+            // Fetch caps (filtered by beacon)
+            if (wantCaps && beacon) {
+              const res = await listRecordsFromPds(pds, repoDid, CAP_COLLECTION, 50);
+              const caps = res.records.filter(r => r.value.beacon === beacon);
+              if (verbose) console.log(`[verbose] ${repoDid}: ${res.records.length} caps, ${caps.length} matching beacon`);
+              for (const cap of caps) {
+                cap._handle = handleMap.get(repoDid) || repoDid;
+                cap._type = 'cap';
+              }
+              allItems.push(...caps);
+            }
+
+            // Fetch skills (unfiltered — skills are universal)
+            if (wantSkills) {
+              try {
+                const res = await listRecordsFromPds(pds, repoDid, SKILL_COLLECTION, 50);
+                if (verbose) console.log(`[verbose] ${repoDid}: ${res.records.length} skills`);
+                for (const skill of res.records) {
+                  skill._handle = handleMap.get(repoDid) || repoDid;
+                  skill._type = 'skill';
+                }
+                allItems.push(...res.records);
+              } catch (err) {
+                if (verbose) console.log(`[verbose] ${repoDid}: error fetching skills: ${err.message}`);
+              }
+            }
           } catch (err) {
-            if (verbose) console.log(`[verbose] ${repoDid}: error fetching caps: ${err.message}`);
+            if (verbose) console.log(`[verbose] ${repoDid}: error: ${err.message}`);
           }
         }
 
         // sort by createdAt descending
-        allCaps.sort((a, b) => {
+        allItems.sort((a, b) => {
           const ta = a.value.createdAt || '';
           const tb = b.value.createdAt || '';
           return tb.localeCompare(ta);
@@ -98,26 +135,48 @@ export default function register(program) {
 
         // apply limit
         const limit = parseInt(opts.limit, 10);
-        const capped = allCaps.slice(0, limit);
+        const capped = allItems.slice(0, limit);
 
         if (opts.json) {
           console.log(JSON.stringify(capped, null, 2));
         } else {
           if (capped.length === 0) {
-            console.log('no caps found for this beacon.');
+            if (wantSkills && !wantCaps) {
+              console.log('no skills found.');
+            } else if (wantCaps && !wantSkills) {
+              console.log('no caps found for this beacon.');
+            } else {
+              console.log('no caps or skills found.');
+            }
           }
           for (const rec of capped) {
-            const ref = resolveRef(rec.value, rec.cid);
-            const title = rec.value.title || '';
-            const description = rec.value.description || '';
-            console.log(`ref: ${ref}`);
-            console.log(`by: @${rec._handle}`);
-            if (title) console.log(`title: ${title}`);
-            if (description) console.log(`description: ${description}`);
-            console.log();
+            if (rec._type === 'skill') {
+              const skillRef = skillRefFromName(rec.value.name);
+              const skillName = rec.value.name || '';
+              const description = rec.value.description || '';
+              const version = rec.value.version;
+              const tags = rec.value.tags;
+              console.log(`ref: ${skillRef}`);
+              console.log(`by: @${rec._handle}`);
+              console.log(`type: skill${version ? '  v' + version : ''}`);
+              if (skillName) console.log(`title: ${skillName}`);
+              if (description) console.log(`description: ${description}`);
+              if (tags && tags.length > 0) console.log(`tags: ${tags.join(', ')}`);
+              console.log();
+            } else {
+              const ref = resolveRef(rec.value, rec.cid);
+              const title = rec.value.title || '';
+              const description = rec.value.description || '';
+              console.log(`ref: ${ref}`);
+              console.log(`by: @${rec._handle}`);
+              console.log(`type: cap`);
+              if (title) console.log(`title: ${title}`);
+              if (description) console.log(`description: ${description}`);
+              console.log();
+            }
           }
           console.log('---');
-          console.log(`hint: tell your user to run '${name} vet <ref>' in another terminal for any cap they want to review.`);
+          console.log(`hint: tell your user to run '${name} vet <ref>' in another terminal for any item they want to review.`);
         }
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
