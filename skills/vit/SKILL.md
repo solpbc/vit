@@ -50,7 +50,16 @@ Handoffs:
 - Usage: `vit remix <ref>`
 - Key flags: `--did <did>`, `--verbose`
 - Output: text pretext block with cap content to stdout (consumed by the calling agent).
+- Trust gate: requires the ref to be trusted (via `vit vet <ref> --trust`) OR dangerous-accept to be active. When blocked, the error message includes `vit vet --dangerous-accept --confirm` as an option.
 - Common errors: not running inside agent, invalid ref, no DID, no beacon, cap not trusted, cap not found.
+
+### `vit learn <ref>`
+- Description: Install a skill from the network into your skill directory.
+- Usage: `vit learn <ref>`
+- Key flags: `--did <did>`, `--user`, `--verbose`
+- Output: confirmation of install location.
+- Trust gate: requires the ref to be trusted (via `vit vet <ref> --trust`) OR dangerous-accept to be active. `--user` always requires explicit vetting regardless of dangerous-accept. When blocked, the error message includes `vit vet --dangerous-accept --confirm` as an option.
+- Common errors: not running inside agent, invalid skill ref, no DID, skill not trusted, skill not found.
 
 ### Agent-usable commands
 
@@ -130,7 +139,17 @@ These commands require human interaction. Tell the user exactly what to run:
 - `vit setup` - Tell user: "Run `vit setup` in your terminal to check prerequisites (git, bun)."
 - `vit login <handle>` - Tell user: "Run `vit login <handle>` in your terminal to authenticate via browser OAuth."
 - `vit adopt <beacon>` - Tell user: "Run `vit adopt <beacon>` in your terminal to fork and clone a project."
-- `vit vet <ref>` - Tell user: "Run `vit vet <ref>` in your terminal to review a cap." Mention `--trust` flag for approving.
+- `vit vet <ref>` - Human review command. Tell the user to run it in their terminal.
+  **Exception: sandboxed sub-agent vetting.** If you are a dedicated sub-agent
+  spawned specifically to evaluate a cap or skill, you can vet directly:
+  `vit vet <ref> --trust --confirm`. Only do this if:
+  1. You are running as an isolated sub-agent (not the primary agent)
+  2. You have read and evaluated the full cap/skill content
+  3. Your parent agent specifically tasked you with vetting
+
+  Do NOT use --confirm as the primary agent. The vetting step exists so a
+  separate context evaluates the content independently.
+- `vit vet --dangerous-accept` - Human only. Permanently disables vet gate for the project. Tell the user if they want autonomous mode.
 
 These are human-only because they call `requireNotAgent()` (or require browser interaction for login) and will fail or be inappropriate when run by an agent.
 
@@ -150,6 +169,7 @@ These are human-only because they call `requireNotAgent()` (or require browser i
 - `.vit/following.json` - `[{ "handle": "...", "did": "...", "followedAt": "..." }]`
 - `.vit/caps.jsonl` - Append-only shipped cap log
 - `.vit/trusted.jsonl` - Append-only vetted cap log
+- `.vit/dangerous-accept` - Project-wide vet bypass flag (written by `vit vet --dangerous-accept --confirm`)
 - `~/.config/vit/vit.json` - User config with `did`, timestamps
 
 ## 8. Reference
