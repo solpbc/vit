@@ -25,6 +25,11 @@ describe('vit doctor', () => {
     expect(result.stdout).toMatch(/bluesky:/);
   });
 
+  test('reports install type', () => {
+    const result = run('doctor');
+    expect(result.stdout).toMatch(/install:/);
+  });
+
   test('vit status is an alias for doctor', () => {
     const result = run('status');
     expect(result.stdout).toMatch(/setup:/);

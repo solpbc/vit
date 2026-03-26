@@ -4,9 +4,10 @@
 import { loadConfig } from '../lib/config.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { readProjectConfig } from '../lib/vit-dir.js';
-import { existsSync } from 'node:fs';
+import { existsSync, lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { mark, name } from '../lib/brand.js';
+import { which } from '../lib/compat.js';
 
 export default function register(program) {
   async function checkHealth() {
@@ -17,6 +18,23 @@ export default function register(program) {
         console.log(`${mark} setup: ok (${when})`);
       } else {
         console.log(`${mark} setup: not done (run ${name} setup)`);
+      }
+
+      const vitPath = which(name);
+      if (!vitPath) {
+        console.log(`${mark} install: not on PATH`);
+      } else {
+        try {
+          if (lstatSync(vitPath).isSymbolicLink()) {
+            console.log(`${mark} install: linked (${vitPath})`);
+          } else if (vitPath.includes('node_modules')) {
+            console.log(`${mark} install: global`);
+          } else {
+            console.log(`${mark} install: source (${vitPath})`);
+          }
+        } catch {
+          console.log(`${mark} install: source (${vitPath})`);
+        }
       }
 
       const projConfig = readProjectConfig();

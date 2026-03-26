@@ -1,10 +1,10 @@
-.PHONY: install install-user test test-node clean
+.PHONY: install link test test-node clean
 
 install:
 	bun install
 
-install-user:
-	bun link
+link:
+	bun install && node bin/vit.js link
 
 test: test-node
 	bun test

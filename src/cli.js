@@ -17,6 +17,8 @@ import registerVet from './cmd/vet.js';
 import registerVouch from './cmd/vouch.js';
 import registerFollow from './cmd/follow.js';
 import registerSetup from './cmd/setup.js';
+import registerHack from './cmd/hack.js';
+import registerLink from './cmd/link.js';
 
 const program = new Command();
 program
@@ -38,5 +40,7 @@ registerVet(program);
 registerVouch(program);
 registerFollow(program);
 registerSetup(program);
+registerHack(program);
+registerLink(program);
 
 export { program };
