@@ -1,42 +1,98 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
+import { existsSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { requireDid } from '../lib/config.js';
 import { CAP_COLLECTION, SKILL_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
-import { appendLog, readProjectConfig, readFollowing } from '../lib/vit-dir.js';
-import { requireNotAgent } from '../lib/agent.js';
+import { appendLog, readProjectConfig, readFollowing, vitDir } from '../lib/vit-dir.js';
+import { requireNotAgent, detectCodingAgent } from '../lib/agent.js';
 import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
 import { isSkillRef, isValidSkillRef, nameFromSkillRef } from '../lib/skill-ref.js';
 import { mark, brand, name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds } from '../lib/pds.js';
 
+function ensureGitignore() {
+  const gitignorePath = join(vitDir(), '.gitignore');
+  const entry = 'dangerous-accept';
+  if (existsSync(gitignorePath)) {
+    const content = readFileSync(gitignorePath, 'utf-8');
+    if (content.includes(entry)) return;
+  }
+  appendFileSync(gitignorePath, entry + '\n');
+}
+
 export default function register(program) {
   program
     .command('vet')
-    .argument('<ref>', 'Cap or skill reference (e.g. fast-cache-invalidation or skill-agent-test-patterns)')
+    .argument('[ref]', 'Cap or skill reference (e.g. fast-cache-invalidation or skill-agent-test-patterns)')
     .description('Review a cap or skill before trusting it')
     .option('--did <did>', 'DID to use')
     .option('--trust', 'Mark the item as locally trusted')
+    .option('--dangerous-accept', 'Permanently disable vet gate for this project (human only)')
+    .option('--confirm', 'Confirm dangerous-accept, or bypass agent gate with --trust')
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (ref, opts) => {
       try {
-        const gate = requireNotAgent();
-        if (!gate.ok) {
-          console.error(`${name} vet must be run by a human. run it in your own terminal.`);
-          console.error('');
-          console.error('vetting requires human review for safety.');
-          console.error('ask your user to run this command in their terminal:');
-          console.error('');
-          console.error(`  vit vet ${ref}`);
-          console.error('');
-          console.error('after reviewing, they can trust it with:');
-          console.error('');
-          console.error(`  vit vet ${ref} --trust`);
-          console.error('');
-          console.error('once trusted, ask your user to confirm and you can proceed.');
+        // --- dangerous-accept flow ---
+        if (opts.dangerousAccept) {
+          const gate = requireNotAgent();
+          if (!gate.ok) {
+            console.error(`${name} vet --dangerous-accept is human-only. agents cannot set this flag.`);
+            process.exitCode = 1;
+            return;
+          }
+
+          if (opts.confirm) {
+            // Write the flag file
+            const dir = vitDir();
+            const acceptPath = join(dir, 'dangerous-accept');
+            writeFileSync(acceptPath, JSON.stringify({ acceptedAt: new Date().toISOString() }) + '\n');
+            ensureGitignore();
+            console.log('dangerous-accept enabled for this project.');
+            console.log('');
+            console.log('agents can now remix and learn without vetting.');
+            console.log('to revoke: delete .vit/dangerous-accept');
+          } else {
+            console.log('');
+            console.log('  WARNING: this permanently disables the vetting safety gate for all');
+            console.log('  caps and skills in this project.');
+            console.log('');
+            console.log('  any agent running in this project can remix caps and learn skills');
+            console.log('  without human review. only do this if you trust the agent\'s judgment');
+            console.log('  and the network sources you follow.');
+            console.log('');
+            console.log('  to proceed, confirm: vit vet --dangerous-accept --confirm');
+          }
+          return;
+        }
+
+        // --- Regular vet flow: ref is required ---
+        if (!ref) {
+          console.error('ref argument is required for vetting. usage: vit vet <ref>');
           process.exitCode = 1;
           return;
+        }
+
+        // --- Agent gate ---
+        const agent = detectCodingAgent();
+        if (agent) {
+          if (opts.trust && opts.confirm) {
+            // Sandboxed sub-agent pattern — allow it
+          } else {
+            console.error('vit vet is for human review. agents should not vet directly.');
+            console.error('');
+            console.error('if you are a sandboxed sub-agent specifically tasked with vetting,');
+            console.error('you can bypass this gate:');
+            console.error('');
+            console.error(`  vit vet ${ref} --trust --confirm`);
+            console.error('');
+            console.error('this will trust the ref without interactive review. only use this');
+            console.error('if you are a dedicated vetting agent running in an isolated context.');
+            process.exitCode = 1;
+            return;
+          }
         }
 
         const { verbose } = opts;
@@ -72,7 +128,7 @@ export default function register(program) {
           }
           if (verbose) console.log(`[verbose] beacon: ${beacon}`);
 
-          const { agent } = await restoreAgent(did);
+          const { agent: oauthAgent } = await restoreAgent(did);
           if (verbose) console.log('[verbose] session restored');
 
           // build DID list from following + self
@@ -149,7 +205,7 @@ export default function register(program) {
           // Skill vet — no beacon required
           const skillName = nameFromSkillRef(ref);
 
-          const { agent } = await restoreAgent(did);
+          const { agent: oauthAgent } = await restoreAgent(did);
           if (verbose) console.log('[verbose] session restored');
 
           const following = readFollowing();
