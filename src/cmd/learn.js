@@ -8,7 +8,8 @@ import { requireDid } from '../lib/config.js';
 import { SKILL_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { readFollowing, readLog, appendLog } from '../lib/vit-dir.js';
-import { requireAgent } from '../lib/agent.js';
+import { requireAgent, detectCodingAgent } from '../lib/agent.js';
+import { shouldBypassVet } from '../lib/trust-gate.js';
 import { isSkillRef, nameFromSkillRef, isValidSkillRef } from '../lib/skill-ref.js';
 import { mark, name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds } from '../lib/pds.js';
@@ -69,11 +70,9 @@ export default function register(program) {
         }
 
         if (!isUserInstall && !trustedEntry) {
-          // Project-level: requires vet UNLESS skip-perms
-          // Check if running in skip-perms mode (dangerously-skip-permissions)
-          const skipPerms = process.env.CLAUDE_SKIP_PERMISSIONS === '1' ||
-                           process.argv.includes('--dangerously-skip-permissions');
-          if (!skipPerms) {
+          // Project-level: requires vet UNLESS dangerous-accept
+          const trustGate = shouldBypassVet();
+          if (!trustGate.bypass) {
             console.error(`skill '${ref}' is not yet vetted.`);
             console.error(`ask the user to vet it first:`);
             console.error('');
@@ -82,10 +81,16 @@ export default function register(program) {
             console.error('after reviewing, they can trust it with:');
             console.error('');
             console.error(`  vit vet ${ref} --trust`);
+            if (detectCodingAgent()) {
+              console.error('');
+              console.error('or, to trust all items without review:');
+              console.error('');
+              console.error('  vit vet --dangerous-accept --confirm');
+            }
             process.exitCode = 1;
             return;
           }
-          if (verbose) console.log('[verbose] skip-perms mode: bypassing vet for project-level install');
+          if (verbose) console.log(`[verbose] vet gate bypassed: ${trustGate.reason}`);
         }
 
         const did = requireDid(opts);

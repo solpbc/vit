@@ -49,7 +49,7 @@ describe('vit learn', () => {
     rmSync(tmp, { recursive: true, force: true });
   });
 
-  test('requires vet for project-level install without skip-perms', () => {
+  test('requires vet for project-level install without dangerous-accept', () => {
     const tmp = join(tmpdir(), '.test-learn-proj-' + Math.random().toString(36).slice(2));
     mkdirSync(join(tmp, '.vit'), { recursive: true });
     const r = run('learn skill-test --did did:plc:test123', tmp, agentEnv);
@@ -58,46 +58,58 @@ describe('vit learn', () => {
     rmSync(tmp, { recursive: true, force: true });
   });
 
-  test('errors when no DID configured (with skip-perms for project-level)', () => {
-    // Use skip-perms to bypass vet, then hit DID check
-    const configHome = join(tmpdir(), '.test-learn-config-' + Math.random().toString(36).slice(2));
-    mkdirSync(configHome, { recursive: true });
-    const r = run('learn skill-test', '/tmp', { ...agentEnv, XDG_CONFIG_HOME: configHome, CLAUDE_SKIP_PERMISSIONS: '1' });
-    expect(r.exitCode).not.toBe(0);
-    expect(r.stderr).toContain('no DID configured');
-    rmSync(configHome, { recursive: true, force: true });
-  });
+  // --- trust gate tests ---
 
-  test('trust gate: vet check happens before network call', () => {
-    // Even with a valid DID, should fail at vet check
-    const tmp = join(tmpdir(), '.test-learn-trust-' + Math.random().toString(36).slice(2));
-    mkdirSync(join(tmp, '.vit'), { recursive: true });
-    const r = run('learn skill-test --did did:plc:test123', tmp, agentEnv);
-    expect(r.exitCode).not.toBe(0);
-    expect(r.stderr).toContain('not yet vetted');
-    expect(r.stderr).toContain('vit vet skill-test');
-    rmSync(tmp, { recursive: true, force: true });
-  });
+  describe('trust gate', () => {
+    test('CLAUDE_SKIP_PERMISSIONS env var no longer bypasses vet', () => {
+      const tmp = join(tmpdir(), '.test-learn-noskip-' + Math.random().toString(36).slice(2));
+      mkdirSync(join(tmp, '.vit'), { recursive: true });
+      const r = run('learn skill-test --did did:plc:test123', tmp, { ...agentEnv, CLAUDE_SKIP_PERMISSIONS: '1' });
+      expect(r.exitCode).not.toBe(0);
+      // Should STILL fail at vet check — env var no longer works
+      expect(r.stderr).toContain('not yet vetted');
+      rmSync(tmp, { recursive: true, force: true });
+    });
 
-  test('trust gate: skip-perms bypasses vet for project-level', () => {
-    // With skip-perms, should pass vet and fail at auth
-    const tmp = join(tmpdir(), '.test-learn-skip-' + Math.random().toString(36).slice(2));
-    mkdirSync(join(tmp, '.vit'), { recursive: true });
-    const r = run('learn skill-test --did did:plc:test123', tmp, { ...agentEnv, CLAUDE_SKIP_PERMISSIONS: '1' });
-    expect(r.exitCode).not.toBe(0);
-    // Should NOT fail at vet check
-    expect(r.stderr).not.toContain('not yet vetted');
-    rmSync(tmp, { recursive: true, force: true });
-  });
+    test('dangerous-accept bypasses vet for project-level install', () => {
+      const tmp = join(tmpdir(), '.test-learn-da-' + Math.random().toString(36).slice(2));
+      mkdirSync(join(tmp, '.vit'), { recursive: true });
+      writeFileSync(join(tmp, '.vit', 'dangerous-accept'), JSON.stringify({ acceptedAt: '2026-03-26T14:30:00.000Z' }));
+      const r = run('learn skill-test --did did:plc:test123', tmp, agentEnv);
+      // Should bypass vet check — will fail later at auth, NOT at vet
+      expect(r.stderr).not.toContain('not yet vetted');
+      rmSync(tmp, { recursive: true, force: true });
+    });
 
-  test('trust gate: skip-perms does NOT bypass vet for --user', () => {
-    const tmp = join(tmpdir(), '.test-learn-skip-user-' + Math.random().toString(36).slice(2));
-    mkdirSync(join(tmp, '.vit'), { recursive: true });
-    const r = run('learn skill-test --user --did did:plc:test123', tmp, { ...agentEnv, CLAUDE_SKIP_PERMISSIONS: '1' });
-    expect(r.exitCode).not.toBe(0);
-    // Should STILL fail at vet check for --user
-    expect(r.stderr).toContain('not yet vetted');
-    expect(r.stderr).toContain('user-wide install requires vetting');
-    rmSync(tmp, { recursive: true, force: true });
+    test('dangerous-accept does NOT bypass vet for --user install', () => {
+      const tmp = join(tmpdir(), '.test-learn-da-user-' + Math.random().toString(36).slice(2));
+      mkdirSync(join(tmp, '.vit'), { recursive: true });
+      writeFileSync(join(tmp, '.vit', 'dangerous-accept'), JSON.stringify({ acceptedAt: '2026-03-26T14:30:00.000Z' }));
+      const r = run('learn skill-test --user --did did:plc:test123', tmp, agentEnv);
+      expect(r.exitCode).not.toBe(0);
+      // Should STILL fail at vet check for --user
+      expect(r.stderr).toContain('not yet vetted');
+      expect(r.stderr).toContain('user-wide install requires vetting');
+      rmSync(tmp, { recursive: true, force: true });
+    });
+
+    test('error includes dangerous-accept hint when agent detected', () => {
+      const tmp = join(tmpdir(), '.test-learn-hint-' + Math.random().toString(36).slice(2));
+      mkdirSync(join(tmp, '.vit'), { recursive: true });
+      const r = run('learn skill-test --did did:plc:test123', tmp, agentEnv);
+      expect(r.exitCode).not.toBe(0);
+      expect(r.stderr).toContain('vit vet --dangerous-accept --confirm');
+      rmSync(tmp, { recursive: true, force: true });
+    });
+
+    test('vet check happens before network call', () => {
+      const tmp = join(tmpdir(), '.test-learn-trust-' + Math.random().toString(36).slice(2));
+      mkdirSync(join(tmp, '.vit'), { recursive: true });
+      const r = run('learn skill-test --did did:plc:test123', tmp, agentEnv);
+      expect(r.exitCode).not.toBe(0);
+      expect(r.stderr).toContain('not yet vetted');
+      expect(r.stderr).toContain('vit vet skill-test');
+      rmSync(tmp, { recursive: true, force: true });
+    });
   });
 });
