@@ -113,10 +113,19 @@ export default function register(program) {
     .description('Listen to Jetstream for cap events')
     .option('-v, --verbose', 'Show full JSON for each event')
     .option('--did <did>', 'Filter by DID (reads saved DID from config if not provided)')
+    .option('--global', 'Show cap events from all DIDs across the network')
     .option('--collection <nsid>', 'Collection NSID to filter', CAP_COLLECTION)
     .action(async (opts) => {
       try {
-        if (!opts.did) {
+        if (opts.global && opts.did) {
+          console.error('error: --global and --did are mutually exclusive');
+          process.exitCode = 1;
+          return;
+        }
+
+        if (opts.global) {
+          opts.did = undefined;
+        } else if (!opts.did) {
           const config = loadConfig();
           if (config.did) {
             opts.did = config.did;

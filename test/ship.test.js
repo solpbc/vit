@@ -3,6 +3,9 @@
 
 import { describe, test, expect } from 'bun:test';
 import { run } from './helpers.js';
+import { mkdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const agentEnv = { CLAUDECODE: '1' };
 
@@ -66,5 +69,14 @@ describe('vit ship', () => {
     expect(r.exitCode).not.toBe(0);
     expect(r.stderr).not.toMatch(/three lowercase words/i);
     expect(r.stderr).not.toMatch(/body is required/i);
+  });
+
+  test('errors when no beacon set', () => {
+    const tmp = join(tmpdir(), '.test-ship-beacon-' + Math.random().toString(36).slice(2));
+    mkdirSync(tmp, { recursive: true });
+    const r = run('ship --title "Hi" --description "desc" --ref "one-two-three" --did "did:plc:abc"', tmp, agentEnv, 'body text');
+    expect(r.exitCode).not.toBe(0);
+    expect(r.stderr).toContain('no beacon set');
+    rmSync(tmp, { recursive: true, force: true });
   });
 });
