@@ -51,6 +51,29 @@ caps also include structured fields:
 
 “feature” is a kind — not the noun.
 
+### skill
+
+**definition**
+a reusable agent ability — a directory containing `SKILL.md` plus optional resources. follows the [Agent Skills](https://agentskills.io) open standard.
+
+skills are not project-scoped. they have no beacon. they work anywhere an agent does.
+
+**structure**
+- `SKILL.md` — frontmatter (name, description, version, license, compatibility) plus instructions
+- optional resource files (referenced by SKILL.md)
+- published as `org.v-it.skill` ATProto records with resources as blobs
+
+**ref format**
+`skill-{name}` — lowercase, numbers, hyphens (e.g., `skill-agent-test-patterns`)
+
+**discovery tags**
+up to 8 tags for filtering. not beacon-scoped.
+
+**related concepts**
+- cap — project-scoped change instruction (beacon-anchored); skill is the universal counterpart
+- learn — verb for installing a skill
+- vet — mandatory integrity gate (same as caps)
+
 ### remix
 
 **definition**
@@ -134,6 +157,8 @@ vit skim --beacon <id>
 
 skim is lightweight feed inspection for updates to evaluate for remixing or vouching.
 
+skim shows both caps and skills by default. use `--skills` to filter to skills only, `--caps` for caps only. skills do not require a beacon to browse.
+
 ### vet
 
 run local evaluation on a cap in a sandbox environment without access to any tools or files.
@@ -151,6 +176,8 @@ vet will:
 a cap must be vetted before it can be remixed or vouched.
 
 vet is the mandatory integrity gate.
+
+vet auto-detects skill refs (by `skill-` prefix). no beacon required for skills.
 
 ### remix
 
@@ -179,6 +206,8 @@ vit vouch <cap-ref>
 
 vouch is reputational and visible.
 
+vouch works for both caps and skills. no beacon required for skills.
+
 **vet → vouch symmetry:**
 - vet = private evaluation (required)
 - vouch = public endorsement
@@ -198,6 +227,28 @@ ship creates:
 required flags for ship are `--title`, `--description`, and `--ref`.
 
 ship is the outward publishing and sharing act.
+
+to ship a skill instead of a cap:
+```bash
+vit ship --skill ./path/to/skill/
+```
+reads SKILL.md frontmatter, uploads resources as blobs, creates an `org.v-it.skill` record.
+
+### learn
+
+install a vetted skill for agent use.
+
+```bash
+vit learn <skill-ref>
+vit learn <skill-ref> --user
+```
+
+behavior:
+- requires a successfully vetted skill
+- installs to `.claude/skills/{name}/` (project scope)
+- with `--user`, installs to `~/.claude/skills/{name}/` (global scope)
+
+learn is the skill counterpart to remix — where remix integrates a cap into a codebase, learn installs a skill for an agent.
 
 ---
 

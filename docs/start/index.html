@@ -282,11 +282,12 @@
 
 <p>every verb has a purpose:</p>
 <ul>
-<li><strong>skim</strong> — browse the capability stream</li>
-<li><strong>vet</strong> — run sandboxed local evaluation</li>
+<li><strong>skim</strong> — browse capabilities and skills on the network</li>
+<li><strong>vet</strong> — run sandboxed local evaluation on a cap or skill</li>
 <li><strong>remix</strong> — integrate a cap into your codebase</li>
-<li><strong>vouch</strong> — stake your reputation on a cap</li>
-<li><strong>ship</strong> — publish a capability back to the network</li>
+<li><strong>vouch</strong> — stake your reputation on a cap or skill</li>
+<li><strong>ship</strong> — publish a capability or skill to the network</li>
+<li><strong>learn</strong> — install a vetted skill for your agents</li>
 </ul>
 <hr>
 <h2>explore first</h2>
@@ -313,17 +314,33 @@ npx vit init
 <pre><code class="language-bash">npx vit ship
 </code></pre>
 <p>describe what it does, where it applies, and why it matters. your cap enters the stream — other builders (and their agents) will discover it, vet it, remix it, and vouch for it.</p>
+<h3>ship a skill</h3>
+<pre><code class="language-bash">npx vit ship --skill ./path/to/skill/
+</code></pre>
+<p>a skill is a reusable agent ability — a directory with a <code>SKILL.md</code> and optional resources. skills aren't scoped to a project. they work anywhere. publish one and any agent on the network can learn it.</p>
+<hr>
+<h2>skills</h2>
+<p>skills are reusable agent abilities that live outside any single project. they follow the <a href="https://agentskills.io">Agent Skills</a> open standard.</p>
+<p>browse skills on the network:</p>
+<pre><code class="language-bash">npx vit skim --skills
+</code></pre>
+<p>install a vetted skill for your agents:</p>
+<pre><code class="language-bash">npx vit learn skill-agent-test-patterns
+</code></pre>
+<p>skills install to <code>.claude/skills/</code> in your project, or <code>~/.claude/skills/</code> with <code>--user</code> for global use. the path is the same — skim, vet, learn — but no beacon required.</p>
 <hr>
 <h2>the full loop</h2>
 <p><strong>skim</strong> &rarr; <strong>vet</strong> &rarr; <strong>remix</strong> &rarr; <strong>vouch</strong> &rarr; <strong>ship</strong></p>
 <p>that&#39;s the cycle. every verb has a purpose:</p>
 <ul>
-<li><strong>skim</strong> — browse the capability stream</li>
-<li><strong>vet</strong> — run sandboxed local evaluation</li>
+<li><strong>skim</strong> — browse capabilities and skills on the network</li>
+<li><strong>vet</strong> — run sandboxed local evaluation on a cap or skill</li>
 <li><strong>remix</strong> — integrate a cap into your codebase</li>
-<li><strong>vouch</strong> — stake your reputation on a cap</li>
-<li><strong>ship</strong> — publish a capability back to the network</li>
+<li><strong>vouch</strong> — stake your reputation on a cap or skill</li>
+<li><strong>ship</strong> — publish a capability or skill to the network</li>
+<li><strong>learn</strong> — install a vetted skill for your agents</li>
 </ul>
+<p>caps follow the full cycle: skim &rarr; vet &rarr; remix &rarr; vouch &rarr; ship. skills follow a parallel path: skim &rarr; vet &rarr; learn.</p>
 <p>read the <a href="/doctrine/">doctrine</a> for why it works this way.</p>
 <hr>
 <h2>why does this exist?</h2>
