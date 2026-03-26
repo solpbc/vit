@@ -10,6 +10,7 @@ import { restoreAgent } from '../lib/oauth.js';
 import { appendLog, readProjectConfig, readLog, readFollowing } from '../lib/vit-dir.js';
 import { REF_PATTERN, resolveRef } from '../lib/cap-ref.js';
 import { name } from '../lib/brand.js';
+import { resolvePds, listRecordsFromPds } from '../lib/pds.js';
 
 export default function register(program) {
   program
@@ -104,12 +105,10 @@ export default function register(program) {
           let match = null;
           for (const repoDid of dids) {
             try {
-              const res = await agent.com.atproto.repo.listRecords({
-                repo: repoDid,
-                collection: CAP_COLLECTION,
-                limit: 50,
-              });
-              for (const rec of res.data.records) {
+              const pds = await resolvePds(repoDid);
+              if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
+              const res = await listRecordsFromPds(pds, repoDid, CAP_COLLECTION, 50);
+              for (const rec of res.records) {
                 const recRef = resolveRef(rec.value, rec.cid);
                 if (recRef === opts.recap) {
                   if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {

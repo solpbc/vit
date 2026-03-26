@@ -8,6 +8,7 @@ import { readProjectConfig, readFollowing } from '../lib/vit-dir.js';
 import { requireAgent } from '../lib/agent.js';
 import { resolveRef } from '../lib/cap-ref.js';
 import { name } from '../lib/brand.js';
+import { resolvePds, listRecordsFromPds } from '../lib/pds.js';
 
 export default function register(program) {
   program
@@ -76,13 +77,11 @@ export default function register(program) {
         const allCaps = [];
         for (const repoDid of dids) {
           try {
-            const res = await agent.com.atproto.repo.listRecords({
-              repo: repoDid,
-              collection: CAP_COLLECTION,
-              limit: 50,
-            });
-            const caps = res.data.records.filter(r => r.value.beacon === beacon);
-            if (verbose) console.log(`[verbose] ${repoDid}: ${res.data.records.length} caps, ${caps.length} matching beacon`);
+            const pds = await resolvePds(repoDid);
+            if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
+            const res = await listRecordsFromPds(pds, repoDid, CAP_COLLECTION, 50);
+            const caps = res.records.filter(r => r.value.beacon === beacon);
+            if (verbose) console.log(`[verbose] ${repoDid}: ${res.records.length} caps, ${caps.length} matching beacon`);
             for (const cap of caps) cap._handle = handleMap.get(repoDid) || repoDid;
             allCaps.push(...caps);
           } catch (err) {
