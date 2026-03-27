@@ -44,7 +44,7 @@ The `docs/` directory is published to [v-it.org](https://v-it.org) via GitHub Pa
 All JS source files must include this header immediately after the shebang line:
 
 ```
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2026 sol pbc
 ```
 

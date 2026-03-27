@@ -2,7 +2,7 @@
   "name": "vit",
   "version": "0.1.0",
   "description": "Social toolkit for personalized software",
-  "license": "AGPL-3.0-only",
+  "license": "MIT",
   "bin": {
     "vit": "bin/vit.js"
   },

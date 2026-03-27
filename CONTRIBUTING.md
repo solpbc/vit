@@ -134,5 +134,5 @@ hand-test affected commands directly:
 
 ## license
 
-vit is licensed under AGPL-3.0-only.
+vit is licensed under the MIT License.
 see `LICENSE` for the full text.

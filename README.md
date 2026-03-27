@@ -84,4 +84,4 @@ vit is a human+agent collaboration tool. it works with [Claude Code](https://cla
 
 ## license
 
-[AGPL-3.0](LICENSE) — built by [sol pbc](https://solpbc.org), a public benefit corporation.
+[MIT](LICENSE) — built by [sol pbc](https://solpbc.org), a public benefit corporation.

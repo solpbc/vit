@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2026 sol pbc
 
 const VIT_MARK = 'v\u0307';  // v̇

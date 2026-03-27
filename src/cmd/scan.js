@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2026 sol pbc
 
 import { CAP_COLLECTION, SKILL_COLLECTION, DEFAULT_JETSTREAM_URL } from '../lib/constants.js';
