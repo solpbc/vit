@@ -2,7 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { loadConfig } from '../lib/config.js';
-import { CAP_COLLECTION, JETSTREAM_URL } from '../lib/constants.js';
+import { CAP_COLLECTION, DEFAULT_JETSTREAM_URL } from '../lib/constants.js';
 import { resolveRef } from '../lib/cap-ref.js';
 import { brand } from '../lib/brand.js';
 
@@ -57,8 +57,7 @@ function formatEvent(event) {
 }
 
 function connect(opts, cursor) {
-  const jetstreamUrl = opts.jetstream || JETSTREAM_URL;
-  const url = buildUrl(jetstreamUrl, opts.collection, opts.did, cursor);
+  const url = buildUrl(opts.jetstreamUrl, opts.collection, opts.did, cursor);
   let lastCursor = cursor;
 
   ws = new WebSocket(url);
@@ -132,6 +131,9 @@ export default function register(program) {
           }
         }
 
+        const jetstreamUrl = opts.jetstream || process.env.VIT_JETSTREAM_URL || DEFAULT_JETSTREAM_URL;
+        opts.jetstreamUrl = jetstreamUrl;
+
         for (const sig of ['SIGINT', 'SIGTERM']) {
           process.on(sig, () => {
             shuttingDown = true;
@@ -141,7 +143,6 @@ export default function register(program) {
           });
         }
 
-        const jetstreamUrl = opts.jetstream || JETSTREAM_URL;
         const url = buildUrl(jetstreamUrl, opts.collection, opts.did, null);
         console.log(`${brand} firehose`);
         console.log(`  Collection: ${opts.collection}`);

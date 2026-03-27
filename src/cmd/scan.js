@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
-import { CAP_COLLECTION, SKILL_COLLECTION, JETSTREAM_URL } from '../lib/constants.js';
+import { CAP_COLLECTION, SKILL_COLLECTION, DEFAULT_JETSTREAM_URL } from '../lib/constants.js';
 import { resolveRef } from '../lib/cap-ref.js';
 import { resolveHandleFromDid } from '../lib/pds.js';
 import { brand } from '../lib/brand.js';
@@ -26,6 +26,8 @@ export default function register(program) {
           return;
         }
 
+        const jetstreamUrl = opts.jetstream || process.env.VIT_JETSTREAM_URL || DEFAULT_JETSTREAM_URL;
+
         const wantCaps = !opts.skills;
         const wantSkills = !opts.caps;
 
@@ -37,7 +39,6 @@ export default function register(program) {
         if (wantCaps) collections.push(CAP_COLLECTION);
         if (wantSkills) collections.push(SKILL_COLLECTION);
 
-        const jetstreamUrl = opts.jetstream || JETSTREAM_URL;
         const url = new URL(jetstreamUrl);
         for (const col of collections) {
           url.searchParams.append('wantedCollections', col);
