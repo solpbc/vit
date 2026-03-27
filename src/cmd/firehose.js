@@ -2,18 +2,16 @@
 // Copyright (c) 2026 sol pbc
 
 import { loadConfig } from '../lib/config.js';
-import { CAP_COLLECTION } from '../lib/constants.js';
+import { CAP_COLLECTION, JETSTREAM_URL } from '../lib/constants.js';
 import { resolveRef } from '../lib/cap-ref.js';
 import { brand } from '../lib/brand.js';
-
-const JETSTREAM_URL = 'wss://jetstream2.us-east.bsky.network/subscribe';
 
 let ws = null;
 let shuttingDown = false;
 let backoff = 1000;
 
-function buildUrl(collection, did, cursor) {
-  const url = new URL(JETSTREAM_URL);
+function buildUrl(baseUrl, collection, did, cursor) {
+  const url = new URL(baseUrl);
   url.searchParams.set('wantedCollections', collection);
   if (did) url.searchParams.set('wantedDids', did);
   if (cursor) url.searchParams.set('cursor', cursor);
@@ -59,7 +57,8 @@ function formatEvent(event) {
 }
 
 function connect(opts, cursor) {
-  const url = buildUrl(opts.collection, opts.did, cursor);
+  const jetstreamUrl = opts.jetstream || JETSTREAM_URL;
+  const url = buildUrl(jetstreamUrl, opts.collection, opts.did, cursor);
   let lastCursor = cursor;
 
   ws = new WebSocket(url);
@@ -115,6 +114,7 @@ export default function register(program) {
     .option('--did <did>', 'Filter by DID (reads saved DID from config if not provided)')
     .option('--global', 'Show cap events from all DIDs across the network')
     .option('--collection <nsid>', 'Collection NSID to filter', CAP_COLLECTION)
+    .option('--jetstream <url>', 'Jetstream WebSocket URL (default: VIT_JETSTREAM_URL env or built-in)')
     .action(async (opts) => {
       try {
         if (opts.global && opts.did) {
@@ -141,7 +141,8 @@ export default function register(program) {
           });
         }
 
-        const url = buildUrl(opts.collection, opts.did, null);
+        const jetstreamUrl = opts.jetstream || JETSTREAM_URL;
+        const url = buildUrl(jetstreamUrl, opts.collection, opts.did, null);
         console.log(`${brand} firehose`);
         console.log(`  Collection: ${opts.collection}`);
         if (opts.did) console.log(`  DID filter: ${opts.did}`);

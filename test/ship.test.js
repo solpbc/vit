@@ -64,6 +64,19 @@ describe('vit ship', () => {
     expect(r.stderr).toMatch(/--recap must be exactly three lowercase words/i);
   });
 
+  test('rejects --kind with invalid value', () => {
+    const r = run('ship --title "Hi" --description "desc" --ref "one-two-three" --kind "invalid" --did "did:plc:abc"', undefined, agentEnv, 'body text');
+    expect(r.exitCode).not.toBe(0);
+    expect(r.stderr).toMatch(/--kind must be one of/i);
+  });
+
+  test('--help shows --kind and --recap', () => {
+    const r = run('ship --help');
+    expect(r.exitCode).toBe(0);
+    expect(r.stdout).toContain('--kind <kind>');
+    expect(r.stdout).toContain('--recap <ref>');
+  });
+
   test('accepts valid ref format (fails at auth, not validation)', () => {
     const r = run('ship --title "Hi" --description "desc" --ref "one-two-three" --did "did:plc:abc"', undefined, agentEnv, 'body text');
     expect(r.exitCode).not.toBe(0);

@@ -9,7 +9,7 @@ import { requireAgent, detectCodingAgent } from '../lib/agent.js';
 import { shouldBypassVet } from '../lib/trust-gate.js';
 import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
 import { brand, name } from '../lib/brand.js';
-import { resolvePds, listRecordsFromPds } from '../lib/pds.js';
+import { resolvePds, listRecordsFromPds, queryDidsInParallel } from '../lib/pds.js';
 
 export default function register(program) {
   program
@@ -83,24 +83,20 @@ export default function register(program) {
         if (verbose) console.log(`[verbose] querying ${dids.length} accounts`);
 
         let match = null;
-        for (const repoDid of dids) {
-          try {
-            const pds = await resolvePds(repoDid);
-            if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
-            const res = await listRecordsFromPds(pds, repoDid, CAP_COLLECTION, 50);
-            for (const rec of res.records) {
-              if (rec.value.beacon !== beacon) continue;
-              const recRef = resolveRef(rec.value, rec.cid);
-              if (recRef === ref) {
-                if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {
-                  match = rec;
-                }
+        await queryDidsInParallel(dids, async (repoDid) => {
+          const pds = await resolvePds(repoDid);
+          if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
+          const res = await listRecordsFromPds(pds, repoDid, CAP_COLLECTION);
+          for (const rec of res.records) {
+            if (rec.value.beacon !== beacon) continue;
+            const recRef = resolveRef(rec.value, rec.cid);
+            if (recRef === ref) {
+              if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {
+                match = rec;
               }
             }
-          } catch (err) {
-            if (verbose) console.log(`[verbose] ${repoDid}: error fetching caps: ${err.message}`);
           }
-        }
+        });
 
         if (!match) {
           console.error(`no cap found with ref '${ref}' for this beacon.`);

@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 sol pbc
 
-import { CAP_COLLECTION, SKILL_COLLECTION } from '../lib/constants.js';
+import { CAP_COLLECTION, SKILL_COLLECTION, JETSTREAM_URL } from '../lib/constants.js';
 import { resolveRef } from '../lib/cap-ref.js';
 import { resolveHandleFromDid } from '../lib/pds.js';
 import { brand } from '../lib/brand.js';
-
-const JETSTREAM_URL = 'wss://jetstream2.us-east.bsky.network/subscribe';
 
 export default function register(program) {
   program
@@ -18,6 +16,7 @@ export default function register(program) {
     .option('--caps', 'Show only cap publishers')
     .option('--tag <tag>', 'Filter skills by tag')
     .option('-v, --verbose', 'Show each event as it arrives')
+    .option('--jetstream <url>', 'Jetstream WebSocket URL (default: VIT_JETSTREAM_URL env or built-in)')
     .action(async (opts) => {
       try {
         const days = parseInt(opts.days, 10);
@@ -38,7 +37,8 @@ export default function register(program) {
         if (wantCaps) collections.push(CAP_COLLECTION);
         if (wantSkills) collections.push(SKILL_COLLECTION);
 
-        const url = new URL(JETSTREAM_URL);
+        const jetstreamUrl = opts.jetstream || JETSTREAM_URL;
+        const url = new URL(jetstreamUrl);
         for (const col of collections) {
           url.searchParams.append('wantedCollections', col);
         }

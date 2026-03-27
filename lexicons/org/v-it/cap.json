@@ -47,6 +47,11 @@
             "ref": "lex:org.v-it.cap#replyRef",
             "description": "Reference to the parent and root caps when this cap is a reply in a thread."
           },
+          "recap": {
+            "type": "ref",
+            "ref": "lex:org.v-it.cap#recapRef",
+            "description": "Reference to the parent cap this was derived from."
+          },
           "embed": {
             "type": "union",
             "description": "Embedded content: images, video, external links, or record references.",
@@ -87,6 +92,13 @@
             "maxLength": 512,
             "description": "Beacon URI scoping this cap to a project."
           },
+          "kind": {
+            "type": "string",
+            "maxLength": 64,
+            "maxGraphemes": 32,
+            "knownValues": ["feat", "fix", "test", "docs", "refactor", "chore", "perf", "style"],
+            "description": "Category of the capability."
+          },
           "createdAt": {
             "type": "string",
             "format": "datetime",
@@ -108,6 +120,24 @@
           "type": "ref",
           "ref": "lex:com.atproto.repo.strongRef",
           "description": "The direct parent cap being replied to."
+        }
+      }
+    },
+    "recapRef": {
+      "type": "object",
+      "description": "Reference to a parent cap this was derived from.",
+      "required": ["uri", "ref"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "AT URI of the parent cap record."
+        },
+        "ref": {
+          "type": "string",
+          "maxLength": 128,
+          "maxGraphemes": 64,
+          "description": "Three lowercase words separated by dashes identifying the parent cap."
         }
       }
     }

@@ -9,7 +9,7 @@ import { requireAgent } from '../lib/agent.js';
 import { resolveRef } from '../lib/cap-ref.js';
 import { skillRefFromName } from '../lib/skill-ref.js';
 import { name } from '../lib/brand.js';
-import { resolvePds, listRecordsFromPds } from '../lib/pds.js';
+import { resolvePds, listRecordsFromPds, queryDidsInParallel } from '../lib/pds.js';
 
 export default function register(program) {
   program
@@ -86,41 +86,35 @@ export default function register(program) {
         // fetch from each DID
         const allItems = [];
 
-        for (const repoDid of dids) {
-          try {
-            const pds = await resolvePds(repoDid);
-            if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
+        await queryDidsInParallel(dids, async (repoDid) => {
+          const pds = await resolvePds(repoDid);
+          if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
 
-            // Fetch caps (filtered by beacon)
-            if (wantCaps && beacon) {
-              const res = await listRecordsFromPds(pds, repoDid, CAP_COLLECTION, 50);
-              const caps = res.records.filter(r => r.value.beacon === beacon);
-              if (verbose) console.log(`[verbose] ${repoDid}: ${res.records.length} caps, ${caps.length} matching beacon`);
-              for (const cap of caps) {
-                cap._handle = handleMap.get(repoDid) || repoDid;
-                cap._type = 'cap';
-              }
-              allItems.push(...caps);
+          if (wantCaps && beacon) {
+            const res = await listRecordsFromPds(pds, repoDid, CAP_COLLECTION);
+            const caps = res.records.filter(r => r.value.beacon === beacon);
+            if (verbose) console.log(`[verbose] ${repoDid}: ${res.records.length} caps, ${caps.length} matching beacon`);
+            for (const cap of caps) {
+              cap._handle = handleMap.get(repoDid) || repoDid;
+              cap._type = 'cap';
             }
-
-            // Fetch skills (unfiltered — skills are universal)
-            if (wantSkills) {
-              try {
-                const res = await listRecordsFromPds(pds, repoDid, SKILL_COLLECTION, 50);
-                if (verbose) console.log(`[verbose] ${repoDid}: ${res.records.length} skills`);
-                for (const skill of res.records) {
-                  skill._handle = handleMap.get(repoDid) || repoDid;
-                  skill._type = 'skill';
-                }
-                allItems.push(...res.records);
-              } catch (err) {
-                if (verbose) console.log(`[verbose] ${repoDid}: error fetching skills: ${err.message}`);
-              }
-            }
-          } catch (err) {
-            if (verbose) console.log(`[verbose] ${repoDid}: error: ${err.message}`);
+            allItems.push(...caps);
           }
-        }
+
+          if (wantSkills) {
+            try {
+              const res = await listRecordsFromPds(pds, repoDid, SKILL_COLLECTION);
+              if (verbose) console.log(`[verbose] ${repoDid}: ${res.records.length} skills`);
+              for (const skill of res.records) {
+                skill._handle = handleMap.get(repoDid) || repoDid;
+                skill._type = 'skill';
+              }
+              allItems.push(...res.records);
+            } catch (err) {
+              if (verbose) console.log(`[verbose] ${repoDid}: error fetching skills: ${err.message}`);
+            }
+          }
+        });
 
         // sort by createdAt descending
         allItems.sort((a, b) => {
