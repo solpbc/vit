@@ -133,6 +133,21 @@ When the user says "ship it", "vit ship", or asks you to publish a cap for work 
 - Output: `beacon: lit <uri>` or `beacon: unlit`.
 - Common errors: invalid target URL or clone/probe failure.
 
+### `vit scan`
+- Description: Discover cap and skill publishers across the network via Jetstream replay.
+- Usage: `vit scan [options]`
+- Key flags:
+  - `--days <n>` — number of days to replay (default: 7)
+  - `--beacon <beacon>` — filter by beacon (caps only)
+  - `--skills` — show only skill publishers
+  - `--caps` — show only cap publishers
+  - `--tag <tag>` — filter skills by tag
+  - `-v, --verbose` — show each event as it arrives
+  - `--jetstream <url>` — custom Jetstream URL (default: `VIT_JETSTREAM_URL` env or built-in)
+- Output: Publisher summaries sorted by activity count. Each entry shows handle, cap/skill counts, beacons, tags, and last active date.
+- Read-only: Replays Jetstream events with a time-bounded timeout (2–10 minutes based on `--days`). Does not write any data.
+- Use cases: Find active publishers to follow, discover beacons with recent activity, identify skill authors by tag.
+
 ## 5. Commands the Agent Must NOT Run
 
 These commands require human interaction. Tell the user exactly what to run:

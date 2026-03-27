@@ -59,3 +59,21 @@ Agent skills for this project live in `skills/`. When authoring or updating skil
 - Use gerund or action-oriented naming (lowercase-hyphens only) for skill names.
 - Write descriptions in third person that specify both what the skill does and when to use it.
 - Test with all target models (Haiku, Sonnet, Opus) as effectiveness varies.
+
+## Dogfooding
+
+Ship meaningful work as caps. Use `vit ship` after completing a feature, fix, or improvement — not for typos or formatting.
+
+```
+vit ship --title "Short Title" --description "One sentence of value." --ref "three-word-slug" --kind feat <<'EOF'
+Body paragraph explaining what the cap does and how it works.
+EOF
+```
+
+Flags:
+- `--title`: concise noun phrase (2–5 words)
+- `--description`: one sentence explaining the value
+- `--ref`: three lowercase hyphenated words — a memorable discovery slug
+- `--kind`: one of `feat`, `fix`, `test`, `docs`, `refactor`, `chore`, `perf`, `style`
+- `--recap <ref>`: link to a prior cap this one derives from (e.g. after `vit remix`)
+- Body (stdin): short paragraph for another developer or agent who might adopt it
