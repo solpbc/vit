@@ -5,6 +5,7 @@ import { CAP_COLLECTION, SKILL_COLLECTION, DEFAULT_JETSTREAM_URL } from '../lib/
 import { resolveRef } from '../lib/cap-ref.js';
 import { resolveHandleFromDid } from '../lib/pds.js';
 import { brand } from '../lib/brand.js';
+import { jsonOk, jsonError } from '../lib/json-output.js';
 
 export default function register(program) {
   program
@@ -16,11 +17,17 @@ export default function register(program) {
     .option('--caps', 'Show only cap publishers')
     .option('--tag <tag>', 'Filter skills by tag')
     .option('-v, --verbose', 'Show each event as it arrives')
+    .option('--json', 'Output as JSON')
     .option('--jetstream <url>', 'Jetstream WebSocket URL (default: VIT_JETSTREAM_URL env or built-in)')
     .action(async (opts) => {
       try {
+        const vlog = opts.json ? (...a) => console.error(...a) : console.log;
         const days = parseInt(opts.days, 10);
         if (isNaN(days) || days < 1) {
+          if (opts.json) {
+            jsonError('--days must be a positive integer');
+            return;
+          }
           console.error('error: --days must be a positive integer');
           process.exitCode = 1;
           return;
@@ -46,12 +53,14 @@ export default function register(program) {
         url.searchParams.set('cursor', String(cursor));
 
         const scanType = wantCaps && wantSkills ? 'cap + skill' : wantSkills ? 'skill' : 'cap';
-        console.log(`${brand} scan`);
-        console.log(`  Replaying ${days} day${days === 1 ? '' : 's'} of ${scanType} events...`);
-        if (opts.beacon) console.log(`  Beacon filter: ${opts.beacon}`);
-        if (opts.tag) console.log(`  Tag filter: ${opts.tag}`);
-        console.log(`  Timeout: ${Math.round(timeout / 1000)}s`);
-        console.log('');
+        if (!opts.json) {
+          console.log(`${brand} scan`);
+          console.log(`  Replaying ${days} day${days === 1 ? '' : 's'} of ${scanType} events...`);
+          if (opts.beacon) console.log(`  Beacon filter: ${opts.beacon}`);
+          if (opts.tag) console.log(`  Tag filter: ${opts.tag}`);
+          console.log(`  Timeout: ${Math.round(timeout / 1000)}s`);
+          console.log('');
+        }
 
         const publishers = new Map();
 
@@ -92,11 +101,11 @@ export default function register(program) {
               if (isCapEvent) {
                 const title = record.title || '';
                 const refPart = ref ? ` (${ref})` : '';
-                console.log(`  ${didShort}: [cap] ${title}${refPart} [${record.beacon || 'no beacon'}]`);
+                vlog(`  ${didShort}: [cap] ${title}${refPart} [${record.beacon || 'no beacon'}]`);
               } else {
                 const skillName = record.name || '';
                 const tags = record.tags ? ` [${record.tags.join(', ')}]` : '';
-                console.log(`  ${didShort}: [skill] ${skillName}${tags}`);
+                vlog(`  ${didShort}: [skill] ${skillName}${tags}`);
               }
             }
 
@@ -130,6 +139,10 @@ export default function register(program) {
         });
 
         if (publishers.size === 0) {
+          if (opts.json) {
+            jsonOk({ publishers: [] });
+            return;
+          }
           console.log(`no ${scanType} publishers found in this time window.`);
           return;
         }
@@ -143,6 +156,10 @@ export default function register(program) {
         const totalCount = (e) => e.capCount + e.skillCount;
         entries.sort((a, b) => totalCount(b) - totalCount(a));
 
+        if (opts.json) {
+          jsonOk({ publishers: entries });
+          return;
+        }
         console.log(`found ${entries.length} publisher${entries.length === 1 ? '' : 's'}:\n`);
         for (const e of entries) {
           console.log(`  @${e.handle}`);
@@ -160,7 +177,12 @@ export default function register(program) {
           console.log(`    ${parts.join('  ')}`);
         }
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        const msg = err instanceof Error ? err.message : String(err);
+        if (opts.json) {
+          jsonError(msg);
+          return;
+        }
+        console.error(msg);
         process.exitCode = 1;
       }
     });

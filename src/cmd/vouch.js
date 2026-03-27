@@ -10,6 +10,8 @@ import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
 import { isSkillRef, isValidSkillRef, nameFromSkillRef } from '../lib/skill-ref.js';
 import { mark, name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
+import { loadConfig } from '../lib/config.js';
+import { jsonOk, jsonError } from '../lib/json-output.js';
 
 export default function register(program) {
   program
@@ -17,36 +19,54 @@ export default function register(program) {
     .argument('<ref>', 'Cap or skill reference (e.g. fast-cache-invalidation or skill-agent-test-patterns)')
     .description('Publicly endorse a vetted cap or skill')
     .option('--did <did>', 'DID to use')
+    .option('--json', 'Output as JSON')
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (ref, opts) => {
       try {
         const { verbose } = opts;
+        const vlog = opts.json ? (...a) => console.error(...a) : console.log;
         const isSkill = isSkillRef(ref);
 
         // Validate ref format
         if (isSkill) {
           if (!isValidSkillRef(ref)) {
+            if (opts.json) {
+              jsonError('invalid skill ref', 'expected format: skill-{name}');
+              return;
+            }
             console.error('invalid skill ref. expected format: skill-{name} (lowercase letters, numbers, hyphens)');
             process.exitCode = 1;
             return;
           }
         } else {
           if (!REF_PATTERN.test(ref)) {
+            if (opts.json) {
+              jsonError('invalid ref', 'expected three lowercase words with dashes');
+              return;
+            }
             console.error('invalid ref. expected three lowercase words with dashes (e.g. fast-cache-invalidation)');
             process.exitCode = 1;
             return;
           }
         }
 
+        if (opts.json && !(opts.did || loadConfig().did)) {
+          jsonError('no DID configured', "run 'vit login <handle>' first");
+          return;
+        }
         const did = requireDid(opts);
         if (!did) return;
-        if (verbose) console.log(`[verbose] DID: ${did}`);
+        if (verbose) vlog(`[verbose] DID: ${did}`);
 
         if (isSkill) {
           // Skill vouch — no beacon required, check trusted first
           const trusted = readLog('trusted.jsonl');
           const trustedEntry = trusted.find(e => e.ref === ref);
           if (!trustedEntry) {
+            if (opts.json) {
+              jsonError(`skill '${ref}' is not yet vetted`, `run 'vit vet ${ref}' first`);
+              return;
+            }
             console.error(`skill '${ref}' is not yet vetted. vet it first:`);
             console.error('');
             console.error(`  vit vet ${ref}`);
@@ -57,12 +77,12 @@ export default function register(program) {
             process.exitCode = 1;
             return;
           }
-          if (verbose) console.log(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
+          if (verbose) vlog(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
 
           const skillName = nameFromSkillRef(ref);
 
           const { agent } = await restoreAgent(did);
-          if (verbose) console.log('[verbose] session restored');
+          if (verbose) vlog('[verbose] session restored');
 
           const following = readFollowing();
           const dids = following.map(e => e.did);
@@ -70,7 +90,7 @@ export default function register(program) {
 
           const allRecords = await batchQuery(dids, async (repoDid) => {
             const pds = await resolvePds(repoDid);
-            if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
+            if (verbose) vlog(`[verbose] ${repoDid}: resolved PDS ${pds}`);
             return (await listRecordsFromPds(pds, repoDid, SKILL_COLLECTION, 50)).records;
           }, { verbose });
 
@@ -86,6 +106,10 @@ export default function register(program) {
           }
 
           if (!match) {
+            if (opts.json) {
+              jsonError(`no skill found with ref '${ref}'`);
+              return;
+            }
             console.error(`no skill found with ref '${ref}' from followed accounts.`);
             process.exitCode = 1;
             return;
@@ -102,7 +126,7 @@ export default function register(program) {
             ref,
             // No beacon for skill vouches
           };
-          if (verbose) console.log(`[verbose] creating vouch for ${match.uri}`);
+          if (verbose) vlog(`[verbose] creating vouch for ${match.uri}`);
           const rkey = TID.nextStr();
           const res = await agent.com.atproto.repo.putRecord({
             repo: did,
@@ -123,23 +147,35 @@ export default function register(program) {
           } catch (logErr) {
             console.error('warning: failed to write vouched.jsonl:', logErr.message);
           }
-          if (verbose) console.log('[verbose] logged to vouched.jsonl');
+          if (verbose) vlog('[verbose] logged to vouched.jsonl');
 
+          if (opts.json) {
+            jsonOk({ ref, uri: match.uri, vouchUri: res.data.uri });
+            return;
+          }
           console.log(`${mark} vouched: ${ref} (${match.uri})`);
         } else {
           // Cap vouch — requires beacon (check beacon before trusted, matching original behavior)
           const projectConfig = readProjectConfig();
           const beacon = projectConfig.beacon;
           if (!beacon) {
+            if (opts.json) {
+              jsonError('no beacon set', "run 'vit init' first");
+              return;
+            }
             console.error(`no beacon set. run '${name} init' in a project directory first.`);
             process.exitCode = 1;
             return;
           }
-          if (verbose) console.log(`[verbose] beacon: ${beacon}`);
+          if (verbose) vlog(`[verbose] beacon: ${beacon}`);
 
           const trusted = readLog('trusted.jsonl');
           const trustedEntry = trusted.find(e => e.ref === ref);
           if (!trustedEntry) {
+            if (opts.json) {
+              jsonError(`cap '${ref}' is not yet vetted`, `run 'vit vet ${ref}' first`);
+              return;
+            }
             console.error(`cap '${ref}' is not yet vetted. vet it first:`);
             console.error('');
             console.error(`  vit vet ${ref}`);
@@ -150,10 +186,10 @@ export default function register(program) {
             process.exitCode = 1;
             return;
           }
-          if (verbose) console.log(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
+          if (verbose) vlog(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
 
           const { agent } = await restoreAgent(did);
-          if (verbose) console.log('[verbose] session restored');
+          if (verbose) vlog('[verbose] session restored');
 
           const following = readFollowing();
           const dids = following.map(e => e.did);
@@ -161,7 +197,7 @@ export default function register(program) {
 
           const allRecords = await batchQuery(dids, async (repoDid) => {
             const pds = await resolvePds(repoDid);
-            if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
+            if (verbose) vlog(`[verbose] ${repoDid}: resolved PDS ${pds}`);
             return (await listRecordsFromPds(pds, repoDid, CAP_COLLECTION, 50)).records;
           }, { verbose });
 
@@ -179,6 +215,10 @@ export default function register(program) {
           }
 
           if (!match) {
+            if (opts.json) {
+              jsonError(`no cap found with ref '${ref}' for this beacon`);
+              return;
+            }
             console.error(`no cap found with ref '${ref}' for this beacon.`);
             process.exitCode = 1;
             return;
@@ -195,7 +235,7 @@ export default function register(program) {
             ref,
             beacon,
           };
-          if (verbose) console.log(`[verbose] creating vouch for ${match.uri}`);
+          if (verbose) vlog(`[verbose] creating vouch for ${match.uri}`);
           const rkey = TID.nextStr();
           const res = await agent.com.atproto.repo.putRecord({
             repo: did,
@@ -217,12 +257,21 @@ export default function register(program) {
           } catch (logErr) {
             console.error('warning: failed to write vouched.jsonl:', logErr.message);
           }
-          if (verbose) console.log('[verbose] logged to vouched.jsonl');
+          if (verbose) vlog('[verbose] logged to vouched.jsonl');
 
+          if (opts.json) {
+            jsonOk({ ref, uri: match.uri, vouchUri: res.data.uri });
+            return;
+          }
           console.log(`${mark} vouched: ${ref} (${match.uri})`);
         }
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        const msg = err instanceof Error ? err.message : String(err);
+        if (opts.json) {
+          jsonError(msg);
+          return;
+        }
+        console.error(msg);
         process.exitCode = 1;
       }
     });

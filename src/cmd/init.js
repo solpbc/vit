@@ -8,17 +8,23 @@ import { toBeacon } from '../lib/beacon.js';
 import { vitDir, readProjectConfig, writeProjectConfig } from '../lib/vit-dir.js';
 import { requireAgent } from '../lib/agent.js';
 import { mark, name, DOT_VIT_README } from '../lib/brand.js';
+import { jsonOk, jsonError } from '../lib/json-output.js';
 
 export default function register(program) {
   program
     .command('init')
     .description('Initialize .vit directory and set project beacon. Use the most official upstream or well-known git URL so all contributors converge on the same beacon.')
     .option('--beacon <url>', 'Git URL (or "." to read from git remote upstream/origin) to derive the beacon URI')
+    .option('--json', 'Output as JSON')
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (opts) => {
       try {
         const gate = requireAgent();
         if (!gate.ok) {
+          if (opts.json) {
+            jsonError('agent required', 'run vit init from a coding agent');
+            return;
+          }
           console.error(`${name} init should be run by a coding agent (e.g. claude code, gemini cli).`);
           console.error(`open your agent and ask it to run '${name} init' for you.`);
           process.exitCode = 1;
@@ -26,12 +32,17 @@ export default function register(program) {
         }
 
         const { verbose } = opts;
+        const vlog = opts.json ? (...a) => console.error(...a) : console.log;
         const dir = vitDir();
-        if (verbose) console.log(`[verbose] .vit dir: ${dir}`);
+        if (verbose) vlog(`[verbose] .vit dir: ${dir}`);
 
         if (!opts.beacon) {
           const config = readProjectConfig();
           if (config.beacon) {
+            if (opts.json) {
+              jsonOk({ beacon: config.beacon });
+              return;
+            }
             console.log(`${mark} beacon: ${config.beacon}`);
             console.log(`hint: to change the beacon, run: ${name} init --beacon <git-url>`);
             return;
@@ -45,10 +56,19 @@ export default function register(program) {
             });
             isGitRepo = true;
           } catch {}
-          if (verbose) console.log(`[verbose] in git repo: ${isGitRepo ? 'yes' : 'no'}`);
+          if (verbose) vlog(`[verbose] in git repo: ${isGitRepo ? 'yes' : 'no'}`);
 
           const hasVitDir = existsSync(dir);
           if (!isGitRepo) {
+            let remotes = [];
+            if (opts.json) {
+              jsonOk({
+                status: hasVitDir ? 'no beacon' : 'not initialized',
+                git: false,
+                remotes,
+              });
+              return;
+            }
             console.log(hasVitDir ? 'status: no beacon' : 'status: not initialized');
             console.log('git: false');
             if (hasVitDir) {
@@ -74,7 +94,7 @@ export default function register(program) {
           } catch {
             remoteNames = [];
           }
-          if (verbose) console.log(`[verbose] remotes detected: ${remoteNames.length > 0 ? remoteNames.join(', ') : 'none'}`);
+          if (verbose) vlog(`[verbose] remotes detected: ${remoteNames.length > 0 ? remoteNames.join(', ') : 'none'}`);
 
           const remotes = [];
           for (const name of remoteNames) {
@@ -87,7 +107,16 @@ export default function register(program) {
             } catch {}
           }
           if (verbose && remotes.length > 0) {
-            console.log(`[verbose] remote urls: ${remotes.map(r => `${r.name}=${r.url}`).join(' ')}`);
+            vlog(`[verbose] remote urls: ${remotes.map(r => `${r.name}=${r.url}`).join(' ')}`);
+          }
+
+          if (opts.json) {
+            jsonOk({
+              status: hasVitDir ? 'no beacon' : 'not initialized',
+              git: true,
+              remotes: remotes.map(r => ({ name: r.name, url: r.url })),
+            });
+            return;
           }
 
           const remotesDisplay = remotes.length > 0
@@ -110,7 +139,7 @@ export default function register(program) {
 
         let gitUrl = opts.beacon;
         if (gitUrl === '.') {
-          if (verbose) console.log('[verbose] resolving --beacon . via remote.upstream.url then remote.origin.url');
+          if (verbose) vlog('[verbose] resolving --beacon . via remote.upstream.url then remote.origin.url');
           let usedRemote = '';
           try {
             gitUrl = execSync('git config --get remote.upstream.url', {
@@ -135,25 +164,38 @@ export default function register(program) {
           }
 
           if (!gitUrl) {
+            if (opts.json) {
+              jsonError('no git remote found', 'set a remote or provide a git URL directly');
+              return;
+            }
             console.error('No git remote found. Set a remote or provide a git URL directly.');
             process.exitCode = 1;
             return;
           }
-          if (verbose) console.log(`[verbose] Read git remote ${usedRemote}: ${gitUrl}`);
+          if (verbose) vlog(`[verbose] Read git remote ${usedRemote}: ${gitUrl}`);
         }
 
         const beacon = 'vit:' + toBeacon(gitUrl);
-        if (verbose) console.log(`[verbose] Computed beacon: ${beacon}`);
+        if (verbose) vlog(`[verbose] Computed beacon: ${beacon}`);
         writeProjectConfig({ beacon });
-        if (verbose) console.log(`[verbose] Wrote config.json`);
+        if (verbose) vlog(`[verbose] Wrote config.json`);
         const readmePath = join(vitDir(), 'README.md');
         if (!existsSync(readmePath)) {
           writeFileSync(readmePath, DOT_VIT_README);
-          if (verbose) console.log(`[verbose] Wrote .vit/README.md`);
+          if (verbose) vlog(`[verbose] Wrote .vit/README.md`);
+        }
+        if (opts.json) {
+          jsonOk({ beacon });
+          return;
         }
         console.log(`${mark} beacon: ${beacon}`);
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        const msg = err instanceof Error ? err.message : String(err);
+        if (opts.json) {
+          jsonError(msg);
+          return;
+        }
+        console.error(msg);
         process.exitCode = 1;
       }
     });

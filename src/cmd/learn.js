@@ -13,6 +13,8 @@ import { shouldBypassVet } from '../lib/trust-gate.js';
 import { isSkillRef, nameFromSkillRef, isValidSkillRef } from '../lib/skill-ref.js';
 import { mark, name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
+import { loadConfig } from '../lib/config.js';
+import { jsonOk, jsonError } from '../lib/json-output.js';
 
 export default function register(program) {
   program
@@ -21,11 +23,16 @@ export default function register(program) {
     .description('Install a skill from the network into your skill directory')
     .option('--did <did>', 'DID to use')
     .option('--user', 'Install to user-wide ~/.claude/skills/ (requires vet)')
+    .option('--json', 'Output as JSON')
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (ref, opts) => {
       try {
         const gate = requireAgent();
         if (!gate.ok) {
+          if (opts.json) {
+            jsonError('agent required', 'run vit learn from a coding agent');
+            return;
+          }
           console.error(`${name} learn should be run by a coding agent (e.g. claude code, gemini cli).`);
           console.error(`open your agent and ask it to run '${name} learn' for you.`);
           process.exitCode = 1;
@@ -33,14 +40,23 @@ export default function register(program) {
         }
 
         const { verbose } = opts;
+        const vlog = opts.json ? (...a) => console.error(...a) : console.log;
 
         if (!isSkillRef(ref)) {
+          if (opts.json) {
+            jsonError('invalid skill ref', 'expected format: skill-{name}');
+            return;
+          }
           console.error(`invalid skill ref. expected format: skill-{name} (e.g. skill-agent-test-patterns)`);
           process.exitCode = 1;
           return;
         }
 
         if (!isValidSkillRef(ref)) {
+          if (opts.json) {
+            jsonError('invalid skill ref', 'lowercase letters, numbers, hyphens only');
+            return;
+          }
           console.error('invalid skill ref. name must be lowercase letters, numbers, hyphens only.');
           console.error('no leading hyphen, no consecutive hyphens, max 64 chars.');
           process.exitCode = 1;
@@ -48,7 +64,7 @@ export default function register(program) {
         }
 
         const skillName = nameFromSkillRef(ref);
-        if (verbose) console.log(`[verbose] skill name: ${skillName}`);
+        if (verbose) vlog(`[verbose] skill name: ${skillName}`);
 
         // Trust gate
         const isUserInstall = !!opts.user;
@@ -57,6 +73,10 @@ export default function register(program) {
 
         if (isUserInstall && !trustedEntry) {
           // --user ALWAYS requires vet
+          if (opts.json) {
+            jsonError(`skill '${ref}' is not yet vetted`, 'user-wide install requires vetting');
+            return;
+          }
           console.error(`skill '${ref}' is not yet vetted. user-wide install requires vetting.`);
           console.error(`ask the user to vet it first:`);
           console.error('');
@@ -73,6 +93,10 @@ export default function register(program) {
           // Project-level: requires vet UNLESS dangerous-accept
           const trustGate = shouldBypassVet();
           if (!trustGate.bypass) {
+            if (opts.json) {
+              jsonError(`skill '${ref}' is not yet vetted`, `run 'vit vet ${ref}' first`);
+              return;
+            }
             console.error(`skill '${ref}' is not yet vetted.`);
             console.error(`ask the user to vet it first:`);
             console.error('');
@@ -90,15 +114,19 @@ export default function register(program) {
             process.exitCode = 1;
             return;
           }
-          if (verbose) console.log(`[verbose] vet gate bypassed: ${trustGate.reason}`);
+          if (verbose) vlog(`[verbose] vet gate bypassed: ${trustGate.reason}`);
         }
 
+        if (opts.json && !(opts.did || loadConfig().did)) {
+          jsonError('no DID configured', "run 'vit login <handle>' first");
+          return;
+        }
         const did = requireDid(opts);
         if (!did) return;
-        if (verbose) console.log(`[verbose] DID: ${did}`);
+        if (verbose) vlog(`[verbose] DID: ${did}`);
 
         const { agent } = await restoreAgent(did);
-        if (verbose) console.log('[verbose] session restored');
+        if (verbose) vlog('[verbose] session restored');
 
         // Build DID list from following + self
         const following = readFollowing();
@@ -108,7 +136,7 @@ export default function register(program) {
         // Fetch skills from each DID, find matching ref
         const allRecords = await batchQuery(dids, async (repoDid) => {
           const pds = await resolvePds(repoDid);
-          if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
+          if (verbose) vlog(`[verbose] ${repoDid}: resolved PDS ${pds}`);
           return (await listRecordsFromPds(pds, repoDid, SKILL_COLLECTION, 50)).records;
         }, { verbose });
 
@@ -125,13 +153,17 @@ export default function register(program) {
         }
 
         if (!match) {
+          if (opts.json) {
+            jsonError(`no skill found with ref '${ref}'`);
+            return;
+          }
           console.error(`no skill found with ref '${ref}' from followed accounts.`);
           process.exitCode = 1;
           return;
         }
 
         const record = match.value;
-        if (verbose) console.log(`[verbose] found skill: ${record.name} from ${match.uri}`);
+        if (verbose) vlog(`[verbose] found skill: ${record.name} from ${match.uri}`);
 
         // Determine install path
         let installDir;
@@ -145,7 +177,7 @@ export default function register(program) {
 
         // Write SKILL.md from text field — verbatim, no reconstruction
         writeFileSync(join(installDir, 'SKILL.md'), record.text);
-        if (verbose) console.log(`[verbose] wrote SKILL.md to ${installDir}`);
+        if (verbose) vlog(`[verbose] wrote SKILL.md to ${installDir}`);
 
         // Download and write resource blobs
         if (record.resources && record.resources.length > 0) {
@@ -167,7 +199,7 @@ export default function register(program) {
                 if (!blobRes.ok) throw new Error(`blob fetch failed: ${blobRes.status}`);
                 const blobData = Buffer.from(await blobRes.arrayBuffer());
                 writeFileSync(resourcePath, blobData);
-                if (verbose) console.log(`[verbose] wrote resource: ${resource.path}`);
+                if (verbose) vlog(`[verbose] wrote resource: ${resource.path}`);
               }
             } catch (err) {
               console.error(`warning: failed to download resource ${resource.path}: ${err.message}`);
@@ -192,11 +224,20 @@ export default function register(program) {
         }
 
         const scope = isUserInstall ? 'user' : 'project';
+        if (opts.json) {
+          jsonOk({ ref, name: skillName, installedTo: installDir, scope, version: record.version || null });
+          return;
+        }
         console.log(`${mark} learned: ${ref} (${scope})`);
         console.log(`installed to: ${installDir}`);
         if (record.version) console.log(`version: ${record.version}`);
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        const msg = err instanceof Error ? err.message : String(err);
+        if (opts.json) {
+          jsonError(msg);
+          return;
+        }
+        console.error(msg);
         process.exitCode = 1;
       }
     });

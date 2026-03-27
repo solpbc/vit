@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { mark, name } from '../lib/brand.js';
 import { which } from '../lib/compat.js';
+import { jsonOk, jsonError } from '../lib/json-output.js';
 
 function scanSkillDir(dir) {
   const skills = [];
@@ -36,61 +37,81 @@ function scanSkillDir(dir) {
 }
 
 export default function register(program) {
-  async function checkHealth() {
+  async function checkHealth(opts) {
     try {
       const config = loadConfig();
+      const setup = {
+        done: !!config.setup_at,
+        at: config.setup_at ? new Date(config.setup_at * 1000).toISOString() : null,
+      };
+      let installType = 'not on PATH';
+      let vitPath = which(name);
+      let installPath = vitPath || null;
+      let beacon = null;
+      let skillInstalled = false;
+      let projectSkills = [];
+      let userSkills = [];
+      let blueskyOk = false;
+      let pds = null;
+
       if (config.setup_at) {
         const when = new Date(config.setup_at * 1000).toISOString();
-        console.log(`${mark} setup: ok (${when})`);
+        if (!opts.json) console.log(`${mark} setup: ok (${when})`);
       } else {
-        console.log(`${mark} setup: not done (run ${name} setup)`);
+        if (!opts.json) console.log(`${mark} setup: not done (run ${name} setup)`);
       }
 
-      const vitPath = which(name);
       if (!vitPath) {
-        console.log(`${mark} install: not on PATH`);
+        installType = 'not on PATH';
+        if (!opts.json) console.log(`${mark} install: not on PATH`);
       } else {
         try {
           if (lstatSync(vitPath).isSymbolicLink()) {
-            console.log(`${mark} install: linked (${vitPath})`);
+            installType = 'linked';
+            if (!opts.json) console.log(`${mark} install: linked (${vitPath})`);
           } else if (vitPath.includes('node_modules')) {
-            console.log(`${mark} install: global`);
+            installType = 'global';
+            if (!opts.json) console.log(`${mark} install: global`);
           } else {
-            console.log(`${mark} install: source (${vitPath})`);
+            installType = 'source';
+            if (!opts.json) console.log(`${mark} install: source (${vitPath})`);
           }
         } catch {
-          console.log(`${mark} install: source (${vitPath})`);
+          installType = 'source';
+          if (!opts.json) console.log(`${mark} install: source (${vitPath})`);
         }
       }
 
       const projConfig = readProjectConfig();
+      beacon = projConfig.beacon || null;
       if (projConfig.beacon) {
-        console.log(`${mark} beacon: ${projConfig.beacon}`);
+        if (!opts.json) console.log(`${mark} beacon: ${projConfig.beacon}`);
       } else {
-        console.log(`${mark} beacon: not set`);
+        if (!opts.json) console.log(`${mark} beacon: not set`);
       }
 
       const skillPath = join(process.cwd(), '.claude', 'skills', 'using-vit', 'SKILL.md');
+      skillInstalled = existsSync(skillPath);
       if (existsSync(skillPath)) {
-        console.log(`${mark} skill: ok (using-vit)`);
+        if (!opts.json) console.log(`${mark} skill: ok (using-vit)`);
       } else {
-        console.log(`${mark} skill: not installed (run ${name} setup)`);
+        if (!opts.json) console.log(`${mark} skill: not installed (run ${name} setup)`);
       }
 
       // Report installed skills
       const projectSkillDir = join(process.cwd(), '.claude', 'skills');
-      const projectSkills = scanSkillDir(projectSkillDir);
+      projectSkills = scanSkillDir(projectSkillDir);
       const userSkillDir = join(homedir(), '.claude', 'skills');
-      const userSkills = scanSkillDir(userSkillDir);
+      userSkills = scanSkillDir(userSkillDir);
 
-      if (projectSkills.length > 0) {
+      if (!opts.json && projectSkills.length > 0) {
         console.log(`${mark} project skills: ${projectSkills.length} installed`);
         for (const s of projectSkills) {
           const ver = s.version ? ` v${s.version}` : '';
           console.log(`    ${s.name}${ver}`);
         }
       }
-      if (userSkills.length > 0) {
+      if (!opts.json && userSkills.length > 0) {
         console.log(`${mark} user skills: ${userSkills.length} installed`);
         for (const s of userSkills) {
           const ver = s.version ? ` v${s.version}` : '';
@@ -99,26 +120,46 @@ export default function register(program) {
       }
 
       if (!config.did) {
-        console.log(`${mark} bluesky: not logged in (run ${name} login <handle>)`);
+        if (!opts.json) console.log(`${mark} bluesky: not logged in (run ${name} login <handle>)`);
       } else {
         try {
           const { session } = await restoreAgent(config.did);
-          const pds = session.serverMetadata?.issuer;
-          console.log(`${mark} bluesky: ok (${session.did}${pds ? ', ' + pds : ''})`);
+          blueskyOk = true;
+          pds = session.serverMetadata?.issuer || null;
+          if (!opts.json) console.log(`${mark} bluesky: ok (${session.did}${pds ? ', ' + pds : ''})`);
         } catch {
-          console.log(`${mark} bluesky: token expired or invalid (run ${name} login <handle>)`);
+          if (!opts.json) console.log(`${mark} bluesky: token expired or invalid (run ${name} login <handle>)`);
         }
       }
+
+      if (opts.json) {
+        jsonOk({
+          setup,
+          install: { type: installType, path: installPath },
+          beacon,
+          skill: skillInstalled,
+          projectSkills,
+          userSkills,
+          bluesky: { ok: blueskyOk, did: config.did || null, pds },
+        });
+      }
     } catch (err) {
-      console.error(err instanceof Error ? err.message : String(err));
+      const msg = err instanceof Error ? err.message : String(err);
+      if (opts.json) {
+        jsonError(msg);
+        return;
+      }
+      console.error(msg);
       process.exitCode = 1;
     }
   }
 
   program.command('doctor')
     .description('Verify vit environment and project configuration')
+    .option('--json', 'Output as JSON')
     .action(checkHealth);
   program.command('status')
     .description('Alias for doctor')
+    .option('--json', 'Output as JSON')
     .action(checkHealth);
 }

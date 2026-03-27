@@ -10,6 +10,8 @@ import { shouldBypassVet } from '../lib/trust-gate.js';
 import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
 import { brand, name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
+import { loadConfig } from '../lib/config.js';
+import { jsonOk, jsonError } from '../lib/json-output.js';
 
 export default function register(program) {
   program
@@ -17,11 +19,16 @@ export default function register(program) {
     .argument('<ref>', 'Three-word cap reference (e.g. fast-cache-invalidation)')
     .description('Derive a vetted cap into the local codebase')
     .option('--did <did>', 'DID to use')
+    .option('--json', 'Output as JSON')
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (ref, opts) => {
       try {
         const gate = requireAgent();
         if (!gate.ok) {
+          if (opts.json) {
+            jsonError('agent required', 'run vit remix from a coding agent');
+            return;
+          }
           console.error(`${name} remix should be run by a coding agent (e.g. claude code, gemini cli).`);
           console.error(`open your agent and ask it to run '${name} remix' for you.`);
           process.exitCode = 1;
@@ -29,31 +36,48 @@ export default function register(program) {
         }
 
         const { verbose } = opts;
+        const vlog = opts.json ? (...a) => console.error(...a) : console.log;
 
         if (!REF_PATTERN.test(ref)) {
+          if (opts.json) {
+            jsonError('invalid ref', 'expected three lowercase words with dashes');
+            return;
+          }
           console.error('invalid ref. expected three lowercase words with dashes (e.g. fast-cache-invalidation)');
           process.exitCode = 1;
           return;
         }
 
+        if (opts.json && !(opts.did || loadConfig().did)) {
+          jsonError('no DID configured', "run 'vit login <handle>' first");
+          return;
+        }
         const did = requireDid(opts);
         if (!did) return;
-        if (verbose) console.log(`[verbose] DID: ${did}`);
+        if (verbose) vlog(`[verbose] DID: ${did}`);
 
         const projectConfig = readProjectConfig();
         const beacon = projectConfig.beacon;
         if (!beacon) {
+          if (opts.json) {
+            jsonError('no beacon set', "run 'vit init' first");
+            return;
+          }
           console.error(`no beacon set. run '${name} init' in a project directory first.`);
           process.exitCode = 1;
           return;
         }
-        if (verbose) console.log(`[verbose] beacon: ${beacon}`);
+        if (verbose) vlog(`[verbose] beacon: ${beacon}`);
 
         const trusted = readLog('trusted.jsonl');
         const trustedEntry = trusted.find(e => e.ref === ref);
         if (!trustedEntry) {
           const trustGate = shouldBypassVet();
           if (!trustGate.bypass) {
+            if (opts.json) {
+              jsonError(`cap '${ref}' is not trusted`, `ask user to run 'vit vet ${ref} --trust'`);
+              return;
+            }
             console.error(`cap '${ref}' is not trusted. ask the user to vet it first:`);
             console.error('');
             console.error(`  vit vet ${ref}`);
@@ -70,12 +94,12 @@ export default function register(program) {
             process.exitCode = 1;
             return;
           }
-          if (verbose) console.log(`[verbose] vet gate bypassed: ${trustGate.reason}`);
+          if (verbose) vlog(`[verbose] vet gate bypassed: ${trustGate.reason}`);
         }
-        if (verbose && trustedEntry) console.log(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
+        if (verbose && trustedEntry) vlog(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
 
         const { agent } = await restoreAgent(did);
-        if (verbose) console.log('[verbose] session restored');
+        if (verbose) vlog('[verbose] session restored');
 
         const following = readFollowing();
         const dids = following.map(e => e.did);
@@ -83,7 +107,7 @@ export default function register(program) {
 
         const allRecords = await batchQuery(dids, async (repoDid) => {
           const pds = await resolvePds(repoDid);
-          if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
+          if (verbose) vlog(`[verbose] ${repoDid}: resolved PDS ${pds}`);
           return (await listRecordsFromPds(pds, repoDid, CAP_COLLECTION, 50)).records;
         }, { verbose });
 
@@ -101,6 +125,10 @@ export default function register(program) {
         }
 
         if (!match) {
+          if (opts.json) {
+            jsonError(`no cap found with ref '${ref}' for this beacon`);
+            return;
+          }
           console.error(`no cap found with ref '${ref}' for this beacon.`);
           process.exitCode = 1;
           return;
@@ -111,6 +139,11 @@ export default function register(program) {
         const title = record.title || ref;
         const description = record.description || '';
         const text = record.text || '';
+
+        if (opts.json) {
+          jsonOk({ ref, author, title, description, text });
+          return;
+        }
 
         console.log(`# ${brand} remix: ${title}`);
         console.log('');
@@ -137,7 +170,12 @@ export default function register(program) {
         console.log('');
         console.log(text);
       } catch (err) {
-        console.error(err.message);
+        const msg = err instanceof Error ? err.message : String(err);
+        if (opts.json) {
+          jsonError(msg);
+          return;
+        }
+        console.error(msg);
         process.exitCode = 1;
       }
     });
