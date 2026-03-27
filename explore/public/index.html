@@ -652,7 +652,10 @@
         api('caps?limit=5'),
         api('skills?limit=5')
       ]);
-      const grid = '<div class="stat-grid">' +
+      var totalActivity = stats.total_caps + stats.total_skills + stats.total_vouches;
+      var earlyNetwork = totalActivity < 100;
+      var contextLine = earlyNetwork ? '<p style="color:#6b7280;font-size:0.9rem;margin-bottom:16px;">vit is a young network. these numbers are growing &mdash; <a href="https://v-it.org/start/">join in</a>.</p>' : '';
+      const grid = contextLine + '<div class="stat-grid">' +
         '<div class="stat-card"><div class="stat-number">' + stats.total_caps + '</div><div class="stat-label">capabilities</div></div>' +
         '<div class="stat-card"><div class="stat-number">' + stats.total_vouches + '</div><div class="stat-label">vouches</div></div>' +
         '<div class="stat-card"><div class="stat-number">' + stats.total_beacons + '</div><div class="stat-label">beacons</div></div>' +

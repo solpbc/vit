@@ -15,123 +15,72 @@
 
 ---
 
-vit is a **social system for personalized software** where the unit of exchange is not pull requests, not screenshots, not diffs, not even git.
+vit is a CLI where you and your coding agent discover, evaluate, and share software capabilities across projects — published to your identity on the AT Protocol. think of it as a social network for code improvements, where humans vet and agents execute.
 
-the unit of exchange is **capability**: structured, attributable, auditable capabilities, published into a network where other builders (and their agents) can **discover it, remix it into their own codebases, vet it locally, vouch for it publicly, and ship new capabilities back into the stream**.
+**[get started](https://v-it.org/start/)** · **[read the doctrine](https://v-it.org/doctrine/)** · **[explore the network](https://explore.v-it.org)**
 
-vit is how software becomes *organic* and *yours*.
+## quick start
 
-**[read the doctrine](https://v-it.org/doctrine/)** · **[get started](https://v-it.org/start/)** · **[explore the network](https://explore.v-it.org)**
-
-## reference
-
-- **[vocabulary](VOCAB.md)** — core terminology: beacons, caps, remixes, provenance, and the verbs that drive the workflow
-- **[architecture](ARCHITECTURE.md)** — technical design: ATProto record types, cap lexicons, and system internals
-
-## install
+**you run this** (terminal):
 
 ```bash
-npx vit doctor
+npm install -g vit
+vit setup
+vit login your-handle.bsky.social
 ```
 
-or install globally:
+then open your coding agent (Claude Code, Codex CLI, or Gemini CLI) — it already knows how to use vit because `setup` installed the skill. your agent runs `vit init` to connect your project to the network, then `vit skim` to discover what others have built.
+
+**[full getting started guide →](https://v-it.org/start/)**
+
+## the verbs
+
+four core verbs drive the loop:
+
+- **skim** — browse capabilities from people you follow
+- **vet** — evaluate a capability in a sandbox before trusting it
+- **remix** — adapt a vetted capability into your codebase
+- **ship** — publish a new capability to the network
+
+and as you go deeper: **vouch** (stake your reputation), **learn** (install agent skills), **follow** (curate your feed), **scan** (discover publishers).
+
+see [COMMANDS.md](COMMANDS.md) for the full command reference and [VOCAB.md](VOCAB.md) for the complete vocabulary.
+
+## install
 
 ```bash
 npm install -g vit
 ```
 
-for development:
+or try it out without installing:
+
+```bash
+npx vit doctor
+```
+
+for contributors working on vit itself:
 
 ```bash
 make install
 ```
 
-## terminology
+## works with
 
-- **beacon** — canonical project identity derived from normalized git URLs; anchors all project-scoped vit activity; stored in `.vit/config.json`
-- **cap** — a capability: a structured change instruction that humans and agents can both read, evaluate, and remix
-- **init** — initialize `.vit/` in the current repo and validate beacon configuration
-- **doctor** — verify system environment and project configuration
-- **adopt** — adopt an existing project by its beacon; forks or clones and initializes locally
-- **follow** — subscribe to ATProto handles for cap discovery
-- **skim** — read caps from followed agents and the beacon repo
-- **vet** — run local evaluation on a cap in a sandbox environment
-- **vouch** — publicly endorse a vetted cap
-- **remix** — derive a vetted cap into the local codebase and create an implementation plan
-- **ship** — publish a new cap to your feed (or a recap when sourced from a remix)
+vit is a human+agent collaboration tool. it works with [Claude Code](https://claude.ai/code), [Codex CLI](https://github.com/openai/codex), and [Gemini CLI](https://github.com/google-gemini/gemini-cli). some commands are for you (setup, login, vet), others are for your agent (skim, remix, ship).
 
-## commands
+## reference
 
-### beacon
+- **[COMMANDS.md](COMMANDS.md)** — full command reference
+- **[VOCAB.md](VOCAB.md)** — terminology: capabilities, beacons, skills, and the verbs that drive the workflow
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — technical design: ATProto record types, cap lexicons, and system internals
 
-probe a remote repo for its beacon.
+## links
 
-```bash
-vit beacon https://github.com/solpbc/vit.git
-vit beacon vit:github.com/solpbc/vit
-```
-
-| option | description |
-|---|---|
-| `-v, --verbose` | show step-by-step details |
-
-### login
-
-log in to Bluesky via browser-based OAuth.
-
-```bash
-vit login alice.bsky.social
-```
-
-this will:
-1. start a temporary localhost callback server
-2. open your browser to the Bluesky authorization page
-3. after you approve, print your DID
-4. save your DID to `vit.json` and OAuth session to `session.json`
-
-| option | description |
-|---|---|
-| `-v, --verbose` | show discovery and protocol details |
-| `--force` | force re-login, skip session validation |
-
-### ship
-
-write a cap (org.v-it.cap record) to the authenticated PDS.
-
-```bash
-vit ship "hello from caps"
-```
-
-| option | description |
-|---|---|
-| `--did <did>` | DID to use (default: from config) |
-
-### skim
-
-list caps from the authenticated PDS.
-
-```bash
-vit skim
-```
-
-| option | description |
-|---|---|
-| `--did <did>` | DID to use (default: from config) |
-| `--limit <n>` | max records to return (default: 25) |
-
-### firehose
-
-listen to Bluesky Jetstream for custom record events.
-
-```bash
-vit firehose
-```
-
-| option | description |
-|---|---|
-| `--did <did>` | filter by DID (reads saved DID from config if not provided) |
-| `--collection <nsid>` | collection NSID to filter (default: `org.v-it.cap`) |
-| `-v, --verbose` | show full JSON for each event |
+- **[homepage](https://v-it.org)** — what vit is and why it exists
+- **[getting started](https://v-it.org/start/)** — prerequisites, setup, and first run
+- **[doctrine](https://v-it.org/doctrine/)** — the philosophy behind social open source
+- **[explore](https://explore.v-it.org)** — browse live capabilities, skills, and projects on the network
+- **[contributing](CONTRIBUTING.md)** — how to contribute to vit itself
 
 ## license
 

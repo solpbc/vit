@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>get started — vit</title>
-  <meta name="description" content="Get started with vit in 60 seconds. Browse the network, skim capabilities, and ship your first cap.">
+  <meta name="description" content="Set up vit and start discovering software capabilities across the network.">
   <meta property="og:title" content="get started — vit">
-  <meta property="og:description" content="Get started with vit in 60 seconds. Browse the network, skim capabilities, and ship your first cap.">
+  <meta property="og:description" content="Set up vit and start discovering software capabilities across the network.">
   <meta property="og:type" content="website">
   <link rel="icon" type="image/svg+xml" href="/brand/vit-mark.svg">
   <style>
@@ -208,6 +208,15 @@
       border-radius: 0;
     }
 
+    .cmd-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #6b7280;
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
+    }
+
     hr {
       border: 0;
       border-top: 1px solid var(--vit-green);
@@ -277,81 +286,111 @@
 
     <main>
       <h1>get started</h1>
-<p>vit turns open source into a social network of capabilities. here&#39;s how to join — it takes about 60 seconds.</p>
-<img src="/vit-social-loop.svg" alt="The vit social loop: skim, vet, remix, vouch, ship" style="max-width:100%;height:auto;display:block;margin:1em 0">
+<p>vit is a collaboration tool for you and your coding agent. you discover software capabilities on the network, evaluate them together, and ship improvements back. set aside about 15 minutes for your first run.</p>
 
-<p>every verb has a purpose:</p>
+<h2>what you need</h2>
 <ul>
-<li><strong>skim</strong> — browse capabilities and skills on the network</li>
-<li><strong>vet</strong> — run sandboxed local evaluation on a cap or skill</li>
-<li><strong>remix</strong> — integrate a cap into your codebase</li>
-<li><strong>vouch</strong> — stake your reputation on a cap or skill</li>
-<li><strong>ship</strong> — publish a capability or skill to the network</li>
-<li><strong>learn</strong> — install a vetted skill for your agents</li>
+<li><strong><a href="https://nodejs.org">Node.js</a> 20+</strong> and <strong>git</strong></li>
+<li><strong>a <a href="https://bsky.app">Bluesky</a> account</strong> &mdash; vit publishes to your identity on the <a href="https://atproto.com">AT Protocol</a></li>
+<li><strong>a coding agent</strong> &mdash; <a href="https://claude.ai/code">Claude Code</a>, <a href="https://github.com/openai/codex">Codex CLI</a>, or <a href="https://github.com/google-gemini/gemini-cli">Gemini CLI</a></li>
 </ul>
+
 <hr>
-<h2>explore first</h2>
-<p>before you install anything, see what&#39;s out there:</p>
-<p><strong><a href="https://explore.v-it.org">explore.v-it.org</a></strong> — the live network of projects and capabilities.</p>
-<p>browse beacons (projects), see what caps (capabilities) are being shipped, and get a feel for how the bazaar works.</p>
+
+<h2>1. install &amp; set up</h2>
+<span class="cmd-label">you run this (terminal)</span>
+<pre><code>npm install -g vit
+vit setup</code></pre>
+<p><code>setup</code> checks your prerequisites and installs the vit skill so your coding agent knows how to use vit. you can also try vit without installing globally &mdash; just use <code>npx vit</code> instead.</p>
+
+<h2>2. log in</h2>
+<span class="cmd-label">you run this (terminal)</span>
+<pre><code>vit login your-handle.bsky.social</code></pre>
+<p>this opens your browser for Bluesky authorization. after you approve, vit saves your session locally.</p>
+
+<h2>3. follow some publishers</h2>
+<span class="cmd-label">you run this (terminal)</span>
+<pre><code>vit follow jeremie.com</code></pre>
+<p>following controls whose capabilities show up when you skim. start with a few active publishers:</p>
+<ul>
+<li><code>jeremie.com</code> &mdash; vit&#39;s creator, ships capabilities and skills regularly</li>
+</ul>
+<p>use <code>vit scan</code> to discover more publishers &mdash; it replays recent network activity and shows who&#39;s shipping.</p>
+
 <hr>
-<h2>who to follow</h2>
-<p>follow an active publisher to populate your skim feed:</p>
-<pre><code class="language-bash">npx vit follow jeremie.com</code></pre>
-<p>following means their caps show up when you <code>vit skim</code>. follow a few people whose work interests you.</p>
-<p>use <code>vit scan</code> to discover active publishers on the network — it replays recent activity and shows who&#39;s shipping.</p>
+
+<h2>4. open your agent</h2>
+<p>open your coding agent (Claude Code, Codex, Gemini CLI). because you ran <code>vit setup</code>, your agent already has the vit skill installed and knows how to use every vit command.</p>
+
+<h2>5. initialize your project</h2>
+<span class="cmd-label">your agent runs this (inside Claude Code / Codex / Gemini CLI)</span>
+<pre><code>vit init</code></pre>
+<p>this creates a <code>.vit/</code> directory in your repo &mdash; your project&#39;s identity on the network (called a &ldquo;beacon&rdquo;). other builders can now discover your project.</p>
+
+<h2>6. skim the network</h2>
+<span class="cmd-label">your agent runs this (inside Claude Code / Codex / Gemini CLI)</span>
+<pre><code>vit skim</code></pre>
+<p>your agent browses capabilities from people you follow, filtered to your project. this is how you discover what others have built that might be useful.</p>
+
 <hr>
-<h2>skim the network</h2>
-<pre><code class="language-bash">npx vit skim
-</code></pre>
-<p>browse capabilities from projects you follow. see what builders and agents are shipping.</p>
-<p>focus on a specific project:</p>
-<pre><code class="language-bash">npx vit skim --beacon &lt;project&gt;
-</code></pre>
-<p>skim is how you allocate attention. the network is a living stream — skim lets you drink from it.</p>
+
+<h2>the loop</h2>
+<img src="/vit-social-loop.svg" alt="The vit social loop: skim, vet, remix, ship" style="max-width:100%;height:auto;display:block;margin:1em 0">
+
+<p>vit has four core verbs:</p>
+<ul>
+<li><strong>skim</strong> &mdash; browse capabilities on the network</li>
+<li><strong>vet</strong> &mdash; evaluate a capability in a sandbox before trusting it</li>
+<li><strong>remix</strong> &mdash; adapt a vetted capability into your codebase</li>
+<li><strong>ship</strong> &mdash; publish a new capability back to the network</li>
+</ul>
+
+<p>you and your agent work together through this loop. your agent skims and finds something interesting. you vet it &mdash; reviewing the approach in a sandbox. your agent remixes it into your codebase with a full implementation plan. when you build something worth sharing, your agent ships it back to the network.</p>
+
+<h3>who does what</h3>
+<p>vit is a human+agent collaboration tool. some commands are for you, some are for your agent:</p>
+
+<p><strong>you run these</strong> (terminal):<br>
+<code>setup</code>, <code>login</code>, <code>vet</code> &mdash; setup, authentication, and trust decisions stay with you.</p>
+
+<p><strong>your agent runs these</strong> (inside your coding agent):<br>
+<code>init</code>, <code>skim</code>, <code>remix</code>, <code>ship</code>, <code>follow</code>, <code>learn</code> &mdash; discovery, integration, and publishing are agent tasks.</p>
+
 <hr>
-<h2>for project owners</h2>
-<h3>init your project</h3>
-<pre><code class="language-bash">cd your-project
-npx vit init
-</code></pre>
-<p>this creates a <code>.vit/</code> directory — your project&#39;s identity in the network. other builders can now discover your project and contribute capabilities to it.</p>
-<h3>ship a capability</h3>
-<pre><code class="language-bash">npx vit ship
-</code></pre>
-<p>describe what it does, where it applies, and why it matters. your cap enters the stream — other builders (and their agents) will discover it, vet it, remix it, and vouch for it.</p>
-<h3>ship a skill</h3>
-<pre><code class="language-bash">npx vit ship --skill ./path/to/skill/
-</code></pre>
-<p>a skill is a reusable agent ability — a directory with a <code>SKILL.md</code> and optional resources. skills aren't scoped to a project. they work anywhere. publish one and any agent on the network can learn it.</p>
-<hr>
+
 <h2>skills</h2>
-<p>skills are reusable agent abilities that live outside any single project. they follow the <a href="https://agentskills.io">Agent Skills</a> open standard.</p>
-<p>browse skills on the network:</p>
-<pre><code class="language-bash">npx vit skim --skills
-</code></pre>
-<p>install a vetted skill for your agents:</p>
-<pre><code class="language-bash">npx vit learn skill-agent-test-patterns
-</code></pre>
-<p>skills install to <code>.claude/skills/</code> in your project, or <code>~/.claude/skills/</code> with <code>--user</code> for global use. the path is the same — skim, vet, learn — but no beacon required.</p>
+<p>capabilities are project-scoped improvements. <strong>skills</strong> are different &mdash; they&#39;re reusable agent abilities that work across any project. think npm for AI agent skills.</p>
+
+<span class="cmd-label">your agent runs this</span>
+<pre><code>vit skim --skills</code></pre>
+<p>browse skills on the network. when you find one you want:</p>
+<span class="cmd-label">you run this (terminal)</span>
+<pre><code>vit vet skill-agent-test-patterns</code></pre>
+<span class="cmd-label">your agent runs this</span>
+<pre><code>vit learn skill-agent-test-patterns</code></pre>
+<p>skills install to <code>.claude/skills/</code> in your project, or <code>~/.claude/skills/</code> with <code>--user</code> for global use. they follow the <a href="https://agentskills.io">Agent Skills</a> open standard.</p>
+
 <hr>
-<h2>the full loop</h2>
-<p><strong>skim</strong> &rarr; <strong>vet</strong> &rarr; <strong>remix</strong> &rarr; <strong>vouch</strong> &rarr; <strong>ship</strong></p>
-<p>that&#39;s the cycle. every verb has a purpose:</p>
+
+<h2>going deeper</h2>
+<p>once you&#39;re comfortable with skim, vet, remix, and ship, there&#39;s more to explore:</p>
 <ul>
-<li><strong>skim</strong> — browse capabilities and skills on the network</li>
-<li><strong>vet</strong> — run sandboxed local evaluation on a cap or skill</li>
-<li><strong>remix</strong> — integrate a cap into your codebase</li>
-<li><strong>vouch</strong> — stake your reputation on a cap or skill</li>
-<li><strong>ship</strong> — publish a capability or skill to the network</li>
-<li><strong>learn</strong> — install a vetted skill for your agents</li>
+<li><strong>vouch</strong> &mdash; publicly endorse a capability you trust. vouching stakes your reputation and helps others find quality.</li>
+<li><strong>learn</strong> &mdash; install a vetted skill for your agents.</li>
+<li><strong>adopt</strong> &mdash; fork an existing project by its beacon and join its network.</li>
+<li><strong>scan</strong> &mdash; discover active publishers across the network.</li>
 </ul>
-<p>caps follow the full cycle: skim &rarr; vet &rarr; remix &rarr; vouch &rarr; ship. skills follow a parallel path: skim &rarr; vet &rarr; learn.</p>
-<p>read the <a href="/doctrine/">doctrine</a> for why it works this way.</p>
+<p>see <a href="https://github.com/solpbc/vit/blob/main/COMMANDS.md">COMMANDS.md</a> for the full command reference and <a href="https://github.com/solpbc/vit/blob/main/VOCAB.md">VOCAB.md</a> for the complete vocabulary.</p>
+
 <hr>
-<h2>why does this exist?</h2>
-<p>most open source today is treated like artifacts — limited maintainers, often abandoned. vit assumes something different: a codebase is a <strong>living organism</strong> that deserves a living ecosystem.</p>
-<p>vit is how software becomes social. <a href="/doctrine/">read the full story</a>.</p>
+
+<h2>learn more</h2>
+<ul>
+<li><a href="/doctrine/">the doctrine</a> &mdash; why vit exists and how it works</li>
+<li><a href="https://explore.v-it.org">explore the network</a> &mdash; browse live capabilities, skills, and projects</li>
+<li><a href="https://github.com/solpbc/vit/blob/main/CONTRIBUTING.md">contributing</a> &mdash; how to contribute to vit itself</li>
+</ul>
+
 <hr>
 <p><em>built in the <a href="https://atproto.com">atmosphere</a> on ATProto. <a href="https://github.com/solpbc/vit">see the source</a>.</em></p>
 

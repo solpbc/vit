@@ -1,16 +1,20 @@
 contributing to vit happens through vit itself.
-you do not route work through pull requests or issues; you ship caps.
+you do not route work through pull requests or issues; you ship capabilities.
 for the philosophy behind this system, read the [doctrine](https://v-it.org/doctrine/).
 
 ## prerequisites
 
-- [bun](https://bun.sh) installed
+- [Node.js](https://nodejs.org) 20+ (check: `node --version`)
+- [git](https://git-scm.com)
 - a [Bluesky](https://bsky.app) account
-- vit installed (`bun install -g @aspect/vit` or `make install-user` from source)
+- a coding agent ([Claude Code](https://claude.ai/code), [Codex CLI](https://github.com/openai/codex), or [Gemini CLI](https://github.com/google-gemini/gemini-cli))
+- vit installed (`npm install -g vit` or `make install` from source)
 
 ## setup
 
-run these one-time steps to join vit's own beacon:
+run these one-time steps to join vit's own project:
+
+**you run this** (terminal):
 
 ```bash
 vit setup
@@ -18,68 +22,97 @@ vit login <your-handle>.bsky.social
 vit adopt vit:github.com/solpbc/vit
 ```
 
-`setup` checks prerequisites.
-`login` authenticates with Bluesky.
-`adopt` forks or clones the repo.
-then your agent runs `vit init` to initialize `.vit/` and set the beacon.
-after this, you have a local workspace anchored to vit's beacon.
+`setup` checks prerequisites and installs the vit skill for your agent.
+`login` authenticates with Bluesky via browser OAuth.
+`adopt` forks or clones the vit repo and initializes it.
 
-follow active contributors so your skim stream stays relevant:
+**your agent runs this** (inside Claude Code / Codex / Gemini CLI):
 
 ```bash
-vit follow <handle>
+vit init
+```
+
+this sets the beacon (project identity) in `.vit/`. after this, you have a local workspace anchored to vit's project on the network.
+
+follow active contributors so your skim feed stays relevant:
+
+**you run this** (terminal):
+
+```bash
+vit follow jeremie.com
 ```
 
 ## the loop
 
-you and your agent run one loop: skim -> vet -> remix or vouch -> ship.
-this is a human and agent collaboration model, not a background automation model.
+you and your agent run one loop: **skim** → **vet** → **remix** or **vouch** → **ship**.
+this is a human+agent collaboration model, not a background automation.
 
 ### skim
 
-your agent browses the cap stream filtered to your beacon.
-run `vit skim` (agent-only).
-this surfaces new caps from people you follow.
+**your agent runs this** (inside Claude Code / Codex / Gemini CLI):
+
+```bash
+vit skim
+```
+
+your agent browses the capability stream filtered to the vit project. this surfaces new capabilities from people you follow.
 
 ### vet
 
-you evaluate a cap locally with `vit vet <ref>` (human-only).
-once satisfied, mark it trusted with `vit vet <ref> --trust`.
+**you run this** (terminal):
+
+```bash
+vit vet <ref>
+```
+
+you evaluate a capability locally in a sandbox. once satisfied, mark it trusted:
+
+```bash
+vit vet <ref> --trust
+```
+
 trusting is what unlocks remix and vouch.
 
 ### remix
 
-your agent derives a vetted cap into your local codebase with a full implementation plan.
-run `vit remix <ref>` (agent-only).
-the remix is local, inspectable, and traceable to the source cap.
+**your agent runs this** (inside Claude Code / Codex / Gemini CLI):
+
+```bash
+vit remix <ref>
+```
+
+your agent derives a vetted capability into your local codebase with a full implementation plan. the remix is local, inspectable, and traceable to the source.
 
 ### vouch
 
-you publicly vouch for a vetted cap.
-run `vit vouch <ref>`.
-this is optional but important: vouching stakes your reputation and surfaces quality.
+**you run this** (terminal):
+
+```bash
+vit vouch <ref>
+```
+
+publicly endorse a vetted capability. optional but important — vouching stakes your reputation and surfaces quality.
 
 ### ship
 
-your agent ships a new cap back to the network.
-use this format:
+**your agent runs this** (inside Claude Code / Codex / Gemini CLI):
 
 ```bash
 vit ship --title "..." --description "..." --ref <three-word-ref> <<'BODY'
-<cap body - markdown instructions>
+<capability body - markdown instructions>
 BODY
 ```
 
 `--ref` must be three lowercase words separated by dashes.
-when shipping a derivative of a remixed cap, add `--recap <original-ref>` to keep provenance intact.
+when shipping a derivative of a remixed capability, add `--recap <original-ref>` to keep provenance intact.
 
-## what makes a good cap
+## what makes a good capability
 
 - clear intent, scope, and risk assessment
 - a descriptive `ref` (three lowercase words, dash-separated)
 - one recognized kind: `feat`, `fix`, `test`, `docs`, `perf`, `sec`, `refactor`, or `chore`
 - self-contained instructions so a human or agent can implement it
-- full cap structure aligned to [VOCAB.md](VOCAB.md)
+- full capability structure aligned to [VOCAB.md](VOCAB.md)
 
 ## local development
 
@@ -102,5 +135,4 @@ hand-test affected commands directly:
 ## license
 
 vit is licensed under AGPL-3.0-only.
-caps you ship inherit this license.
 see `LICENSE` for the full text.
