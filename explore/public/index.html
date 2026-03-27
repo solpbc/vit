@@ -647,25 +647,49 @@
     }
 
     async function renderStats(el) {
-      const [data, recent] = await Promise.all([api('stats'), api('caps?limit=5')]);
-      el.innerHTML = '<div class="stat-grid">' +
-        '<div class="stat-card"><div class="stat-number">' + data.total_caps + '</div><div class="stat-label">capabilities</div></div>' +
-        '<div class="stat-card"><div class="stat-number">' + data.total_vouches + '</div><div class="stat-label">vouches</div></div>' +
-        '<div class="stat-card"><div class="stat-number">' + data.total_beacons + '</div><div class="stat-label">beacons</div></div>' +
-        '<div class="stat-card"><div class="stat-number">' + data.active_dids + '</div><div class="stat-label">active participants</div></div>' +
-        '<div class="stat-card"><div class="stat-number">' + data.total_skills + '</div><div class="stat-label">skills</div></div>' +
-        '<div class="stat-card"><div class="stat-number">' + data.skill_publishers + '</div><div class="stat-label">skill publishers</div></div>' +
+      const [stats, recentCaps, recentSkills] = await Promise.all([
+        api('stats'),
+        api('caps?limit=5'),
+        api('skills?limit=5')
+      ]);
+      const grid = '<div class="stat-grid">' +
+        '<div class="stat-card"><div class="stat-number">' + stats.total_caps + '</div><div class="stat-label">capabilities</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + stats.total_vouches + '</div><div class="stat-label">vouches</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + stats.total_beacons + '</div><div class="stat-label">beacons</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + stats.active_dids + '</div><div class="stat-label">active participants</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + stats.total_skills + '</div><div class="stat-label">skills</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + stats.skill_publishers + '</div><div class="stat-label">skill publishers</div></div>' +
         '</div>';
-      if (recent.caps && recent.caps.length > 0) {
-        el.innerHTML += '<div class="recent-activity"><h3>recent activity</h3>' + recent.caps.map(renderCapItem).join('') + '</div>';
+
+      const events = [];
+      (recentCaps.caps || []).forEach(function(c) { events.push({ type: 'cap', label: c.title || c.ref || 'untitled', author: displayName(c), time: c.created_at }); });
+      (recentSkills.skills || []).forEach(function(s) { events.push({ type: 'skill', label: s.name || 'unnamed', author: displayName(s), time: s.created_at }); });
+      events.sort(function(a, b) { return (b.time || '').localeCompare(a.time || ''); });
+      events.splice(5);
+
+      let activity = '';
+      if (events.length > 0) {
+        activity = '<div class="recent-activity"><h3>recent activity</h3>' +
+          events.map(function(e) {
+            return '<div class="cap-item"><div class="cap-title">' + esc(e.label) + '</div><div class="cap-meta">' + esc(e.type) + ' · ' + esc(e.author) + ' · ' + timeAgo(e.time) + '</div></div>';
+          }).join('') + '</div>';
       }
+
+      el.innerHTML = grid + activity;
     }
 
-    // Pulse indicator
-    api('caps?limit=1').then(function(data) {
+    // Pulse indicator — check both caps and skills for most recent activity
+    Promise.all([api('caps?limit=1'), api('skills?limit=1')]).then(function(results) {
+      var capData = results[0], skillData = results[1];
+      var latest = null;
+      if (capData.caps && capData.caps.length > 0) latest = capData.caps[0].created_at;
+      if (skillData.skills && skillData.skills.length > 0) {
+        var skillTime = skillData.skills[0].created_at;
+        if (!latest || skillTime > latest) latest = skillTime;
+      }
       var el = document.getElementById('pulse');
-      if (el && data.caps && data.caps.length > 0) {
-        el.innerHTML = '<span class="pulse-dot"></span>last activity: ' + timeAgo(data.caps[0].created_at);
+      if (el && latest) {
+        el.innerHTML = '<span class="pulse-dot"></span>last activity: ' + timeAgo(latest);
       }
     }).catch(function() {});
 
