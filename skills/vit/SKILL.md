@@ -133,6 +133,18 @@ When the user says "ship it", "vit ship", or asks you to publish a cap for work 
 - Output: `beacon: lit <uri>` or `beacon: unlit`.
 - Common errors: invalid target URL or clone/probe failure.
 
+### `vit explore`
+- Description: Query the public explore index at explore.v-it.org. No authentication required.
+- Subcommands:
+  - `vit explore caps` — list recent caps. Flags: `--beacon <beacon>` (use `.` for current project), `--limit <n>`, `--cursor <id>`, `--json`
+  - `vit explore skills` — list published skills. Flags: `--tag <tag>`, `--limit <n>`, `--cursor <id>`, `--json`
+  - `vit explore beacons` — list active beacons. Flags: `--json`
+  - `vit explore vouches` — list vouches for a cap. Flags: `--cap <uri>` or `--ref <ref>`, `--beacon <beacon>` (narrows ref search), `--json`
+  - `vit explore stats` — network-wide stats. Flags: `--json`
+- All subcommands accept `--explore-url <url>` to override the API endpoint (also via `VIT_EXPLORE_URL` env var).
+- Discovery hierarchy: `explore` (indexed, instant) > `scan` (Jetstream replay, slow) > `skim` (followed accounts only).
+- Use cases: Find caps by beacon, discover skills by tag, check network health, look up vouches before adopting.
+
 ### `vit scan`
 - Description: Discover cap and skill publishers across the network via Jetstream replay.
 - Usage: `vit scan [options]`
