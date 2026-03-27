@@ -70,4 +70,3 @@ this mirrors the convention used in the ATProto repository.
 ## future work
 
 - provenance tracking across vet, remix, vouch, and ship lineage.
-- runtime lexicon validation (currently `validate: false` in CLI write commands).

@@ -133,12 +133,15 @@
     "recapRef": {
       "type": "object",
       "description": "Reference to a parent skill this was derived from.",
-      "required": ["uri"],
+      "required": ["uri", "cid"],
       "properties": {
         "uri": {
           "type": "string",
           "format": "at-uri",
           "description": "AT URI of the parent skill record."
+        },
+        "cid": {
+          "type": "string"
         }
       }
     }

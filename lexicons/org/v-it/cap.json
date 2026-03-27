@@ -87,10 +87,20 @@
             "maxLength": 512,
             "description": "Beacon URI scoping this cap to a project."
           },
+          "kind": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The kind of capability being shipped.",
+            "knownValues": ["feat", "fix", "test", "docs", "refactor", "chore", "perf", "style"]
+          },
           "createdAt": {
             "type": "string",
             "format": "datetime",
             "description": "Client-declared timestamp when this cap was originally created."
+          },
+          "recap": {
+            "type": "ref",
+            "ref": "#recapRef"
           }
         }
       }
@@ -108,6 +118,21 @@
           "type": "ref",
           "ref": "lex:com.atproto.repo.strongRef",
           "description": "The direct parent cap being replied to."
+        }
+      }
+    },
+    "recapRef": {
+      "type": "object",
+      "description": "Recap reference to the original record being recapped.",
+      "required": ["uri", "ref"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "ref": {
+          "type": "string",
+          "maxLength": 128
         }
       }
     }

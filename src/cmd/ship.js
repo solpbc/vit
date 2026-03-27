@@ -227,7 +227,7 @@ async function shipSkill(opts) {
     collection: SKILL_COLLECTION,
     rkey,
     record,
-    validate: false,
+    validate: true,
   };
 
   if (verbose) console.log(`[verbose] putRecord ${putArgs.collection} rkey=${rkey}`);
@@ -382,6 +382,7 @@ async function shipCap(opts) {
     createdAt: now,
   };
   if (projectConfig.beacon) record.beacon = projectConfig.beacon;
+  if (opts.kind) record.kind = opts.kind;
   if (opts.recap) record.recap = { uri: recapUri, ref: opts.recap };
   const rkey = TID.nextStr();
   if (verbose) console.log(`[verbose] Record built, rkey: ${rkey}`);
@@ -390,7 +391,7 @@ async function shipCap(opts) {
     collection: CAP_COLLECTION,
     rkey,
     record,
-    validate: false,
+    validate: true,
   };
   if (verbose) console.log(`[verbose] putRecord ${putArgs.collection} rkey=${rkey}`);
   const putRes = await agent.com.atproto.repo.putRecord(putArgs);
@@ -434,6 +435,7 @@ export default function register(program) {
     .option('--description <description>', 'Description of the cap')
     .option('--ref <ref>', 'Three lowercase words with dashes (e.g. fast-cache-invalidation)')
     .option('--recap <ref>', 'Ref of the cap this derives from (quote-post semantics)')
+    .option('--kind <kind>', 'kind of cap (feat, fix, test, docs, refactor, chore, perf, style)')
     .option('--skill <path>', 'Publish a skill directory (reads SKILL.md + resources)')
     .option('--tags <tags>', 'Comma-separated discovery tags (for skills)')
     .option('--version <version>', 'Version string (for skills, overrides frontmatter)')
@@ -476,6 +478,7 @@ Authoring guidance (for coding agents):
     --description    One sentence explaining what this cap does
     --ref            Three lowercase words with dashes (your-ref-name)
     --recap <ref>    Optional. Ref of the cap this derives from (links back to original)
+    --kind <kind>    Optional. Kind of cap (feat, fix, test, docs, refactor, chore, perf, style)
     body (stdin)     Full cap content, piped or via heredoc
 
   Skill fields:

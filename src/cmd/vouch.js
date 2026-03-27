@@ -111,7 +111,7 @@ export default function register(program) {
             collection: VOUCH_COLLECTION,
             rkey,
             record: vouchRecord,
-            validate: false,
+            validate: true,
           });
 
           try {
@@ -208,7 +208,7 @@ export default function register(program) {
             collection: VOUCH_COLLECTION,
             rkey,
             record: vouchRecord,
-            validate: false,
+            validate: true,
           });
 
           try {

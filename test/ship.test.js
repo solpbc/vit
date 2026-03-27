@@ -64,6 +64,12 @@ describe('vit ship', () => {
     expect(r.stderr).toMatch(/--recap must be exactly three lowercase words/i);
   });
 
+  test('ship cap accepts --kind option', () => {
+    const r = run('ship --title "Hi" --description "desc" --ref "one-two-three" --kind feat --did "did:plc:abc"', undefined, agentEnv, 'body text');
+    expect(r.exitCode).not.toBe(0);
+    expect(r.stderr).not.toMatch(/unknown option|three lowercase words|body is required/i);
+  });
+
   test('accepts valid ref format (fails at auth, not validation)', () => {
     const r = run('ship --title "Hi" --description "desc" --ref "one-two-three" --did "did:plc:abc"', undefined, agentEnv, 'body text');
     expect(r.exitCode).not.toBe(0);
