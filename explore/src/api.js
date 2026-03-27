@@ -75,6 +75,48 @@ export async function handleRequest(request, env) {
     });
   }
 
+  if (pathname === '/api/cap') {
+    const ref = searchParams.get('ref');
+    const uri = searchParams.get('uri');
+    const beacon = searchParams.get('beacon');
+
+    if (!ref && !uri) {
+      return json({ error: 'ref or uri is required' }, 400);
+    }
+
+    if (ref && uri) {
+      return json({ error: 'provide ref or uri, not both' }, 400);
+    }
+
+    const conditions = [];
+    const bindings = [];
+
+    if (uri) {
+      conditions.push('c.uri = ?');
+      bindings.push(uri);
+    }
+
+    if (ref) {
+      conditions.push('c.ref = ?');
+      bindings.push(ref);
+
+      if (beacon) {
+        conditions.push('c.beacon = ?');
+        bindings.push(beacon);
+      }
+    }
+
+    let sql = `SELECT c.*, h.handle,
+      (SELECT COUNT(*) FROM vouches v WHERE v.cap_uri = c.uri) as vouch_count
+     FROM caps c
+     LEFT JOIN handles h ON c.did = h.did
+     WHERE ${conditions.join(' AND ')}`;
+    sql += ' ORDER BY c.created_at DESC LIMIT 1';
+
+    const result = await env.DB.prepare(sql).bind(...bindings).first();
+    return json({ cap: result });
+  }
+
   if (pathname === '/api/vouches') {
     const capUri = searchParams.get('cap_uri');
     if (!capUri) {
@@ -129,6 +171,42 @@ export async function handleRequest(request, env) {
       skills: results,
       cursor: results.length > 0 ? results[results.length - 1].id : null,
     });
+  }
+
+  if (pathname === '/api/skill') {
+    const name = searchParams.get('name');
+    const uri = searchParams.get('uri');
+
+    if (!name && !uri) {
+      return json({ error: 'name or uri is required' }, 400);
+    }
+
+    if (name && uri) {
+      return json({ error: 'provide name or uri, not both' }, 400);
+    }
+
+    const conditions = [];
+    const bindings = [];
+
+    if (uri) {
+      conditions.push('s.uri = ?');
+      bindings.push(uri);
+    }
+
+    if (name) {
+      conditions.push('s.name = ?');
+      bindings.push(name);
+    }
+
+    let sql = `SELECT s.*, h.handle,
+      (SELECT COUNT(*) FROM vouches v WHERE v.cap_uri = s.uri) as vouch_count
+     FROM skills s
+     LEFT JOIN handles h ON s.did = h.did
+     WHERE ${conditions.join(' AND ')}`;
+    sql += ' ORDER BY s.created_at DESC LIMIT 1';
+
+    const result = await env.DB.prepare(sql).bind(...bindings).first();
+    return json({ skill: result });
   }
 
   if (pathname === '/api/stats') {

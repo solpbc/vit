@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS caps (
 
 CREATE INDEX IF NOT EXISTS idx_caps_beacon ON caps(beacon);
 CREATE INDEX IF NOT EXISTS idx_caps_created_at ON caps(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_caps_ref ON caps(ref);
 
 CREATE TABLE IF NOT EXISTS vouches (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
