@@ -387,6 +387,7 @@ async function shipCap(opts) {
     createdAt: now,
   };
   if (projectConfig.beacon) record.beacon = projectConfig.beacon;
+  if (opts.kind) record.kind = opts.kind;
   if (opts.recap) record.recap = { uri: recapUri, ref: opts.recap };
   if (opts.kind) record.kind = opts.kind;
   const rkey = TID.nextStr();
@@ -483,7 +484,7 @@ Authoring guidance (for coding agents):
     --description    One sentence explaining what this cap does
     --ref            Three lowercase words with dashes (your-ref-name)
     --recap <ref>    Optional. Ref of the cap this derives from (links back to original)
-    --kind           Category: feat, fix, test, docs, refactor, chore, perf, style
+    --kind <kind>    Category: feat, fix, test, docs, refactor, chore, perf, style
     body (stdin)     Full cap content, piped or via heredoc
 
   Skill fields:
