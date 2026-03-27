@@ -25,3 +25,13 @@ export function requireNotAgent() {
   if (!agent) return { ok: true };
   return { ok: false, ...agent };
 }
+
+const SANDBOX_NAMES = {
+  'claude code': 'claude',
+  'gemini cli': 'gemini',
+  'codex': 'codex',
+};
+
+export function toSandboxName(agentName) {
+  return SANDBOX_NAMES[agentName] || null;
+}

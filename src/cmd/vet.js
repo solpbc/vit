@@ -2,18 +2,119 @@
 // Copyright (c) 2026 sol pbc
 
 import { existsSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
+import { execFile } from 'node:child_process';
 import { join } from 'node:path';
+import { promisify } from 'node:util';
 import { requireDid } from '../lib/config.js';
 import { CAP_COLLECTION, SKILL_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { appendLog, readProjectConfig, readFollowing, vitDir } from '../lib/vit-dir.js';
-import { requireNotAgent, detectCodingAgent } from '../lib/agent.js';
+import { requireNotAgent, detectCodingAgent, toSandboxName } from '../lib/agent.js';
 import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
 import { isSkillRef, isValidSkillRef, nameFromSkillRef } from '../lib/skill-ref.js';
 import { mark, brand, name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
 import { loadConfig } from '../lib/config.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
+import { sandboxArgs } from '../lib/sandbox.js';
+
+const execFileAsync = promisify(execFile);
+
+const SANDBOX_SYSTEM_PROMPT = `You are a safety reviewer. Evaluate the following software capability or skill for safety concerns.
+
+Respond with ONLY a JSON object (no markdown, no explanation outside the JSON):
+{
+  "safe": true or false,
+  "concerns": ["list of specific concerns, empty if safe"],
+  "summary": "one-sentence safety assessment"
+}
+
+Evaluate for: malicious code patterns, data exfiltration, unauthorized access, destructive operations, obfuscated logic, and social engineering.`;
+
+async function runSandboxEval(agentName, contentText, opts) {
+  const vlog = opts.json ? (...a) => console.error(...a) : console.log;
+  if (opts.verbose) vlog(`[verbose] sandbox: spawning ${agentName} sub-agent`);
+
+  const { cmd, args, env } = sandboxArgs(agentName, {
+    prompt: contentText,
+    systemPrompt: SANDBOX_SYSTEM_PROMPT,
+  });
+
+  let stdout;
+  try {
+    const result = await execFileAsync(cmd, args, {
+      env: { ...process.env, ...env },
+      timeout: 30000,
+      maxBuffer: 1024 * 1024,
+    });
+    stdout = result.stdout;
+  } catch (err) {
+    if (err.killed) {
+      throw new Error(`sandbox: ${agentName} sub-agent timed out after 30s`);
+    }
+    throw new Error(`sandbox: ${agentName} sub-agent failed: ${err.message}`);
+  }
+
+  if (opts.verbose) vlog(`[verbose] sandbox: raw output length ${stdout.length}`);
+
+  // Claude wraps output in a JSON envelope with a "result" field containing the text.
+  // Try to extract inner text from Claude's envelope first, then parse verdict.
+  let text = stdout.trim();
+  try {
+    const envelope = JSON.parse(text);
+    if (typeof envelope.result === 'string') {
+      text = envelope.result.trim();
+    }
+  } catch {
+    // Not a JSON envelope — use raw text
+  }
+
+  // Extract JSON from the text (may be wrapped in markdown code fences)
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('sandbox: sub-agent returned no JSON verdict');
+  }
+
+  let verdict;
+  try {
+    verdict = JSON.parse(jsonMatch[0]);
+  } catch {
+    throw new Error('sandbox: sub-agent returned malformed JSON verdict');
+  }
+
+  if (typeof verdict.safe !== 'boolean') {
+    throw new Error('sandbox: verdict missing "safe" field');
+  }
+  if (!Array.isArray(verdict.concerns)) {
+    verdict.concerns = [];
+  }
+  if (typeof verdict.summary !== 'string') {
+    verdict.summary = '';
+  }
+
+  return { safe: verdict.safe, concerns: verdict.concerns, summary: verdict.summary };
+}
+
+function resolveSandboxAgent(opts) {
+  if (typeof opts.sandbox === 'string') {
+    // Explicit agent name — validate it
+    const valid = new Set(['claude', 'codex', 'gemini']);
+    if (!valid.has(opts.sandbox)) {
+      throw new Error(`unknown sandbox agent: '${opts.sandbox}'. must be one of: claude, codex, gemini`);
+    }
+    return opts.sandbox;
+  }
+  // opts.sandbox === true (flag without value) — auto-detect
+  const detected = detectCodingAgent();
+  if (!detected) {
+    throw new Error('could not detect agent for sandbox. specify one explicitly: --sandbox claude');
+  }
+  const mapped = toSandboxName(detected.name);
+  if (!mapped) {
+    throw new Error(`detected agent '${detected.name}' has no sandbox mapping`);
+  }
+  return mapped;
+}
 
 function ensureGitignore() {
   const gitignorePath = join(vitDir(), '.gitignore');
@@ -36,6 +137,7 @@ export default function register(program) {
     .option('--confirm', 'Confirm dangerous-accept, or bypass agent gate with --trust')
     .option('--json', 'Output as JSON')
     .option('-v, --verbose', 'Show step-by-step details')
+    .option('--sandbox [agent]', 'Spawn a sandboxed sub-agent to evaluate safety')
     .action(async (ref, opts) => {
       try {
         const { verbose } = opts;
@@ -124,7 +226,7 @@ export default function register(program) {
         // --- Agent gate ---
         const agent = detectCodingAgent();
         if (agent) {
-          if (opts.trust && opts.confirm) {
+          if ((opts.trust && opts.confirm) || opts.sandbox) {
             // Sandboxed sub-agent pattern — allow it
           } else {
             if (opts.json) {
@@ -144,6 +246,8 @@ export default function register(program) {
             return;
           }
         }
+
+        const sandboxAgent = opts.sandbox ? resolveSandboxAgent(opts) : null;
 
         if (opts.json && !(opts.did || loadConfig().did)) {
           jsonError('no DID configured', "run 'vit login <handle>' first");
@@ -207,6 +311,65 @@ export default function register(program) {
           }
 
           const record = match.value;
+
+          if (opts.sandbox) {
+            const contentText = [
+              `Type: cap`,
+              record.title ? `Title: ${record.title}` : '',
+              record.description ? `Description: ${record.description}` : '',
+              record.text ? `\nContent:\n${record.text}` : '',
+            ].filter(Boolean).join('\n');
+
+            const verdict = await runSandboxEval(sandboxAgent, contentText, opts);
+
+            if (opts.trust) {
+              if (verdict.safe) {
+                appendLog('trusted.jsonl', {
+                  ref,
+                  uri: match.uri,
+                  trustedAt: new Date().toISOString(),
+                  sandboxVerdict: verdict,
+                });
+                if (opts.json) {
+                  jsonOk({ trusted: true, ref, uri: match.uri, sandbox: verdict });
+                  return;
+                }
+                console.log(`${mark} trusted: ${ref} (sandbox: safe)`);
+                return;
+              } else {
+                // Unsafe — do NOT trust
+                if (opts.json) {
+                  jsonOk({ trusted: false, ref, uri: match.uri, sandbox: verdict });
+                  process.exitCode = 1;
+                  return;
+                }
+                console.error(`${mark} sandbox verdict: UNSAFE`);
+                console.error(`  summary: ${verdict.summary}`);
+                for (const c of verdict.concerns) {
+                  console.error(`  - ${c}`);
+                }
+                console.error('');
+                console.error('not trusted due to safety concerns.');
+                process.exitCode = 1;
+                return;
+              }
+            }
+
+            // --sandbox without --trust: display verdict
+            if (opts.json) {
+              const author = match.uri.split('/')[2];
+              jsonOk({ ref, type: 'cap', author, title: record.title || '', description: record.description || '', text: record.text || '', sandbox: verdict, trusted: false });
+              return;
+            }
+            console.log(`${mark} sandbox verdict: ${verdict.safe ? 'SAFE' : 'UNSAFE'}`);
+            console.log(`  summary: ${verdict.summary}`);
+            if (verdict.concerns.length > 0) {
+              for (const c of verdict.concerns) {
+                console.log(`  - ${c}`);
+              }
+            }
+            return;
+          }
 
           if (opts.trust) {
             appendLog('trusted.jsonl', {
@@ -291,6 +454,79 @@ export default function register(program) {
           }
 
           const record = match.value;
+
+          if (opts.sandbox) {
+            const parts = [
+              `Type: skill`,
+              `Name: ${record.name}`,
+              record.description ? `Description: ${record.description}` : '',
+              record.text ? `\nContent:\n${record.text}` : '',
+            ];
+            if (record.resources && record.resources.length > 0) {
+              parts.push('\nResources:');
+              for (const r of record.resources) {
+                parts.push(`  ${r.path}${r.description ? ' — ' + r.description : ''}`);
+              }
+            }
+            if (record.tags && record.tags.length > 0) {
+              parts.push(`\nTags: ${record.tags.join(', ')}`);
+            }
+            const contentText = parts.filter(Boolean).join('\n');
+
+            const verdict = await runSandboxEval(sandboxAgent, contentText, opts);
+
+            if (opts.trust) {
+              if (verdict.safe) {
+                appendLog('trusted.jsonl', {
+                  ref,
+                  uri: match.uri,
+                  trustedAt: new Date().toISOString(),
+                  sandboxVerdict: verdict,
+                });
+                if (opts.json) {
+                  jsonOk({ trusted: true, ref, uri: match.uri, sandbox: verdict });
+                  return;
+                }
+                console.log(`${mark} trusted: ${ref} (sandbox: safe)`);
+                return;
+              } else {
+                if (opts.json) {
+                  jsonOk({ trusted: false, ref, uri: match.uri, sandbox: verdict });
+                  process.exitCode = 1;
+                  return;
+                }
+                console.error(`${mark} sandbox verdict: UNSAFE`);
+                console.error(`  summary: ${verdict.summary}`);
+                for (const c of verdict.concerns) {
+                  console.error(`  - ${c}`);
+                }
+                console.error('');
+                console.error('not trusted due to safety concerns.');
+                process.exitCode = 1;
+                return;
+              }
+            }
+
+            // --sandbox without --trust: display verdict
+            if (opts.json) {
+              const author = match.uri.split('/')[2];
+              jsonOk({
+                ref, type: 'skill', name: record.name, author,
+                version: record.version || null, license: record.license || null,
+                description: record.description || null, text: record.text || null,
+                sandbox: verdict, trusted: false,
+              });
+              return;
+            }
+            console.log(`${mark} sandbox verdict: ${verdict.safe ? 'SAFE' : 'UNSAFE'}`);
+            console.log(`  summary: ${verdict.summary}`);
+            if (verdict.concerns.length > 0) {
+              for (const c of verdict.concerns) {
+                console.log(`  - ${c}`);
+              }
+            }
+            return;
+          }
 
           if (opts.trust) {
             appendLog('trusted.jsonl', {

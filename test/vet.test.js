@@ -131,4 +131,82 @@ describe('vit vet', () => {
       rmSync(configHome, { recursive: true, force: true });
     });
   });
+
+  describe('--sandbox', () => {
+    test('--sandbox without agent outside agent env: error with hint', () => {
+      const result = run('vet fast-cache-invalidation --sandbox', undefined, noAgentEnv);
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr).toContain('could not detect agent');
+      expect(result.stderr).toContain('--sandbox claude');
+    });
+
+    test('--sandbox bogus: error about unknown agent', () => {
+      const result = run('vet fast-cache-invalidation --sandbox bogus', undefined, noAgentEnv);
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr).toContain('unknown sandbox agent');
+    });
+
+    test('--sandbox claude accepted (passes validation, fails at DID)', () => {
+      const configHome = join(tmpdir(), '.test-vet-sb-' + Math.random().toString(36).slice(2));
+      mkdirSync(configHome, { recursive: true });
+      const result = run('vet fast-cache-invalidation --sandbox claude', undefined, { ...noAgentEnv, XDG_CONFIG_HOME: configHome });
+      // Should NOT contain validation errors for sandbox agent
+      expect(result.stderr).not.toContain('unknown sandbox agent');
+      rmSync(configHome, { recursive: true, force: true });
+    });
+
+    test('--sandbox codex accepted', () => {
+      const configHome = join(tmpdir(), '.test-vet-sb-codex-' + Math.random().toString(36).slice(2));
+      mkdirSync(configHome, { recursive: true });
+      const result = run('vet fast-cache-invalidation --sandbox codex', undefined, { ...noAgentEnv, XDG_CONFIG_HOME: configHome });
+      expect(result.stderr).not.toContain('unknown sandbox agent');
+      rmSync(configHome, { recursive: true, force: true });
+    });
+
+    test('--sandbox gemini accepted', () => {
+      const configHome = join(tmpdir(), '.test-vet-sb-gemini-' + Math.random().toString(36).slice(2));
+      mkdirSync(configHome, { recursive: true });
+      const result = run('vet fast-cache-invalidation --sandbox gemini', undefined, { ...noAgentEnv, XDG_CONFIG_HOME: configHome });
+      expect(result.stderr).not.toContain('unknown sandbox agent');
+      rmSync(configHome, { recursive: true, force: true });
+    });
+
+    test('--sandbox without value in agent env: auto-detects agent', () => {
+      const configHome = join(tmpdir(), '.test-vet-sb-auto-' + Math.random().toString(36).slice(2));
+      mkdirSync(configHome, { recursive: true });
+      const result = run('vet fast-cache-invalidation --sandbox', undefined, { ...agentEnv, XDG_CONFIG_HOME: configHome });
+      // Should pass sandbox agent resolution (claude code → claude), fail later at DID
+      expect(result.stderr).not.toContain('could not detect agent');
+      expect(result.stderr).not.toContain('unknown sandbox agent');
+      rmSync(configHome, { recursive: true, force: true });
+    });
+
+    test('--sandbox passes agent gate (agent env + --sandbox flag)', () => {
+      const configHome = join(tmpdir(), '.test-vet-sb-gate-' + Math.random().toString(36).slice(2));
+      mkdirSync(configHome, { recursive: true });
+      const result = run('vet fast-cache-invalidation --sandbox claude', undefined, { ...agentEnv, XDG_CONFIG_HOME: configHome });
+      // Should NOT contain the agent gate error
+      expect(result.stderr).not.toContain('vit vet is for human review');
+      rmSync(configHome, { recursive: true, force: true });
+    });
+
+    test('--sandbox shows in help output', () => {
+      const result = run('vet --help');
+      expect(result.stdout).toContain('--sandbox');
+    });
+
+    test('--sandbox --json without agent outside agent env: JSON error', () => {
+      const result = run('vet fast-cache-invalidation --sandbox --json', undefined, noAgentEnv);
+      const parsed = JSON.parse(result.stdout);
+      expect(parsed.ok).toBe(false);
+      expect(parsed.error).toContain('could not detect agent');
+    });
+
+    test('--sandbox --json bogus: JSON error', () => {
+      const result = run('vet fast-cache-invalidation --sandbox bogus --json', undefined, noAgentEnv);
+      const parsed = JSON.parse(result.stdout);
+      expect(parsed.ok).toBe(false);
+      expect(parsed.error).toContain('unknown sandbox agent');
+    });
+  });
 });
