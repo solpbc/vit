@@ -59,3 +59,20 @@ Agent skills for this project live in `skills/`. When authoring or updating skil
 - Use gerund or action-oriented naming (lowercase-hyphens only) for skill names.
 - Write descriptions in third person that specify both what the skill does and when to use it.
 - Test with all target models (Haiku, Sonnet, Opus) as effectiveness varies.
+
+## Dogfooding
+
+When completing significant work (features, fixes, or meaningful refactors), ship a cap to the vit network:
+
+```bash
+echo "2-4 sentence description of the capability for developers" | ./bin/vit.js ship \
+  --title "Short Title" \
+  --description "One sentence of value" \
+  --ref three-word-ref \
+  --kind feat
+```
+
+- Use `--kind`: `feat` for features, `fix` for bug fixes, `docs` for documentation, `refactor`, `test`, `perf`, `chore`
+- Refs must be exactly three lowercase words separated by dashes
+- Do not ship for trivial changes (typos, formatting, config tweaks)
+- Ship skills with: `./bin/vit.js ship --skill ./skills/<name>/`

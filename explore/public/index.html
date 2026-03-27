@@ -330,6 +330,37 @@
       font-weight: 600;
     }
 
+    .pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--vit-green);
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .last-activity {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    .recent-activity {
+      margin-top: 24px;
+    }
+
+    .recent-activity h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0 0 12px;
+    }
+
     @media (max-width: 600px) {
       .nav-toggle {
         display: block;
@@ -392,6 +423,7 @@
         </nav>
       </div>
       <p class="tagline">open source is social</p>
+      <p class="last-activity" id="pulse"></p>
     </header>
 
     <main id="content">
@@ -477,14 +509,23 @@
       });
     }
 
+    function atUriToRecordUrl(uri) {
+      if (!uri || !uri.startsWith('at://')) return null;
+      var parts = uri.slice(5).split('/');
+      if (parts.length < 3) return null;
+      return 'https://bsky.social/xrpc/com.atproto.repo.getRecord?repo=' + encodeURIComponent(parts[0]) + '&collection=' + encodeURIComponent(parts[1]) + '&rkey=' + encodeURIComponent(parts[2]);
+    }
+
     function renderCapItem(cap) {
-      const title = esc(cap.title) || 'untitled';
-      const name = esc(displayName(cap));
-      const ref = cap.ref ? '<code>' + esc(cap.ref) + '</code>' : '';
-      const beacon = cap.beacon ? '<a href="#beacon/' + encodeURIComponent(cap.beacon) + '">' + esc(cap.beacon) + '</a>' : '';
-      const time = timeAgo(cap.created_at);
-      const metaParts = [name, beacon, ref, time].filter(Boolean);
-      return '<div class="cap-item"><div class="cap-title">' + title + '</div><div class="cap-meta">' + metaParts.join(' · ') + '</div></div>';
+      var title = esc(cap.title) || 'untitled';
+      var recordUrl = atUriToRecordUrl(cap.uri);
+      var titleHtml = recordUrl ? '<a href="' + esc(recordUrl) + '" title="' + esc(cap.uri || '') + '">' + title + '</a>' : title;
+      var name = esc(displayName(cap));
+      var ref = cap.ref ? '<code>' + esc(cap.ref) + '</code>' : '';
+      var beacon = cap.beacon ? '<a href="#beacon/' + encodeURIComponent(cap.beacon) + '">' + esc(cap.beacon) + '</a>' : '';
+      var time = timeAgo(cap.created_at);
+      var metaParts = [name, beacon, ref, time].filter(Boolean);
+      return '<div class="cap-item"><div class="cap-title">' + titleHtml + '</div><div class="cap-meta">' + metaParts.join(' · ') + '</div></div>';
     }
 
     function renderSkillItem(skill) {
@@ -548,7 +589,7 @@
       capsCursor = data.cursor;
 
       if (data.caps.length === 0) {
-        el.innerHTML = '<div class="empty-state"><p>no caps yet — be the first to <code>vit ship</code></p></div>';
+        el.innerHTML = '<div class="empty-state"><p>no caps yet — capabilities appear here as builders ship them. <a href="https://v-it.org/start/">get started</a></p></div>';
         return;
       }
 
@@ -564,7 +605,7 @@
       skillsCursor = data.cursor;
 
       if (data.skills.length === 0) {
-        el.innerHTML = '<div class="empty-state"><p>no skills yet — publish one with <code>vit ship --skill</code></p></div>';
+        el.innerHTML = '<div class="empty-state"><p>no skills yet — reusable agent abilities appear here when published. <a href="https://v-it.org/start/">get started</a></p></div>';
         return;
       }
 
@@ -583,7 +624,7 @@
       const heading = '<h2 class="view-title">' + esc(beacon) + '</h2>';
 
       if (data.caps.length === 0) {
-        el.innerHTML = heading + '<div class="empty-state"><p>no caps in this beacon yet</p></div>';
+        el.innerHTML = heading + '<div class="empty-state"><p>no caps in this beacon yet — capabilities will appear here as builders ship to this project. <a href="https://v-it.org/start/">get started</a></p></div>';
         return;
       }
 
@@ -597,7 +638,7 @@
       const data = await api('beacons');
 
       if (data.beacons.length === 0) {
-        el.innerHTML = '<div class="empty-state"><p>no beacons yet — create one with <code>vit init</code></p></div>';
+        el.innerHTML = '<div class="empty-state"><p>no beacons yet — projects appear here when builders run <code>vit init</code>. <a href="https://v-it.org/start/">get started</a></p></div>';
         return;
       }
 
@@ -609,15 +650,35 @@
     }
 
     async function renderStats(el) {
-      const data = await api('stats');
-      el.innerHTML = '<div class="stat-grid">' +
-        '<div class="stat-card"><div class="stat-number">' + data.total_caps + '</div><div class="stat-label">capabilities</div></div>' +
-        '<div class="stat-card"><div class="stat-number">' + data.total_vouches + '</div><div class="stat-label">vouches</div></div>' +
-        '<div class="stat-card"><div class="stat-number">' + data.total_beacons + '</div><div class="stat-label">beacons</div></div>' +
-        '<div class="stat-card"><div class="stat-number">' + data.active_dids + '</div><div class="stat-label">active participants</div></div>' +
-        '<div class="stat-card"><div class="stat-number">' + data.total_skills + '</div><div class="stat-label">skills</div></div>' +
-        '<div class="stat-card"><div class="stat-number">' + data.skill_publishers + '</div><div class="stat-label">skill publishers</div></div>' +
+      var [stats, recentCaps, recentSkills] = await Promise.all([
+        api('stats'),
+        api('caps?limit=5'),
+        api('skills?limit=5')
+      ]);
+      var grid = '<div class="stat-grid">' +
+        '<div class="stat-card"><div class="stat-number">' + stats.total_caps + '</div><div class="stat-label">capabilities</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + stats.total_vouches + '</div><div class="stat-label">vouches</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + stats.total_beacons + '</div><div class="stat-label">beacons</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + stats.active_dids + '</div><div class="stat-label">active participants</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + stats.total_skills + '</div><div class="stat-label">skills</div></div>' +
+        '<div class="stat-card"><div class="stat-number">' + stats.skill_publishers + '</div><div class="stat-label">skill publishers</div></div>' +
         '</div>';
+
+      var events = [];
+      (recentCaps.caps || []).forEach(function(c) { events.push({ type: 'cap', label: c.title || c.ref || 'untitled', author: displayName(c), time: c.created_at }); });
+      (recentSkills.skills || []).forEach(function(s) { events.push({ type: 'skill', label: s.name || 'unnamed', author: displayName(s), time: s.created_at }); });
+      events.sort(function(a, b) { return (b.time || '').localeCompare(a.time || ''); });
+      events = events.slice(0, 5);
+
+      var activity = '';
+      if (events.length > 0) {
+        activity = '<div class="recent-activity"><h3>recent activity</h3>' +
+          events.map(function(e) {
+            return '<div class="cap-item"><div class="cap-title">' + esc(e.label) + '</div><div class="cap-meta">' + esc(e.type) + ' · ' + esc(e.author) + ' · ' + timeAgo(e.time) + '</div></div>';
+          }).join('') + '</div>';
+      }
+
+      el.innerHTML = grid + activity;
     }
 
     async function navigate() {
@@ -633,6 +694,23 @@
     }
 
     window.addEventListener('hashchange', navigate);
+    // Populate pulse indicator with most recent activity
+    (async function() {
+      try {
+        var [capData, skillData] = await Promise.all([api('caps?limit=1'), api('skills?limit=1')]);
+        var latest = null;
+        if (capData.caps && capData.caps.length > 0) latest = capData.caps[0].created_at;
+        if (skillData.skills && skillData.skills.length > 0) {
+          var skillTime = skillData.skills[0].created_at;
+          if (!latest || skillTime > latest) latest = skillTime;
+        }
+        var pulseEl = document.getElementById('pulse');
+        if (latest) {
+          pulseEl.innerHTML = '<span class="pulse"></span>last activity: ' + timeAgo(latest);
+        }
+      } catch(e) {}
+    })();
+
     navigate();
   </script>
 </body>

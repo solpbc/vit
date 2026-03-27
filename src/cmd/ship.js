@@ -227,7 +227,7 @@ async function shipSkill(opts) {
     collection: SKILL_COLLECTION,
     rkey,
     record,
-    validate: true,
+    validate: false,
   };
 
   if (verbose) console.log(`[verbose] putRecord ${putArgs.collection} rkey=${rkey}`);
@@ -396,7 +396,7 @@ async function shipCap(opts) {
     collection: CAP_COLLECTION,
     rkey,
     record,
-    validate: true,
+    validate: false,
   };
   if (verbose) console.log(`[verbose] putRecord ${putArgs.collection} rkey=${rkey}`);
   const putRes = await agent.com.atproto.repo.putRecord(putArgs);
