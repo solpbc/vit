@@ -4,65 +4,74 @@
 const PLC_DIRECTORY = 'https://plc.directory';
 const pdsCache = new Map();
 
-function didDocUrl(did) {
+async function fetchDidDocument(did) {
+  let url;
   if (did.startsWith('did:web:')) {
-    const parts = did.slice('did:web:'.length).split(':');
+    const rest = did.slice('did:web:'.length);
+    const parts = rest.split(':');
     const domain = decodeURIComponent(parts[0]);
-    const path = parts.slice(1).map(decodeURIComponent).join('/');
-    return path
-      ? `https://${domain}/${path}/did.json`
-      : `https://${domain}/.well-known/did.json`;
+    if (parts.length === 1) {
+      url = `https://${domain}/.well-known/did.json`;
+    } else {
+      url = `https://${domain}/${parts.slice(1).map(decodeURIComponent).join('/')}/did.json`;
+    }
+  } else {
+    url = `${PLC_DIRECTORY}/${did}`;
   }
-  return `${PLC_DIRECTORY}/${did}`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`failed to resolve DID document for ${did}: ${res.status} ${res.statusText}`);
+  return res.json();
 }
 
 export async function resolvePds(did) {
   if (pdsCache.has(did)) return pdsCache.get(did);
-  const res = await fetch(didDocUrl(did));
-  if (!res.ok) throw new Error(`failed to resolve PDS for ${did}: ${res.status} ${res.statusText}`);
-  const doc = await res.json();
+  const doc = await fetchDidDocument(did);
   const pds = doc.service?.find(s => s.type === 'AtprotoPersonalDataServer');
   if (!pds?.serviceEndpoint) throw new Error(`no PDS found in DID document for ${did}`);
   pdsCache.set(did, pds.serviceEndpoint);
   return pds.serviceEndpoint;
 }
 
-export async function listRecordsFromPds(pdsUrl, repo, collection) {
-  const all = [];
+export async function listRecordsFromPds(pdsUrl, repo, collection, limit) {
+  const records = [];
   let cursor;
   do {
     const url = new URL('/xrpc/com.atproto.repo.listRecords', pdsUrl);
     url.searchParams.set('repo', repo);
     url.searchParams.set('collection', collection);
-    url.searchParams.set('limit', '100');
+    if (limit) url.searchParams.set('limit', String(limit));
     if (cursor) url.searchParams.set('cursor', cursor);
     const res = await fetch(url);
     if (!res.ok) throw new Error(`listRecords failed for ${repo}: ${res.status} ${res.statusText}`);
     const data = await res.json();
-    all.push(...(data.records || []));
+    records.push(...data.records);
     cursor = data.cursor;
   } while (cursor);
-  return { records: all };
+  return { records };
 }
 
 export async function resolveHandleFromDid(did) {
-  const res = await fetch(didDocUrl(did));
-  if (!res.ok) return did;
-  const doc = await res.json();
-  const aka = doc.alsoKnownAs?.find(a => a.startsWith('at://'));
-  return aka ? aka.replace('at://', '') : did;
+  try {
+    const doc = await fetchDidDocument(did);
+    const aka = doc.alsoKnownAs?.find(a => a.startsWith('at://'));
+    return aka ? aka.replace('at://', '') : did;
+  } catch {
+    return did;
+  }
 }
 
-export async function queryDidsInParallel(dids, queryFn, { concurrency = 10 } = {}) {
+export async function batchQuery(items, fn, { batchSize = 10, verbose = false } = {}) {
+  if (verbose) console.log(`[verbose] querying ${items.length} accounts in batches of ${batchSize}`);
   const results = [];
-  for (let i = 0; i < dids.length; i += concurrency) {
-    const batch = dids.slice(i, i + concurrency);
-    const settled = await Promise.allSettled(batch.map(queryFn));
-    for (const result of settled) {
-      if (result.status === 'fulfilled') {
-        results.push(result.value);
-      } else {
-        console.error(`warning: query failed: ${result.reason?.message || result.reason}`);
+  for (let i = 0; i < items.length; i += batchSize) {
+    const chunk = items.slice(i, i + batchSize);
+    const settled = await Promise.allSettled(chunk.map(fn));
+    for (let j = 0; j < settled.length; j++) {
+      if (settled[j].status === 'fulfilled' && settled[j].value !== undefined) {
+        results.push(settled[j].value);
+      } else if (settled[j].status === 'rejected' && verbose) {
+        console.log(`[verbose] ${chunk[j]}: error: ${settled[j].reason?.message || settled[j].reason}`);
       }
     }
   }

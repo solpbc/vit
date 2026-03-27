@@ -12,7 +12,7 @@ import { requireAgent, detectCodingAgent } from '../lib/agent.js';
 import { shouldBypassVet } from '../lib/trust-gate.js';
 import { isSkillRef, nameFromSkillRef, isValidSkillRef } from '../lib/skill-ref.js';
 import { mark, name } from '../lib/brand.js';
-import { resolvePds, listRecordsFromPds, queryDidsInParallel } from '../lib/pds.js';
+import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
 
 export default function register(program) {
   program
@@ -104,15 +104,17 @@ export default function register(program) {
         const following = readFollowing();
         const dids = following.map(e => e.did);
         dids.push(did);
-        if (verbose) console.log(`[verbose] querying ${dids.length} accounts`);
 
         // Fetch skills from each DID, find matching ref
-        let match = null;
-        await queryDidsInParallel(dids, async (repoDid) => {
+        const allRecords = await batchQuery(dids, async (repoDid) => {
           const pds = await resolvePds(repoDid);
           if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
-          const res = await listRecordsFromPds(pds, repoDid, SKILL_COLLECTION);
-          for (const rec of res.records) {
+          return (await listRecordsFromPds(pds, repoDid, SKILL_COLLECTION, 50)).records;
+        }, { verbose });
+
+        let match = null;
+        for (const records of allRecords) {
+          for (const rec of records) {
             const recName = rec.value.name;
             if (recName === skillName) {
               if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {
@@ -120,7 +122,7 @@ export default function register(program) {
               }
             }
           }
-        });
+        }
 
         if (!match) {
           console.error(`no skill found with ref '${ref}' from followed accounts.`);

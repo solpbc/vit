@@ -12,7 +12,7 @@ import { appendLog, readProjectConfig, readLog, readFollowing } from '../lib/vit
 import { REF_PATTERN, resolveRef } from '../lib/cap-ref.js';
 import { isValidSkillName, skillRefFromName } from '../lib/skill-ref.js';
 import { name } from '../lib/brand.js';
-import { resolvePds, listRecordsFromPds, queryDidsInParallel } from '../lib/pds.js';
+import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
 
 function parseFrontmatter(text) {
   const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
@@ -351,14 +351,16 @@ async function shipCap(opts) {
     const following = readFollowing();
     const dids = following.map(e => e.did);
     dids.push(did);
-    if (verbose) console.log(`[verbose] recap: querying ${dids.length} accounts`);
 
-    let match = null;
-    await queryDidsInParallel(dids, async (repoDid) => {
+    const allRecords = await batchQuery(dids, async (repoDid) => {
       const pds = await resolvePds(repoDid);
       if (verbose) console.log(`[verbose] ${repoDid}: resolved PDS ${pds}`);
-      const res = await listRecordsFromPds(pds, repoDid, CAP_COLLECTION);
-      for (const rec of res.records) {
+      return (await listRecordsFromPds(pds, repoDid, CAP_COLLECTION, 50)).records;
+    }, { verbose });
+
+    let match = null;
+    for (const records of allRecords) {
+      for (const rec of records) {
         const recRef = resolveRef(rec.value, rec.cid);
         if (recRef === opts.recap) {
           if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {
@@ -366,7 +368,7 @@ async function shipCap(opts) {
           }
         }
       }
-    });
+    }
 
     if (match) {
       recapUri = match.uri;
