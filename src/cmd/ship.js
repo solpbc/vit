@@ -389,7 +389,6 @@ async function shipCap(opts) {
   if (projectConfig.beacon) record.beacon = projectConfig.beacon;
   if (opts.kind) record.kind = opts.kind;
   if (opts.recap) record.recap = { uri: recapUri, ref: opts.recap };
-  if (opts.kind) record.kind = opts.kind;
   const rkey = TID.nextStr();
   if (verbose) console.log(`[verbose] Record built, rkey: ${rkey}`);
   const putArgs = {
