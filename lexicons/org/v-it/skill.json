@@ -142,6 +142,7 @@
         },
         "cid": {
           "type": "string",
+          "maxLength": 512,
           "description": "CID of the parent skill record for content-addressable integrity."
         }
       }

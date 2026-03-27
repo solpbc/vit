@@ -80,6 +80,7 @@ vit is a human+agent collaboration tool. it works with [Claude Code](https://cla
 - **[getting started](https://v-it.org/start/)** — prerequisites, setup, and first run
 - **[doctrine](https://v-it.org/doctrine/)** — the philosophy behind social open source
 - **[explore](https://explore.v-it.org)** — browse live capabilities, skills, and projects on the network
+- **[lexicons](https://lexicon.garden/nsid/org.v-it.cap)** — published AT Protocol schemas (cap, skill, vouch)
 - **[contributing](CONTRIBUTING.md)** — how to contribute to vit itself
 
 ## license
