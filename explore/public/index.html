@@ -217,6 +217,34 @@
       text-decoration: underline;
     }
 
+    .cap-title-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .cap-title-row .cap-title {
+      flex: 1;
+      min-width: 0;
+      margin-bottom: 0;
+    }
+
+    .cap-title-row .cap-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .cap-title-row .cap-title a:hover {
+      text-decoration: underline;
+    }
+
+    .cap-time {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      white-space: nowrap;
+      margin-left: auto;
+    }
+
     .skill-item {
       padding: 12px 0;
       border-bottom: 1px solid #e5e7eb;
@@ -231,19 +259,64 @@
       margin-bottom: 4px;
     }
 
-    .skill-meta {
-      font-size: 0.85rem;
-      color: #6b7280;
+    .skill-name-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
     }
 
-    .skill-tag {
-      display: inline-block;
-      background: #e5e7eb;
-      color: #374151;
-      font-size: 0.75rem;
-      padding: 1px 6px;
-      border-radius: 3px;
-      margin-right: 4px;
+    .skill-name-row .skill-title {
+      flex: 1;
+      min-width: 0;
+      margin-bottom: 0;
+    }
+
+    .skill-name-row .skill-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .skill-name-row .skill-title a:hover {
+      text-decoration: underline;
+    }
+
+    .skill-version {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      white-space: nowrap;
+    }
+
+    .skill-desc-truncated {
+      font-size: 0.85rem;
+      color: #6b7280;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 2px 0;
+    }
+
+    .skill-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .skill-footer .tag-pills {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .skill-action {
+      font-size: 0.8rem;
+      color: var(--vit-green-deep);
+      text-decoration: none;
+      white-space: nowrap;
+      margin-left: auto;
+    }
+
+    .skill-action:hover {
+      text-decoration: underline;
     }
 
     .beacon-item {
@@ -298,6 +371,25 @@
       font-size: 0.85rem;
       color: #6b7280;
       margin-top: 4px;
+    }
+
+    .activity-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+
+    .activity-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .activity-meta {
+      font-size: 0.85rem;
+      color: #6b7280;
     }
 
     .empty-state {
@@ -388,6 +480,22 @@
 
       .stat-grid {
         grid-template-columns: 1fr;
+      }
+
+      .cap-title-row {
+        flex-wrap: wrap;
+      }
+
+      .cap-time {
+        font-size: 0.75rem;
+      }
+
+      .skill-name-row {
+        flex-wrap: wrap;
+      }
+
+      .skill-footer {
+        flex-wrap: wrap;
       }
 
       .beacon-item {
@@ -509,6 +617,12 @@
     .kind-badge.kind-security {
       background-color: #fee2e2;
       color: #991b1b;
+    }
+
+    .cap-title-row .kind-badge {
+      margin-left: 0;
+      margin-right: 4px;
+      text-transform: lowercase;
     }
 
     .command-row {
@@ -662,6 +776,14 @@
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    function kindClassSuffix(kind) {
+      if (!kind) return '';
+      return String(kind)
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
     async function api(path) {
       const res = await fetch('/api/' + path);
       return res.json();
@@ -706,27 +828,61 @@
     }
 
     function renderCapItem(cap) {
-      const title = esc(cap.title) || 'untitled';
-      const name = esc(displayName(cap));
-      const ref = cap.ref ? '<code>' + esc(cap.ref) + '</code>' : '';
-      const beacon = cap.beacon ? '<a href="#beacon/' + encodeURIComponent(cap.beacon) + '">' + esc(cap.beacon) + '</a>' : '';
-      const time = timeAgo(cap.created_at);
-      const metaParts = [name, beacon, ref, time].filter(Boolean);
-      const titleHtml = cap.ref
+      var kind = null;
+      if (cap.record_json) {
+        try { kind = JSON.parse(cap.record_json).kind; } catch(e) {}
+      }
+      var kindClass = kindClassSuffix(kind);
+      var kindBadge = kind ? '<span class="kind-badge' + (kindClass ? ' kind-' + kindClass : '') + '">' + esc(kind) + '</span>' : '';
+      var title = esc(cap.title) || 'untitled';
+      var titleHtml = cap.ref
         ? '<a href="#cap/' + encodeURIComponent(cap.ref) + '">' + title + '</a>'
         : title;
-      return '<div class="cap-item"><div class="cap-title">' + titleHtml + '</div><div class="cap-meta">' + metaParts.join(' · ') + '</div></div>';
+      var time = '<span class="cap-time">' + timeAgo(cap.created_at) + '</span>';
+      var beacon = cap.beacon ? '<a href="#beacon/' + encodeURIComponent(cap.beacon) + '">' + esc(cap.beacon) + '</a>' : '';
+      var name = '@' + esc(displayName(cap));
+      var metaParts = [beacon, name].filter(Boolean);
+      return '<div class="cap-item">' +
+        '<div class="cap-title-row">' + kindBadge + '<div class="cap-title">' + titleHtml + '</div>' + time + '</div>' +
+        '<div class="cap-meta">' + metaParts.join(' · ') + '</div>' +
+        '</div>';
     }
 
     function renderSkillItem(skill) {
-      const name = esc(skill.name) || 'unnamed';
-      const desc = skill.description ? '<div>' + esc(skill.description) + '</div>' : '';
-      const author = esc(displayName(skill));
-      const version = skill.version ? 'v' + esc(skill.version) : '';
-      const tags = skill.tags ? skill.tags.split(',').map(function(t) { return '<span class="skill-tag">' + esc(t.trim()) + '</span>'; }).join('') : '';
-      const time = timeAgo(skill.created_at);
-      const metaParts = [author, version, time].filter(Boolean);
-      return '<div class="skill-item"><div class="skill-title"><a href="#skill/' + encodeURIComponent(skill.name) + '">' + name + '</a></div>' + desc + '<div class="skill-meta">' + metaParts.join(' · ') + (tags ? ' · ' + tags : '') + '</div></div>';
+      var name = esc(skill.name) || 'unnamed';
+      var version = skill.version ? '<span class="skill-version">v' + esc(skill.version) + '</span>' : '';
+      var nameLink = '<a href="#skill/' + encodeURIComponent(skill.name) + '">/' + name + '</a>';
+
+      var desc = skill.description
+        ? '<div class="skill-desc-truncated">' + esc(skill.description) + '</div>'
+        : '';
+
+      var record = null;
+      if (skill.record_json) {
+        try { record = JSON.parse(skill.record_json); } catch(e) {}
+      }
+      var tags = [];
+      if (record && record.tags && Array.isArray(record.tags)) {
+        tags = record.tags;
+      } else if (skill.tags) {
+        tags = skill.tags.split(',');
+      }
+
+      var tagHtml = '';
+      if (tags.length > 0) {
+        tagHtml = '<div class="tag-pills">' + tags.map(function(t) {
+          var tag = t.trim ? t.trim() : t;
+          return tag ? '<a href="#skills?tag=' + encodeURIComponent(tag) + '" class="tag-pill">' + esc(tag) + '</a>' : '';
+        }).filter(Boolean).join('') + '</div>';
+      }
+
+      var learnLink = '<a href="#skill/' + encodeURIComponent(skill.name) + '" class="skill-action">learn →</a>';
+
+      return '<div class="skill-item">' +
+        '<div class="skill-name-row"><div class="skill-title">' + nameLink + '</div>' + version + '</div>' +
+        desc +
+        '<div class="skill-footer">' + tagHtml + learnLink + '</div>' +
+        '</div>';
     }
 
     function appendLoadMore(el) {
@@ -807,7 +963,8 @@
 
       var kindBadge = '';
       if (kind) {
-        kindBadge = '<span class="kind-badge kind-' + esc(kind) + '">' + esc(kind) + '</span>';
+        var kindClass = kindClassSuffix(kind);
+        kindBadge = '<span class="kind-badge' + (kindClass ? ' kind-' + kindClass : '') + '">' + esc(kind) + '</span>';
       }
 
       var title = esc(cap.title) || 'untitled';
@@ -1033,7 +1190,7 @@
       if (events.length > 0) {
         activity = '<div class="recent-activity"><h3>recent activity</h3>' +
           events.map(function(e) {
-            return '<div class="cap-item"><div class="cap-title">' + esc(e.label) + '</div><div class="cap-meta">' + esc(e.type) + ' · ' + esc(e.author) + ' · ' + timeAgo(e.time) + '</div></div>';
+            return '<div class="activity-item"><div class="activity-title">' + esc(e.label) + '</div><div class="activity-meta">' + esc(e.type) + ' · ' + esc(e.author) + ' · ' + timeAgo(e.time) + '</div></div>';
           }).join('') + '</div>';
       }
 
