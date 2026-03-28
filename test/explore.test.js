@@ -84,4 +84,57 @@ describe('vit explore', () => {
     const data = JSON.parse(result.stdout);
     expect(data.ok).toBe(true);
   });
+
+  test('cap detail returns JSON', () => {
+    const result = run('explore cap network-content-seeding --json', '/tmp');
+    expect(result.exitCode).toBe(0);
+    const data = JSON.parse(result.stdout);
+    expect(data.ok).toBe(true);
+    expect(data.cap).toBeDefined();
+    expect(data.cap.ref).toBe('network-content-seeding');
+    expect(data.cap.title).toBeDefined();
+  });
+
+  test('cap detail with beacon', () => {
+    const result = run('explore cap network-content-seeding --beacon vit:github.com/solpbc/vit --json', '/tmp');
+    expect(result.exitCode).toBe(0);
+    const data = JSON.parse(result.stdout);
+    expect(data.ok).toBe(true);
+    expect(data.cap).toBeDefined();
+    expect(data.cap.ref).toBe('network-content-seeding');
+  });
+
+  test('cap not found', () => {
+    const result = run('explore cap nonexistent-ref-xyz --json', '/tmp');
+    expect(result.exitCode).not.toBe(0);
+    const data = JSON.parse(result.stdout);
+    expect(data.ok).toBe(false);
+    expect(data.error).toContain("no cap found with ref 'nonexistent-ref-xyz'");
+  });
+
+  test('skill detail returns JSON', () => {
+    const result = run('explore skill atproto-records --json', '/tmp');
+    expect(result.exitCode).toBe(0);
+    const data = JSON.parse(result.stdout);
+    expect(data.ok).toBe(true);
+    expect(data.skill).toBeDefined();
+    expect(data.skill.name).toBe('atproto-records');
+    expect(data.skill.version).toBeDefined();
+  });
+
+  test('skill not found', () => {
+    const result = run('explore skill nonexistent-skill-xyz --json', '/tmp');
+    expect(result.exitCode).not.toBe(0);
+    const data = JSON.parse(result.stdout);
+    expect(data.ok).toBe(false);
+    expect(data.error).toContain("no skill found with name 'nonexistent-skill-xyz'");
+  });
+
+  test('bare explore returns stats JSON', () => {
+    const result = run('explore --json', '/tmp');
+    expect(result.exitCode).toBe(0);
+    const data = JSON.parse(result.stdout);
+    expect(data.ok).toBe(true);
+    expect(typeof data.total_caps).toBe('number');
+  });
 });
