@@ -113,7 +113,7 @@ export default function register(program) {
         }
 
         if (opts.json) {
-          jsonOk(data.cap);
+          jsonOk(data);
           return;
         }
 
@@ -179,7 +179,7 @@ export default function register(program) {
         }
 
         if (opts.json) {
-          jsonOk(data.skill);
+          jsonOk(data);
           return;
         }
 
