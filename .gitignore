@@ -5,6 +5,7 @@ bun.lock
 
 # Environment
 .env
+.npmrc
 
 # Skills
 .agents/

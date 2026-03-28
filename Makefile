@@ -28,10 +28,6 @@ release: test
 		git push --tags
 
 publish:
-ifdef OTP
-	npm publish --otp=$(OTP)
-else
 	npm publish
-endif
 
 ship: release publish
