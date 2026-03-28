@@ -2,6 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { configDir, configPath } from './paths.js';
 
 const vitJsonPath = configPath('vit.json');
@@ -24,7 +25,15 @@ export function saveConfig(obj) {
 }
 
 export function requireDid(opts) {
-  const did = opts?.did || loadConfig().did;
+  if (opts?.did) return opts.did;
+  try {
+    const localLogin = join(process.cwd(), '.vit', 'login.json');
+    if (existsSync(localLogin)) {
+      const local = JSON.parse(readFileSync(localLogin, 'utf-8'));
+      if (local.did) return local.did;
+    }
+  } catch {}
+  const did = loadConfig().did;
   if (!did) {
     console.error("no DID configured. run 'vit login <handle>' first or pass --did.");
     process.exitCode = 1;

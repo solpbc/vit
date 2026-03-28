@@ -10,6 +10,7 @@ import { homedir } from 'node:os';
 import { mark, name } from '../lib/brand.js';
 import { which } from '../lib/compat.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
+import { configPath } from '../lib/paths.js';
 
 function scanSkillDir(dir) {
   const skills = [];
@@ -119,17 +120,44 @@ export default function register(program) {
         }
       }
 
-      if (!config.did) {
+      let effectiveDid = config.did;
+      let identitySource = effectiveDid ? 'global' : null;
+      let authType = 'oauth';
+
+      const localLoginPath = join(process.cwd(), '.vit', 'login.json');
+      try {
+        if (existsSync(localLoginPath)) {
+          const local = JSON.parse(readFileSync(localLoginPath, 'utf-8'));
+          if (local.did) {
+            effectiveDid = local.did;
+            identitySource = 'local';
+            authType = local.type || 'oauth';
+          }
+        }
+      } catch {}
+
+      if (!identitySource && effectiveDid) identitySource = 'global';
+
+      if (identitySource === 'global' && effectiveDid) {
+        try {
+          const raw = readFileSync(configPath('session.json'), 'utf-8');
+          const sessionData = JSON.parse(raw);
+          if (sessionData[effectiveDid]?.type === 'app-password') authType = 'app-password';
+        } catch {}
+      }
+
+      if (!effectiveDid) {
         if (!opts.json) console.log(`${mark} bluesky: not logged in (run ${name} login <handle>)`);
       } else {
         try {
-          const { session } = await restoreAgent(config.did);
+          const { session } = await restoreAgent(effectiveDid);
           blueskyOk = true;
           pds = session.serverMetadata?.issuer || null;
-          if (!opts.json) console.log(`${mark} bluesky: ok (${session.did}${pds ? ', ' + pds : ''})`);
+          if (!opts.json) console.log(`${mark} bluesky: ok (${session.did || effectiveDid}${pds ? ', ' + pds : ''})`);
         } catch {
           if (!opts.json) console.log(`${mark} bluesky: token expired or invalid (run ${name} login <handle>)`);
         }
+        if (!opts.json) console.log(`${mark} identity: ${identitySource} (${authType})`);
       }
 
       if (opts.json) {
@@ -140,7 +168,7 @@ export default function register(program) {
           skill: skillInstalled,
           projectSkills,
           userSkills,
-          bluesky: { ok: blueskyOk, did: config.did || null, pds },
+          bluesky: { ok: blueskyOk, did: effectiveDid || null, pds, source: identitySource, authType },
         });
       }
     } catch (err) {
