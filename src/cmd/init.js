@@ -15,6 +15,7 @@ export default function register(program) {
     .command('init')
     .description('Initialize .vit directory and set project beacon. Use the most official upstream or well-known git URL so all contributors converge on the same beacon.')
     .option('--beacon <url>', 'Git URL (or "." to read from git remote upstream/origin) to derive the beacon URI')
+    .option('--secondary <url>', 'Secondary beacon URL for upstream cap discovery')
     .option('--json', 'Output as JSON')
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (opts) => {
@@ -36,14 +37,19 @@ export default function register(program) {
         const dir = vitDir();
         if (verbose) vlog(`[verbose] .vit dir: ${dir}`);
 
-        if (!opts.beacon) {
+        if (!opts.beacon && !opts.secondary) {
           const config = readProjectConfig();
           if (config.beacon) {
             if (opts.json) {
-              jsonOk({ beacon: config.beacon });
+              const out = { beacon: config.beacon };
+              if (config.secondaryBeacon) out.secondaryBeacon = config.secondaryBeacon;
+              jsonOk(out);
               return;
             }
             console.log(`${mark} beacon: ${config.beacon}`);
+            if (config.secondaryBeacon) {
+              console.log(`${mark} secondary beacon: ${config.secondaryBeacon}`);
+            }
             console.log(`hint: to change the beacon, run: ${name} init --beacon <git-url>`);
             return;
           }
@@ -137,6 +143,30 @@ export default function register(program) {
           return;
         }
 
+        if (opts.secondary && !opts.beacon) {
+          const config = readProjectConfig();
+          if (!config.beacon) {
+            if (opts.json) {
+              jsonError("no primary beacon set — run 'vit init --beacon <url>' first");
+              return;
+            }
+            console.error("no primary beacon set — run 'vit init --beacon <url>' first");
+            process.exitCode = 1;
+            return;
+          }
+
+          const secondary = 'vit:' + toBeacon(opts.secondary);
+          const merged = { ...config, secondaryBeacon: secondary };
+          writeProjectConfig(merged);
+          if (opts.json) {
+            jsonOk({ beacon: merged.beacon, secondaryBeacon: merged.secondaryBeacon });
+            return;
+          }
+          console.log(`${mark} beacon: ${merged.beacon}`);
+          console.log(`${mark} secondary beacon: ${merged.secondaryBeacon}`);
+          return;
+        }
+
         let gitUrl = opts.beacon;
         if (gitUrl === '.') {
           if (verbose) vlog('[verbose] resolving --beacon . via remote.upstream.url then remote.origin.url');
@@ -177,7 +207,12 @@ export default function register(program) {
 
         const beacon = 'vit:' + toBeacon(gitUrl);
         if (verbose) vlog(`[verbose] Computed beacon: ${beacon}`);
-        writeProjectConfig({ beacon });
+        const existing = readProjectConfig();
+        const merged = { ...existing, beacon };
+        if (opts.secondary) {
+          merged.secondaryBeacon = 'vit:' + toBeacon(opts.secondary);
+        }
+        writeProjectConfig(merged);
         if (verbose) vlog(`[verbose] Wrote config.json`);
         const readmePath = join(vitDir(), 'README.md');
         if (!existsSync(readmePath)) {
@@ -185,10 +220,15 @@ export default function register(program) {
           if (verbose) vlog(`[verbose] Wrote .vit/README.md`);
         }
         if (opts.json) {
-          jsonOk({ beacon });
+          const out = { beacon: merged.beacon };
+          if (merged.secondaryBeacon) out.secondaryBeacon = merged.secondaryBeacon;
+          jsonOk(out);
           return;
         }
         console.log(`${mark} beacon: ${beacon}`);
+        if (merged.secondaryBeacon) {
+          console.log(`${mark} secondary beacon: ${merged.secondaryBeacon}`);
+        }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (opts.json) {

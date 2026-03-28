@@ -18,6 +18,14 @@ export function readProjectConfig() {
   }
 }
 
+export function readBeaconSet() {
+  const config = readProjectConfig();
+  const set = new Set();
+  if (config.beacon) set.add(config.beacon);
+  if (config.secondaryBeacon) set.add(config.secondaryBeacon);
+  return set;
+}
+
 export function writeProjectConfig(obj, baseDir) {
   const dir = baseDir ? join(baseDir, '.vit') : vitDir();
   mkdirSync(dir, { recursive: true });

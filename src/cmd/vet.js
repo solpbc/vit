@@ -8,7 +8,7 @@ import { promisify } from 'node:util';
 import { requireDid } from '../lib/config.js';
 import { CAP_COLLECTION, SKILL_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
-import { appendLog, readProjectConfig, readFollowing, vitDir } from '../lib/vit-dir.js';
+import { appendLog, readBeaconSet, readFollowing, vitDir } from '../lib/vit-dir.js';
 import { requireNotAgent, detectCodingAgent, toSandboxName } from '../lib/agent.js';
 import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
 import { isSkillRef, isValidSkillRef, nameFromSkillRef } from '../lib/skill-ref.js';
@@ -259,9 +259,8 @@ export default function register(program) {
 
         if (!isSkill) {
           // Cap vet requires beacon
-          const projectConfig = readProjectConfig();
-          const beacon = projectConfig.beacon;
-          if (!beacon) {
+          const beaconSet = readBeaconSet();
+          if (beaconSet.size === 0) {
             if (opts.json) {
               jsonError('no beacon set', "run 'vit init' first");
               return;
@@ -270,7 +269,7 @@ export default function register(program) {
             process.exitCode = 1;
             return;
           }
-          if (verbose) vlog(`[verbose] beacon: ${beacon}`);
+          if (verbose) vlog(`[verbose] beacons: ${[...beaconSet].join(', ')}`);
 
           const { agent: oauthAgent } = await restoreAgent(did);
           if (verbose) vlog('[verbose] session restored');
@@ -290,7 +289,7 @@ export default function register(program) {
           let match = null;
           for (const records of allRecords) {
             for (const rec of records) {
-              if (rec.value.beacon !== beacon) continue;
+              if (!beaconSet.has(rec.value.beacon)) continue;
               const recRef = resolveRef(rec.value, rec.cid);
               if (recRef === ref) {
                 if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {

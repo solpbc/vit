@@ -6,6 +6,7 @@ import { resolveRef } from '../lib/cap-ref.js';
 import { resolveHandleFromDid } from '../lib/pds.js';
 import { brand } from '../lib/brand.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
+import { readBeaconSet } from '../lib/vit-dir.js';
 
 export default function register(program) {
   program
@@ -37,6 +38,23 @@ export default function register(program) {
 
         const wantCaps = !opts.skills;
         const wantSkills = !opts.caps;
+        let beaconSet = null;
+        if (opts.beacon) {
+          if (opts.beacon === '.') {
+            beaconSet = readBeaconSet();
+            if (beaconSet.size === 0) {
+              if (opts.json) {
+                jsonError("no beacon set — run 'vit init' first");
+                return;
+              }
+              console.error("no beacon set — run 'vit init' first");
+              process.exitCode = 1;
+              return;
+            }
+          } else {
+            beaconSet = new Set([opts.beacon]);
+          }
+        }
 
         const cursor = (Date.now() - days * 86400000) * 1000;
         const timeout = Math.max(120000, Math.min(600000, days * 60000));
@@ -56,7 +74,7 @@ export default function register(program) {
         if (!opts.json) {
           console.log(`${brand} scan`);
           console.log(`  Replaying ${days} day${days === 1 ? '' : 's'} of ${scanType} events...`);
-          if (opts.beacon) console.log(`  Beacon filter: ${opts.beacon}`);
+          if (beaconSet) console.log(`  Beacon filter: ${[...beaconSet].join(', ')}`);
           if (opts.tag) console.log(`  Tag filter: ${opts.tag}`);
           console.log(`  Timeout: ${Math.round(timeout / 1000)}s`);
           console.log('');
@@ -87,7 +105,7 @@ export default function register(program) {
             if (!isCapEvent && !isSkillEvent) return;
 
             // Apply filters
-            if (isCapEvent && opts.beacon && record.beacon !== opts.beacon) return;
+            if (isCapEvent && beaconSet && !beaconSet.has(record.beacon)) return;
             if (isSkillEvent && opts.tag) {
               const tags = record.tags || [];
               if (!tags.some(t => t.toLowerCase() === opts.tag.toLowerCase())) return;

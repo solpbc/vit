@@ -83,6 +83,50 @@ describe('vit init', () => {
     expect(result.stdout).toContain('hint: to change the beacon, run: vit init --beacon <git-url>');
   });
 
+  test('--secondary stores secondaryBeacon with existing primary', () => {
+    run('init --beacon https://github.com/org/repo.git', tmpDir, { CLAUDECODE: '1' });
+    const result = run('init --secondary https://github.com/upstream/repo.git', tmpDir, { CLAUDECODE: '1' });
+    expect(result.exitCode).toBe(0);
+
+    const content = readFileSync(join(tmpDir, '.vit', 'config.json'), 'utf-8');
+    const config = JSON.parse(content);
+    expect(config.beacon).toBe('vit:github.com/org/repo');
+    expect(config.secondaryBeacon).toBe('vit:github.com/upstream/repo');
+  });
+
+  test('--secondary errors without existing primary beacon', () => {
+    const result = run('init --secondary https://github.com/upstream/repo.git', tmpDir, { CLAUDECODE: '1' });
+    expect(result.exitCode).not.toBe(0);
+  });
+
+  test('--beacon preserves existing secondaryBeacon', () => {
+    run('init --beacon https://github.com/org/repo.git', tmpDir, { CLAUDECODE: '1' });
+    run('init --secondary https://github.com/upstream/repo.git', tmpDir, { CLAUDECODE: '1' });
+    run('init --beacon https://github.com/org/newrepo.git', tmpDir, { CLAUDECODE: '1' });
+
+    const content = readFileSync(join(tmpDir, '.vit', 'config.json'), 'utf-8');
+    const config = JSON.parse(content);
+    expect(config.beacon).toBe('vit:github.com/org/newrepo');
+    expect(config.secondaryBeacon).toBe('vit:github.com/upstream/repo');
+  });
+
+  test('displays secondary beacon when set', () => {
+    run('init --beacon https://github.com/org/repo.git --secondary https://github.com/upstream/repo.git', tmpDir, { CLAUDECODE: '1' });
+    const result = run('init', tmpDir, { CLAUDECODE: '1' });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('beacon: vit:github.com/org/repo');
+    expect(result.stdout).toContain('secondary beacon: vit:github.com/upstream/repo');
+  });
+
+  test('--json includes secondaryBeacon when set', () => {
+    run('init --beacon https://github.com/org/repo.git --secondary https://github.com/upstream/repo.git', tmpDir, { CLAUDECODE: '1' });
+    const result = run('init --json', tmpDir, { CLAUDECODE: '1' });
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.stdout);
+    expect(output.beacon).toBe('vit:github.com/org/repo');
+    expect(output.secondaryBeacon).toBe('vit:github.com/upstream/repo');
+  });
+
   test('reports no beacon when .vit exists but directory is not a git repo', () => {
     mkdirSync(join(tmpDir, '.vit'), { recursive: true });
     const result = run('init', tmpDir, { CLAUDECODE: '1' });

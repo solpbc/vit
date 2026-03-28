@@ -4,7 +4,7 @@
 import { requireDid } from '../lib/config.js';
 import { CAP_COLLECTION, SKILL_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
-import { readProjectConfig, readFollowing } from '../lib/vit-dir.js';
+import { readBeaconSet, readFollowing } from '../lib/vit-dir.js';
 import { requireAgent } from '../lib/agent.js';
 import { resolveRef } from '../lib/cap-ref.js';
 import { skillRefFromName } from '../lib/skill-ref.js';
@@ -37,21 +37,20 @@ export default function register(program) {
         if (!did) return;
         if (verbose) console.log(`[verbose] DID: ${did}`);
 
-        const projectConfig = readProjectConfig();
-        const beacon = projectConfig.beacon;
+        const beaconSet = readBeaconSet();
 
         const wantCaps = !opts.skills;
         const wantSkills = !opts.caps;
         const skillsOnly = opts.skills && !opts.caps;
 
         // Beacon required unless --skills only mode
-        if (!beacon && !skillsOnly) {
+        if (beaconSet.size === 0 && !skillsOnly) {
           console.error(`no beacon set. run '${name} init' in a project directory first.`);
           process.exitCode = 1;
           return;
         }
 
-        if (verbose && beacon) console.log(`[verbose] beacon: ${beacon}`);
+        if (verbose && beaconSet.size > 0) console.log(`[verbose] beacons: ${[...beaconSet].join(', ')}`);
 
         const { agent } = await restoreAgent(did);
         if (verbose) console.log('[verbose] session restored');
@@ -91,9 +90,9 @@ export default function register(program) {
           const items = [];
 
           // Fetch caps (filtered by beacon)
-          if (wantCaps && beacon) {
+          if (wantCaps && beaconSet.size > 0) {
             const res = await listRecordsFromPds(pds, repoDid, CAP_COLLECTION, 50);
-            const caps = res.records.filter(r => r.value.beacon === beacon);
+            const caps = res.records.filter(r => beaconSet.has(r.value.beacon));
             if (verbose) console.log(`[verbose] ${repoDid}: ${res.records.length} caps, ${caps.length} matching beacon`);
             for (const cap of caps) {
               cap._handle = handleMap.get(repoDid) || repoDid;

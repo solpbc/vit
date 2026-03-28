@@ -52,8 +52,10 @@ export async function handleRequest(request, env) {
     const bindings = [];
 
     if (beacon) {
-      conditions.push('c.beacon = ?');
-      bindings.push(beacon);
+      const beacons = beacon.split(',').filter(Boolean);
+      const placeholders = beacons.map(() => '?').join(', ');
+      conditions.push(`c.beacon IN (${placeholders})`);
+      bindings.push(...beacons);
     }
 
     if (cursor) {
@@ -101,8 +103,10 @@ export async function handleRequest(request, env) {
       bindings.push(ref);
 
       if (beacon) {
-        conditions.push('c.beacon = ?');
-        bindings.push(beacon);
+        const beacons = beacon.split(',').filter(Boolean);
+        const placeholders = beacons.map(() => '?').join(', ');
+        conditions.push(`c.beacon IN (${placeholders})`);
+        bindings.push(...beacons);
       }
     }
 

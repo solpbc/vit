@@ -4,7 +4,7 @@
 import { requireDid } from '../lib/config.js';
 import { CAP_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
-import { readProjectConfig, readFollowing, readLog } from '../lib/vit-dir.js';
+import { readBeaconSet, readFollowing, readLog } from '../lib/vit-dir.js';
 import { requireAgent, detectCodingAgent } from '../lib/agent.js';
 import { shouldBypassVet } from '../lib/trust-gate.js';
 import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
@@ -56,9 +56,8 @@ export default function register(program) {
         if (!did) return;
         if (verbose) vlog(`[verbose] DID: ${did}`);
 
-        const projectConfig = readProjectConfig();
-        const beacon = projectConfig.beacon;
-        if (!beacon) {
+        const beaconSet = readBeaconSet();
+        if (beaconSet.size === 0) {
           if (opts.json) {
             jsonError('no beacon set', "run 'vit init' first");
             return;
@@ -67,7 +66,7 @@ export default function register(program) {
           process.exitCode = 1;
           return;
         }
-        if (verbose) vlog(`[verbose] beacon: ${beacon}`);
+        if (verbose) vlog(`[verbose] beacons: ${[...beaconSet].join(', ')}`);
 
         const trusted = readLog('trusted.jsonl');
         const trustedEntry = trusted.find(e => e.ref === ref);
@@ -114,7 +113,7 @@ export default function register(program) {
         let match = null;
         for (const records of allRecords) {
           for (const rec of records) {
-            if (rec.value.beacon !== beacon) continue;
+            if (!beaconSet.has(rec.value.beacon)) continue;
             const recRef = resolveRef(rec.value, rec.cid);
             if (recRef === ref) {
               if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {

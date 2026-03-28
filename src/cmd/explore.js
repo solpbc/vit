@@ -37,8 +37,9 @@ export default function register(program) {
       try {
         let beacon = opts.beacon;
         if (beacon === '.') {
-          beacon = readProjectConfig().beacon;
-          if (!beacon) {
+          const config = readProjectConfig();
+          const beacons = [config.beacon, config.secondaryBeacon].filter(Boolean);
+          if (beacons.length === 0) {
             const msg = "no beacon set — run 'vit init' first";
             if (opts.json) {
               jsonError(msg);
@@ -48,6 +49,7 @@ export default function register(program) {
             process.exitCode = 1;
             return;
           }
+          beacon = beacons.join(',');
         }
 
         const url = new URL('/api/caps', baseUrl);

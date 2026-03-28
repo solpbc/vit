@@ -45,6 +45,30 @@ describe('vit-dir', () => {
     expect(config).toEqual({});
   });
 
+  test('readBeaconSet returns empty Set when no config', async () => {
+    const { readBeaconSet } = await import('../src/lib/vit-dir.js');
+    const set = readBeaconSet();
+    expect(set).toBeInstanceOf(Set);
+    expect(set.size).toBe(0);
+  });
+
+  test('readBeaconSet returns primary only when no secondary', async () => {
+    const { writeProjectConfig, readBeaconSet } = await import('../src/lib/vit-dir.js');
+    writeProjectConfig({ beacon: 'vit:github.com/org/repo' });
+    const set = readBeaconSet();
+    expect(set.size).toBe(1);
+    expect(set.has('vit:github.com/org/repo')).toBe(true);
+  });
+
+  test('readBeaconSet returns both when secondary is set', async () => {
+    const { writeProjectConfig, readBeaconSet } = await import('../src/lib/vit-dir.js');
+    writeProjectConfig({ beacon: 'vit:github.com/org/repo', secondaryBeacon: 'vit:github.com/upstream/repo' });
+    const set = readBeaconSet();
+    expect(set.size).toBe(2);
+    expect(set.has('vit:github.com/org/repo')).toBe(true);
+    expect(set.has('vit:github.com/upstream/repo')).toBe(true);
+  });
+
   test('appendLog creates file and appends JSONL line', async () => {
     const { appendLog } = await import('../src/lib/vit-dir.js');
     appendLog('caps.jsonl', { ts: '2026-01-01T00:00:00Z', did: 'did:plc:test' });
