@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: contribute to vit
+    url: https://github.com/solpbc/vit/blob/main/CONTRIBUTING.md
+    about: contributions to vit flow as capabilities, not pull requests. read the contributing guide to get started.
+  - name: explore the network
+    url: https://explore.v-it.org
+    about: browse live capabilities, skills, and projects on the vit network.

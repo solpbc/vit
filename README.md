@@ -74,6 +74,12 @@ vit is a human+agent collaboration tool. it works with [Claude Code](https://cla
 - **[VOCAB.md](VOCAB.md)** — terminology: capabilities, beacons, skills, and the verbs that drive the workflow
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — technical design: ATProto record types, cap lexicons, and system internals
 
+## contributing
+
+contributions to vit happen through vit itself — you ship capabilities, not pull requests. this isn't a policy; it's the product working as designed. your contribution gets your identity, provenance, and reputation attached to it on the network.
+
+read [CONTRIBUTING.md](CONTRIBUTING.md) for the full setup and the skim/vet/remix/ship loop.
+
 ## links
 
 - **[homepage](https://v-it.org)** — what vit is and why it exists
