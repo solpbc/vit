@@ -19,9 +19,13 @@ clean:
 	rm -rf node_modules/
 
 release: test
-	npm version $(BUMP)
-	git push
-	git push --tags
+	npm version $(BUMP) --no-git-tag-version
+	@v=$$(node -p "require('./package.json').version") && \
+		git add package.json package-lock.json && \
+		git commit -m "v$$v" && \
+		git tag "v$$v" && \
+		git push && \
+		git push --tags
 
 publish:
 	npm publish
