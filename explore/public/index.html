@@ -720,7 +720,7 @@
 
     <main id="content">
       <nav class="sub-nav">
-        <a href="#">caps</a>
+        <a href="#caps">caps</a>
         <a href="#skills">skills</a>
         <a href="#beacons">beacons</a>
         <a href="#stats">stats</a>
@@ -811,15 +811,16 @@
         }
         return { view: 'skills' };
       }
+      if (hash === 'caps') return { view: 'caps' };
       if (hash === 'stats') return { view: 'stats' };
-      return { view: 'caps' };
+      return { view: 'stats' };
     }
 
     function updateNav() {
       const route = getRoute();
       document.querySelectorAll('.sub-nav a').forEach(function(a) {
         const href = a.getAttribute('href');
-        if (route.view === 'caps' || route.view === 'cap') a.classList.toggle('active', href === '#');
+        if (route.view === 'caps' || route.view === 'cap') a.classList.toggle('active', href === '#caps');
         else if (route.view === 'skills' || route.view === 'skill') a.classList.toggle('active', href === '#skills');
         else if (route.view === 'beacons' || route.view === 'beacon') a.classList.toggle('active', href === '#beacons');
         else if (route.view === 'stats') a.classList.toggle('active', href === '#stats');
@@ -949,7 +950,7 @@
     async function renderCapDetail(el, ref) {
       var data = await api('cap?ref=' + encodeURIComponent(ref));
       if (!data.cap) {
-        el.innerHTML = '<div class="not-found"><a href="#" class="back-link">&larr; back to caps</a><p><strong>Cap not found.</strong></p><p>No cap with ref <code>' + esc(ref) + '</code> was found.</p></div>';
+        el.innerHTML = '<div class="not-found"><a href="#caps" class="back-link">&larr; back to caps</a><p><strong>Cap not found.</strong></p><p>No cap with ref <code>' + esc(ref) + '</code> was found.</p></div>';
         return;
       }
       var cap = data.cap;
@@ -973,7 +974,7 @@
       var beacon = cap.beacon ? '<a href="#beacon/' + encodeURIComponent(cap.beacon) + '">' + esc(cap.beacon) + '</a>' : '';
       var metaParts = [author, beacon, time].filter(Boolean);
 
-      var html = '<a href="#" class="back-link">&larr; caps</a>';
+      var html = '<a href="#caps" class="back-link">&larr; caps</a>';
       html += '<div class="detail-header">';
       html += '<div class="detail-title">' + title + kindBadge + '</div>';
       html += '<div class="detail-meta">' + metaParts.join(' &middot; ') + '</div>';
@@ -1145,6 +1146,18 @@
       capsContainer = document.getElementById('caps-list');
       capsContainer.innerHTML = data.caps.map(renderCapItem).join('');
       appendLoadMore(el);
+
+      // Fetch skills from this beacon's publishers
+      const dids = [...new Set(data.caps.map(function(c) { return c.did; }).filter(Boolean))];
+      if (dids.length > 0) {
+        const skillsUrl = 'skills?' + dids.map(function(d) { return 'did=' + encodeURIComponent(d); }).join('&');
+        const skillsData = await api(skillsUrl);
+        if (skillsData.skills && skillsData.skills.length > 0) {
+          const skillsHtml = '<hr><h3>skills from these publishers</h3>' +
+            '<div id="beacon-skills-list">' + skillsData.skills.map(renderSkillItem).join('') + '</div>';
+          el.insertAdjacentHTML('beforeend', skillsHtml);
+        }
+      }
     }
 
     async function renderBeacons(el) {
