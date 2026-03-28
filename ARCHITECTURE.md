@@ -39,7 +39,7 @@ fields carried over from `app.bsky.feed.post` and their cap-context meaning:
 
 | field | type | cap meaning |
 |---|---|---|
-| `text` | string (max 3000 bytes / 300 graphemes) | primary cap content |
+| `text` | string (max 50000 bytes / 15000 graphemes) | primary cap content |
 | `facets` | array of `app.bsky.richtext.facet` | rich text annotations (mentions, URLs, hashtags) |
 | `reply` | `org.v-it.cap#replyRef` | thread structure (parent + root refs) |
 | `embed` | union of `app.bsky.embed.*` | attached media, links, or record embeds |
