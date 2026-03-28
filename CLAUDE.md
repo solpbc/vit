@@ -35,6 +35,24 @@ make clean      # Remove node_modules
 - Always run `make test` before committing — all tests must pass.
 - Hand-test affected CLI commands (`./bin/vit.js <command>`) to verify behavior beyond what tests cover.
 
+## Releasing
+
+Every commit that changes files in `bin/` or `src/` — the packaged CLI code — **must** be followed by a release and publish to npm:
+
+```bash
+make ship              # bump patch version, tag, push, publish to npm
+make ship BUMP=minor   # for new commands or features
+make ship BUMP=major   # for breaking changes
+```
+
+**This is non-negotiable.** If your commit touches `bin/` or `src/`, run `make ship` before you're done. Use `patch` (default) for fixes and small improvements, `minor` for new commands or features, `major` for breaking changes.
+
+`make ship` runs tests, bumps the version in `package.json`, creates a git commit and tag (`vX.Y.Z`), pushes to origin, and publishes to npm — all in one step.
+
+Individual targets if needed:
+- `make release` — test, bump, commit, tag, push (no npm publish)
+- `make publish` — npm publish only (assumes version is already bumped)
+
 ## Hosting
 
 The `docs/` directory is published to [v-it.org](https://v-it.org) via GitHub Pages. Pushing to main auto-deploys.

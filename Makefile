@@ -1,4 +1,6 @@
-.PHONY: install link test test-node clean
+BUMP ?= patch
+
+.PHONY: install link test test-node clean release publish ship
 
 install:
 	bun install
@@ -16,5 +18,12 @@ test-node:
 clean:
 	rm -rf node_modules/
 
+release: test
+	npm version $(BUMP)
+	git push
+	git push --tags
+
 publish:
 	npm publish
+
+ship: release publish
