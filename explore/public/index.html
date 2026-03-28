@@ -399,6 +399,181 @@
         text-align: left;
       }
     }
+
+    .detail-header {
+      margin-bottom: 20px;
+    }
+
+    .detail-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+
+    .detail-meta {
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+
+    .detail-meta a {
+      color: var(--vit-green-deep);
+      text-decoration: none;
+    }
+
+    .detail-meta a:hover {
+      text-decoration: underline;
+    }
+
+    .detail-body {
+      white-space: pre-wrap;
+      background: #f3f4f6;
+      padding: 16px;
+      border-radius: 6px;
+      margin: 16px 0;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      overflow-wrap: break-word;
+    }
+
+    .detail-section {
+      margin-top: 24px;
+    }
+
+    .detail-section h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0 0 8px;
+      color: #374151;
+    }
+
+    .detail-link {
+      display: inline-block;
+      margin-top: 16px;
+      font-size: 0.85rem;
+    }
+
+    .kind-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 3px;
+      margin-left: 8px;
+      vertical-align: middle;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      background-color: #f3f4f6;
+      color: #374151;
+    }
+
+    .kind-badge.kind-feat {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+
+    .kind-badge.kind-fix {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+
+    .kind-badge.kind-docs {
+      background-color: #dbeafe;
+      color: #1e40af;
+    }
+
+    .kind-badge.kind-test {
+      background-color: #ede9fe;
+      color: #5b21b6;
+    }
+
+    .kind-badge.kind-refactor {
+      background-color: #f3f4f6;
+      color: #374151;
+    }
+
+    .kind-badge.kind-chore {
+      background-color: #f3f4f6;
+      color: #374151;
+    }
+
+    .kind-badge.kind-perf {
+      background-color: #fce7f3;
+      color: #9d174d;
+    }
+
+    .kind-badge.kind-style {
+      background-color: #e0e7ff;
+      color: #3730a3;
+    }
+
+    .kind-badge.kind-security {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    .command-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .command-row code {
+      flex: 1;
+      background: #f3f4f6;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    .copy-btn {
+      background: none;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      color: #374151;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .copy-btn:hover {
+      background: #f3f4f6;
+    }
+
+    .tag-pill {
+      display: inline-block;
+      background: #e5e7eb;
+      color: #374151;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 3px;
+      margin: 0 4px 4px 0;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .tag-pill:hover {
+      background: #d1d5db;
+    }
+
+    .vouch-item {
+      padding: 6px 0;
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+
+    .not-found {
+      color: #6b7280;
+      padding: 32px 0;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 <body>
@@ -458,6 +633,7 @@
     let currentBeaconFilter = null;
     let skillsCursor = null;
     let skillsContainer = null;
+    let currentSkillTag = null;
 
     function timeAgo(dateStr) {
       const now = Date.now();
@@ -491,11 +667,28 @@
       return res.json();
     }
 
+    function copyToClipboard(text, btn) {
+      navigator.clipboard.writeText(text).then(function() {
+        var orig = btn.textContent;
+        btn.textContent = 'copied!';
+        setTimeout(function() { btn.textContent = orig; }, 1500);
+      });
+    }
+
     function getRoute() {
       const hash = location.hash.slice(1);
+      if (hash.startsWith('cap/')) return { view: 'cap', value: decodeURIComponent(hash.slice(4)) };
+      if (hash.startsWith('skill/')) return { view: 'skill', value: decodeURIComponent(hash.slice(6)) };
       if (hash.startsWith('beacon/')) return { view: 'beacon', value: decodeURIComponent(hash.slice(7)) };
       if (hash === 'beacons') return { view: 'beacons' };
-      if (hash === 'skills') return { view: 'skills' };
+      if (hash.startsWith('skills')) {
+        var qmark = hash.indexOf('?');
+        if (qmark !== -1) {
+          var params = new URLSearchParams(hash.slice(qmark + 1));
+          return { view: 'skills', tag: params.get('tag') || null };
+        }
+        return { view: 'skills' };
+      }
       if (hash === 'stats') return { view: 'stats' };
       return { view: 'caps' };
     }
@@ -504,8 +697,8 @@
       const route = getRoute();
       document.querySelectorAll('.sub-nav a').forEach(function(a) {
         const href = a.getAttribute('href');
-        if (route.view === 'caps') a.classList.toggle('active', href === '#');
-        else if (route.view === 'skills') a.classList.toggle('active', href === '#skills');
+        if (route.view === 'caps' || route.view === 'cap') a.classList.toggle('active', href === '#');
+        else if (route.view === 'skills' || route.view === 'skill') a.classList.toggle('active', href === '#skills');
         else if (route.view === 'beacons' || route.view === 'beacon') a.classList.toggle('active', href === '#beacons');
         else if (route.view === 'stats') a.classList.toggle('active', href === '#stats');
         else a.classList.remove('active');
@@ -519,8 +712,8 @@
       const beacon = cap.beacon ? '<a href="#beacon/' + encodeURIComponent(cap.beacon) + '">' + esc(cap.beacon) + '</a>' : '';
       const time = timeAgo(cap.created_at);
       const metaParts = [name, beacon, ref, time].filter(Boolean);
-      const titleHtml = cap.uri
-        ? '<a href="https://pdsls.dev/at/' + esc(cap.uri.replace('at://', '')) + '" target="_blank" rel="noopener">' + title + '</a>'
+      const titleHtml = cap.ref
+        ? '<a href="#cap/' + encodeURIComponent(cap.ref) + '">' + title + '</a>'
         : title;
       return '<div class="cap-item"><div class="cap-title">' + titleHtml + '</div><div class="cap-meta">' + metaParts.join(' · ') + '</div></div>';
     }
@@ -533,7 +726,7 @@
       const tags = skill.tags ? skill.tags.split(',').map(function(t) { return '<span class="skill-tag">' + esc(t.trim()) + '</span>'; }).join('') : '';
       const time = timeAgo(skill.created_at);
       const metaParts = [author, version, time].filter(Boolean);
-      return '<div class="skill-item"><div class="skill-title">' + name + '</div>' + desc + '<div class="skill-meta">' + metaParts.join(' · ') + (tags ? ' · ' + tags : '') + '</div></div>';
+      return '<div class="skill-item"><div class="skill-title"><a href="#skill/' + encodeURIComponent(skill.name) + '">' + name + '</a></div>' + desc + '<div class="skill-meta">' + metaParts.join(' · ') + (tags ? ' · ' + tags : '') + '</div></div>';
     }
 
     function appendLoadMore(el) {
@@ -570,7 +763,8 @@
       btn.onclick = async function() {
         btn.disabled = true;
         btn.textContent = 'loading...';
-        const data = await api('skills?cursor=' + encodeURIComponent(skillsCursor));
+        const tagParam = currentSkillTag ? '&tag=' + encodeURIComponent(currentSkillTag) : '';
+        const data = await api('skills?cursor=' + encodeURIComponent(skillsCursor) + tagParam);
         skillsCursor = data.cursor;
         skillsContainer.innerHTML += data.skills.map(renderSkillItem).join('');
         btn.remove();
@@ -596,17 +790,182 @@
       appendLoadMore(el);
     }
 
-    async function renderSkills(el) {
+    async function renderCapDetail(el, ref) {
+      var data = await api('cap?ref=' + encodeURIComponent(ref));
+      if (!data.cap) {
+        el.innerHTML = '<div class="not-found"><a href="#" class="back-link">&larr; back to caps</a><p><strong>Cap not found.</strong></p><p>No cap with ref <code>' + esc(ref) + '</code> was found.</p></div>';
+        return;
+      }
+      var cap = data.cap;
+      var record = null;
+      if (cap.record_json) {
+        try { record = JSON.parse(cap.record_json); } catch(e) {}
+      }
+
+      var kind = record && record.kind ? record.kind : null;
+      var bodyText = record && record.text ? record.text : null;
+
+      var kindBadge = '';
+      if (kind) {
+        kindBadge = '<span class="kind-badge kind-' + esc(kind) + '">' + esc(kind) + '</span>';
+      }
+
+      var title = esc(cap.title) || 'untitled';
+      var author = esc(displayName(cap));
+      var time = timeAgo(cap.created_at);
+      var beacon = cap.beacon ? '<a href="#beacon/' + encodeURIComponent(cap.beacon) + '">' + esc(cap.beacon) + '</a>' : '';
+      var metaParts = [author, beacon, time].filter(Boolean);
+
+      var html = '<a href="#" class="back-link">&larr; caps</a>';
+      html += '<div class="detail-header">';
+      html += '<div class="detail-title">' + title + kindBadge + '</div>';
+      html += '<div class="detail-meta">' + metaParts.join(' &middot; ') + '</div>';
+      html += '</div>';
+
+      if (bodyText) {
+        html += '<div class="detail-body">' + esc(bodyText) + '</div>';
+      }
+
+      var vouchHtml = '';
+      if (cap.uri) {
+        try {
+          var vouchData = await api('vouches?cap_uri=' + encodeURIComponent(cap.uri));
+          var vouches = vouchData.vouches || [];
+          if (vouches.length > 0) {
+            vouchHtml = '<div class="detail-section"><h3>vouches (' + vouches.length + ')</h3>';
+            vouches.forEach(function(v) {
+              var vName = v.handle ? esc(v.handle) : esc(v.did);
+              vouchHtml += '<div class="vouch-item">@' + vName + ' &middot; ' + timeAgo(v.created_at) + '</div>';
+            });
+            vouchHtml += '</div>';
+          }
+        } catch(e) {}
+      }
+      html += vouchHtml;
+
+      html += '<div class="detail-section"><h3>commands</h3>';
+      html += '<div class="command-row"><code>vit vet ' + esc(ref) + '</code><button class="copy-btn" data-copy="vit vet ' + esc(ref) + '">copy</button></div>';
+      html += '<div class="command-row"><code>vit remix ' + esc(ref) + '</code><button class="copy-btn" data-copy="vit remix ' + esc(ref) + '">copy</button></div>';
+      html += '</div>';
+
+      if (cap.uri) {
+        html += '<a href="https://pdsls.dev/at/' + esc(cap.uri.replace('at://', '')) + '" target="_blank" rel="noopener" class="detail-link">view on ATProto &rarr;</a>';
+      }
+
+      el.innerHTML = html;
+    }
+
+    async function renderSkillDetail(el, name) {
+      var data = await api('skill?name=' + encodeURIComponent(name));
+      if (!data.skill) {
+        el.innerHTML = '<div class="not-found"><a href="#skills" class="back-link">&larr; back to skills</a><p><strong>Skill not found.</strong></p><p>No skill named <code>' + esc(name) + '</code> was found.</p></div>';
+        return;
+      }
+      var skill = data.skill;
+      var record = null;
+      if (skill.record_json) {
+        try { record = JSON.parse(skill.record_json); } catch(e) {}
+      }
+
+      var skillName = esc(skill.name) || 'unnamed';
+      var author = esc(displayName(skill));
+      var time = timeAgo(skill.created_at);
+      var version = skill.version ? 'v' + esc(skill.version) : '';
+      var desc = skill.description ? esc(skill.description) : '';
+
+      var metaParts = [author, time].filter(Boolean);
+
+      var html = '<a href="#skills" class="back-link">&larr; skills</a>';
+      html += '<div class="detail-header">';
+      html += '<div class="detail-title">/' + skillName;
+      if (version) html += ' <span style="font-size:0.85rem;font-weight:normal;color:#6b7280">' + version + '</span>';
+      html += '</div>';
+      html += '<div class="detail-meta">' + metaParts.join(' &middot; ') + '</div>';
+      html += '</div>';
+
+      if (desc) {
+        html += '<p>' + desc + '</p>';
+      }
+
+      var tags = skill.tags ? skill.tags.split(',') : [];
+      if (record && record.tags && Array.isArray(record.tags)) {
+        tags = record.tags;
+      }
+      if (tags.length > 0) {
+        html += '<div style="margin: 12px 0">';
+        tags.forEach(function(t) {
+          var tag = t.trim ? t.trim() : t;
+          if (tag) {
+            html += '<a href="#skills?tag=' + encodeURIComponent(tag) + '" class="tag-pill">' + esc(tag) + '</a>';
+          }
+        });
+        html += '</div>';
+      }
+
+      var license = record && record.license ? record.license : null;
+      var compat = record && record.compatibility ? record.compatibility : null;
+      if (license || compat) {
+        html += '<div class="detail-meta" style="margin: 8px 0">';
+        var infoParts = [];
+        if (license) infoParts.push('license: ' + esc(license));
+        if (compat) infoParts.push(esc(compat));
+        html += infoParts.join(' &middot; ');
+        html += '</div>';
+      }
+
+      var bodyText = record && record.text ? record.text : (skill.text || null);
+      if (bodyText) {
+        html += '<div class="detail-body">' + esc(bodyText) + '</div>';
+      }
+
+      var vouchHtml = '';
+      if (skill.uri) {
+        try {
+          var vouchData = await api('vouches?cap_uri=' + encodeURIComponent(skill.uri));
+          var vouches = vouchData.vouches || [];
+          if (vouches.length > 0) {
+            vouchHtml = '<div class="detail-section"><h3>vouches (' + vouches.length + ')</h3>';
+            vouches.forEach(function(v) {
+              var vName = v.handle ? esc(v.handle) : esc(v.did);
+              vouchHtml += '<div class="vouch-item">@' + vName + ' &middot; ' + timeAgo(v.created_at) + '</div>';
+            });
+            vouchHtml += '</div>';
+          }
+        } catch(e) {}
+      }
+      html += vouchHtml;
+
+      html += '<div class="detail-section"><h3>commands</h3>';
+      html += '<div class="command-row"><code>vit learn skill-' + esc(name) + '</code><button class="copy-btn" data-copy="vit learn skill-' + esc(name) + '">copy</button></div>';
+      html += '<div class="command-row"><code>vit learn skill-' + esc(name) + ' --user</code><button class="copy-btn" data-copy="vit learn skill-' + esc(name) + ' --user">copy</button></div>';
+      html += '</div>';
+
+      if (skill.uri) {
+        html += '<a href="https://pdsls.dev/at/' + esc(skill.uri.replace('at://', '')) + '" target="_blank" rel="noopener" class="detail-link">view on ATProto &rarr;</a>';
+      }
+
+      el.innerHTML = html;
+    }
+
+    async function renderSkills(el, tag) {
+      currentSkillTag = tag || null;
       skillsCursor = null;
-      const data = await api('skills');
+      const data = await api(tag ? 'skills?tag=' + encodeURIComponent(tag) : 'skills');
       skillsCursor = data.cursor;
+      const heading = tag
+        ? '<h2 class="view-title">skills tagged "' + esc(tag) + '" <a href="#skills" style="font-size:0.85rem;font-weight:normal">clear filter</a></h2>'
+        : '';
 
       if (data.skills.length === 0) {
-        el.innerHTML = '<div class="empty-state"><p><strong>No skills yet.</strong></p><p>Skills are reusable agent instructions published to the network. Publish one:</p><pre><code>vit ship --skill</code></pre><p><a href="https://v-it.org/start/">Get started with vit →</a></p></div>';
+        if (tag) {
+          el.innerHTML = heading + '<div class="empty-state"><p>No skills found matching tag "' + esc(tag) + '".</p><p><a href="#skills">View all skills</a></p></div>';
+        } else {
+          el.innerHTML = heading + '<div class="empty-state"><p><strong>No skills yet.</strong></p><p>Skills are reusable agent instructions published to the network. Publish one:</p><pre><code>vit ship --skill</code></pre><p><a href="https://v-it.org/start/">Get started with vit →</a></p></div>';
+        }
         return;
       }
 
-      el.innerHTML = '<div id="skills-list"></div>';
+      el.innerHTML = heading + '<div id="skills-list"></div>';
       skillsContainer = document.getElementById('skills-list');
       skillsContainer.innerHTML = data.skills.map(renderSkillItem).join('');
       appendSkillsLoadMore(el);
@@ -696,16 +1055,24 @@
       }
     }).catch(function() {});
 
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('.copy-btn[data-copy]');
+      if (!btn) return;
+      copyToClipboard(btn.getAttribute('data-copy'), btn);
+    });
+
     async function navigate() {
       updateNav();
       const route = getRoute();
       const view = document.getElementById('view');
 
       if (route.view === 'caps') await renderCaps(view);
-      else if (route.view === 'skills') await renderSkills(view);
+      else if (route.view === 'skills') await renderSkills(view, route.tag);
       else if (route.view === 'beacons') await renderBeacons(view);
       else if (route.view === 'beacon') await renderBeaconCaps(view, route.value);
       else if (route.view === 'stats') await renderStats(view);
+      else if (route.view === 'cap') await renderCapDetail(view, route.value);
+      else if (route.view === 'skill') await renderSkillDetail(view, route.value);
     }
 
     window.addEventListener('hashchange', navigate);
