@@ -1,3 +1,4 @@
 {
-  "beacon": "vit:github.com/solpbc/vit"
+  "beacon": "vit:tangled.org/solpbc.org/vit",
+  "secondaryBeacon": "vit:github.com/solpbc/vit"
 }
