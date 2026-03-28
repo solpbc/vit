@@ -1,6 +1,6 @@
 BUMP ?= patch
 
-.PHONY: install link test test-node clean release publish ship
+.PHONY: install link test test-node clean release publish ship deploy-site deploy-explore
 
 install:
 	bun install
@@ -31,3 +31,9 @@ publish:
 	npm publish
 
 ship: release publish
+
+deploy-site:
+	cd site && wrangler deploy
+
+deploy-explore:
+	cd explore && wrangler deploy

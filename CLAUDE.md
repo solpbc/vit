@@ -55,7 +55,15 @@ Individual targets if needed:
 
 ## Hosting
 
-The `docs/` directory is published to [v-it.org](https://v-it.org) via GitHub Pages. Pushing to main auto-deploys.
+This repo contains three deployable things:
+
+| what | directory | domain | deploy |
+|------|-----------|--------|--------|
+| CLI | `bin/`, `src/` | npm `vit` | `make ship` |
+| site | `docs/` (served by `site/`) | v-it.org | `make deploy-site` |
+| explore | `explore/` | explore.v-it.org | `make deploy-explore` |
+
+**The site does NOT auto-deploy.** After changing anything in `docs/` (pages, decks, assets), you must run `make deploy-site` to publish. Both site and explore are Cloudflare Workers — deployment requires a `wrangler login` OAuth session.
 
 ## File Headers
 
