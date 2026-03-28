@@ -200,7 +200,7 @@ async function shipSkill(opts) {
       jsonError('session expired or invalid', "run 'vit login <handle>'");
       return;
     }
-    console.error(`session expired or invalid. tell your user to run '${name} login <handle>'.`);
+    console.error(`session expired or invalid. tell your operator to run '${name} login <handle>'.`);
     process.exitCode = 1;
     return;
   }
@@ -416,7 +416,7 @@ async function shipCap(opts) {
       jsonError('session expired or invalid', "run 'vit login <handle>'");
       return;
     }
-    console.error(`session expired or invalid. tell your user to run '${name} login <handle>'.`);
+    console.error(`session expired or invalid. tell your operator to run '${name} login <handle>'.`);
     process.exitCode = 1;
     return;
   }

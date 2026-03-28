@@ -135,15 +135,41 @@ export default function register(program) {
         const capped = allItems.slice(0, limit);
 
         if (opts.json) {
-          console.log(JSON.stringify(capped, null, 2));
+          if (capped.length === 0) {
+            const following = readFollowing();
+            let hint;
+            if (skillsOnly) {
+              hint = "no skills found — try 'vit explore skills' or ship your own with 'vit ship --skill'";
+            } else if (following.length === 0) {
+              hint = "not following anyone — run 'vit follow <handle>'";
+            } else {
+              hint = "no matching caps — try 'vit explore caps' or 'vit ship'";
+            }
+            console.log(JSON.stringify({ ok: true, items: [], hint }, null, 2));
+          } else {
+            console.log(JSON.stringify(capped, null, 2));
+          }
         } else {
           if (capped.length === 0) {
             if (skillsOnly) {
-              console.log('no skills found.');
-            } else if (opts.caps) {
-              console.log('no caps found for this beacon.');
+              console.log('no skills found from followed accounts.');
+              console.log('');
+              console.log("try 'vit explore skills' to discover skills network-wide, or ship your own with 'vit ship --skill'.");
             } else {
-              console.log('no caps or skills found.');
+              const following = readFollowing();
+              if (following.length === 0) {
+                console.log("no caps or skills found. you're not following anyone yet and haven't shipped any caps for this beacon.");
+                console.log('');
+                console.log('next steps:');
+                console.log('  vit scan              discover active publishers on the network');
+                console.log('  vit follow <handle>   start following someone to see their caps');
+                console.log('  vit ship              publish a cap to seed the network');
+              } else {
+                console.log('no caps found for this beacon from your followed accounts.');
+                console.log('');
+                console.log("the network grows when people ship. publish a cap with 'vit ship' to get things started for this project.");
+                console.log("try 'vit explore caps' for network-wide discovery.");
+              }
             }
           }
           for (const rec of capped) {
@@ -172,8 +198,10 @@ export default function register(program) {
               console.log();
             }
           }
-          console.log('---');
-          console.log(`hint: tell your user to run '${name} vet <ref>' in another terminal for any item they want to review.`);
+          if (capped.length > 0) {
+            console.log('---');
+            console.log(`hint: tell your operator to run '${name} vet <ref>' in another terminal for any item they want to review.`);
+          }
         }
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));

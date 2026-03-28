@@ -88,7 +88,7 @@ export default function register(program) {
       if (projConfig.beacon) {
         if (!opts.json) console.log(`${mark} beacon: ${projConfig.beacon}`);
       } else {
-        if (!opts.json) console.log(`${mark} beacon: not set`);
+        if (!opts.json) console.log(`${mark} beacon: not set (run vit init)`);
       }
 
       const skillPath = join(process.cwd(), '.claude', 'skills', 'using-vit', 'SKILL.md');

@@ -78,7 +78,7 @@ export default function register(program) {
             return;
           }
           console.error(`skill '${ref}' is not yet vetted. user-wide install requires vetting.`);
-          console.error(`ask the user to vet it first:`);
+          console.error(`tell your operator to vet it first:`);
           console.error('');
           console.error(`  vit vet ${ref}`);
           console.error('');
@@ -98,7 +98,7 @@ export default function register(program) {
               return;
             }
             console.error(`skill '${ref}' is not yet vetted.`);
-            console.error(`ask the user to vet it first:`);
+            console.error(`tell your operator to vet it first:`);
             console.error('');
             console.error(`  vit vet ${ref}`);
             console.error('');
@@ -158,6 +158,10 @@ export default function register(program) {
             return;
           }
           console.error(`no skill found with ref '${ref}' from followed accounts.`);
+          console.error('');
+          console.error('hint: skills appear from accounts you follow and your own.');
+          console.error(`  vit following             check who you're following`);
+          console.error(`  vit explore skills        browse skills network-wide`);
           process.exitCode = 1;
           return;
         }

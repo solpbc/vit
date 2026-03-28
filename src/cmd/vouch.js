@@ -111,6 +111,10 @@ export default function register(program) {
               return;
             }
             console.error(`no skill found with ref '${ref}' from followed accounts.`);
+            console.error('');
+            console.error('hint: skills appear from accounts you follow and your own.');
+            console.error(`  vit following             check who you're following`);
+            console.error(`  vit explore skills        browse skills network-wide`);
             process.exitCode = 1;
             return;
           }
@@ -219,11 +223,16 @@ export default function register(program) {
               return;
             }
             console.error(`no cap found with ref '${ref}' for this beacon.`);
+            console.error('');
+            console.error('hint: caps only appear from accounts you follow and your own.');
+            console.error(`  vit following          check who you're following`);
+            console.error(`  vit explore cap ${ref}  search the network-wide index`);
             process.exitCode = 1;
             return;
           }
 
           const now = new Date().toISOString();
+          const projBeacon = [...beaconSet][0];
           const vouchRecord = {
             $type: VOUCH_COLLECTION,
             subject: {
@@ -232,7 +241,7 @@ export default function register(program) {
             },
             createdAt: now,
             ref,
-            beacon,
+            beacon: projBeacon,
           };
           if (verbose) vlog(`[verbose] creating vouch for ${match.uri}`);
           const rkey = TID.nextStr();
@@ -250,7 +259,7 @@ export default function register(program) {
               uri: match.uri,
               cid: match.cid,
               vouchUri: res.data.uri,
-              beacon,
+              beacon: projBeacon,
               ts: now,
             });
           } catch (logErr) {

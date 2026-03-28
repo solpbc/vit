@@ -94,7 +94,7 @@ describe('vit vet', () => {
     test('agent without flags: error with sandboxed sub-agent hint', () => {
       const result = run('vet fast-cache-invalidation', undefined, agentEnv);
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('vit vet is for human review');
+      expect(result.stderr).toContain('vit vet is for operator review');
       expect(result.stderr).toContain('--trust --confirm');
       expect(result.stderr).toContain('sandboxed sub-agent');
     });
@@ -102,14 +102,14 @@ describe('vit vet', () => {
     test('agent with --trust but no --confirm: error', () => {
       const result = run('vet fast-cache-invalidation --trust', undefined, agentEnv);
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('vit vet is for human review');
+      expect(result.stderr).toContain('vit vet is for operator review');
       expect(result.stderr).toContain('--trust --confirm');
     });
 
     test('agent with --confirm but no --trust: error', () => {
       const result = run('vet fast-cache-invalidation --confirm', undefined, agentEnv);
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('vit vet is for human review');
+      expect(result.stderr).toContain('vit vet is for operator review');
     });
 
     test('agent with --trust --confirm: passes agent gate (fails at DID)', () => {
@@ -118,7 +118,7 @@ describe('vit vet', () => {
       mkdirSync(configHome, { recursive: true });
       const result = run('vet fast-cache-invalidation --trust --confirm', undefined, { ...agentEnv, XDG_CONFIG_HOME: configHome });
       // Should NOT contain the agent gate error
-      expect(result.stderr).not.toContain('vit vet is for human review');
+      expect(result.stderr).not.toContain('vit vet is for operator review');
       rmSync(configHome, { recursive: true, force: true });
     });
 
@@ -127,7 +127,7 @@ describe('vit vet', () => {
       mkdirSync(configHome, { recursive: true });
       const result = run('vet fast-cache-invalidation --trust --confirm', undefined, { ...noAgentEnv, XDG_CONFIG_HOME: configHome });
       // Should NOT contain the agent gate error
-      expect(result.stderr).not.toContain('vit vet is for human review');
+      expect(result.stderr).not.toContain('vit vet is for operator review');
       rmSync(configHome, { recursive: true, force: true });
     });
   });
@@ -186,7 +186,7 @@ describe('vit vet', () => {
       mkdirSync(configHome, { recursive: true });
       const result = run('vet fast-cache-invalidation --sandbox claude', undefined, { ...agentEnv, XDG_CONFIG_HOME: configHome });
       // Should NOT contain the agent gate error
-      expect(result.stderr).not.toContain('vit vet is for human review');
+      expect(result.stderr).not.toContain('vit vet is for operator review');
       rmSync(configHome, { recursive: true, force: true });
     });
 

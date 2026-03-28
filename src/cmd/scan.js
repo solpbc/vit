@@ -162,6 +162,8 @@ export default function register(program) {
             return;
           }
           console.log(`no ${scanType} publishers found in this time window.`);
+          console.log('the network is young — be an early publisher.');
+          console.log("ship a cap with 'vit ship' or a skill with 'vit ship --skill' to get things started.");
           return;
         }
 

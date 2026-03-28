@@ -52,7 +52,8 @@ export default function register(program) {
         if (beacon) {
           console.log(`${mark} beacon: lit ${beacon}`);
         } else {
-          console.log(`${mark} beacon: unlit`);
+          console.log(`${mark} beacon: unlit — this repo hasn't initialized vit yet.`);
+          console.log("the maintainer can light the beacon by running 'vit init' inside the repo.");
         }
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));

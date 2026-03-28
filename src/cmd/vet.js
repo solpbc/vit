@@ -179,7 +179,7 @@ export default function register(program) {
             console.log('  caps and skills in this project.');
             console.log('');
             console.log('  any agent running in this project can remix caps and learn skills');
-            console.log('  without human review. only do this if you trust the agent\'s judgment');
+            console.log('  without operator review. only do this if you trust the agent\'s judgment');
             console.log('  and the network sources you follow.');
             console.log('');
             console.log('  to proceed, confirm: vit vet --dangerous-accept --confirm');
@@ -230,10 +230,10 @@ export default function register(program) {
             // Sandboxed sub-agent pattern — allow it
           } else {
             if (opts.json) {
-              jsonError('vit vet is for human review', 'use --trust --confirm to bypass');
+              jsonError('vit vet is for operator review', 'use --trust --confirm to bypass');
               return;
             }
-            console.error('vit vet is for human review. agents should not vet directly.');
+            console.error('vit vet is for operator review. agents should not vet directly.');
             console.error('');
             console.error('if you are a sandboxed sub-agent specifically tasked with vetting,');
             console.error('you can bypass this gate:');
@@ -305,6 +305,10 @@ export default function register(program) {
               return;
             }
             console.error(`no cap found with ref '${ref}' for this beacon.`);
+            console.error('');
+            console.error('hint: caps only appear from accounts you follow and your own.');
+            console.error(`  vit following          check who you're following`);
+            console.error(`  vit explore cap ${ref}  search the network-wide index`);
             process.exitCode = 1;
             return;
           }
@@ -448,6 +452,10 @@ export default function register(program) {
               return;
             }
             console.error(`no skill found with ref '${ref}' from followed accounts.`);
+            console.error('');
+            console.error('hint: skills appear from accounts you follow and your own.');
+            console.error(`  vit following             check who you're following`);
+            console.error(`  vit explore skills        browse skills network-wide`);
             process.exitCode = 1;
             return;
           }

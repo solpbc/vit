@@ -255,6 +255,8 @@ export default function register(program) {
         console.log(`${brand} explore caps`);
         if (!data.caps?.length) {
           console.log('no caps found.');
+          console.log('the network is just getting started. ship a cap or skill to be one of the first.');
+          console.log("try 'vit scan' for real-time discovery — the explore index may still be catching up.");
           return;
         }
 
@@ -310,6 +312,7 @@ export default function register(program) {
         console.log(`${brand} explore skills`);
         if (!data.skills?.length) {
           console.log('no skills found.');
+          console.log('the network is just getting started. ship a cap or skill to be one of the first.');
           return;
         }
 
@@ -357,6 +360,7 @@ export default function register(program) {
         console.log(`${brand} explore beacons`);
         if (!data.beacons?.length) {
           console.log('no beacons found.');
+          console.log('the network is just getting started. ship a cap or skill to be one of the first.');
           return;
         }
 

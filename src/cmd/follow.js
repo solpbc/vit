@@ -117,10 +117,13 @@ export default function register(program) {
         const list = readFollowing();
         if (list.length === 0) {
           if (opts.json) {
-            jsonOk({ following: [] });
+            jsonOk({ following: [], hint: "run 'vit follow <handle>' to add accounts" });
             return;
           }
-          console.log('no followings');
+          console.log('not following anyone yet.');
+          console.log('');
+          console.log("run 'vit follow <handle>' to start seeing what people are shipping.");
+          console.log("try 'vit scan' to discover active publishers on the network.");
           return;
         }
         if (opts.json) {

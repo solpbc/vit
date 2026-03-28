@@ -74,10 +74,10 @@ export default function register(program) {
           const trustGate = shouldBypassVet();
           if (!trustGate.bypass) {
             if (opts.json) {
-              jsonError(`cap '${ref}' is not trusted`, `ask user to run 'vit vet ${ref} --trust'`);
+              jsonError(`cap '${ref}' is not trusted`, `tell your operator to run 'vit vet ${ref} --trust'`);
               return;
             }
-            console.error(`cap '${ref}' is not trusted. ask the user to vet it first:`);
+            console.error(`cap '${ref}' is not trusted. tell your operator to vet it first:`);
             console.error('');
             console.error(`  vit vet ${ref}`);
             console.error('');
@@ -129,6 +129,10 @@ export default function register(program) {
             return;
           }
           console.error(`no cap found with ref '${ref}' for this beacon.`);
+          console.error('');
+          console.error('hint: caps only appear from accounts you follow and your own.');
+          console.error(`  vit following          check who you're following`);
+          console.error(`  vit explore cap ${ref}  search the network-wide index`);
           process.exitCode = 1;
           return;
         }

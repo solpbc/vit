@@ -23,7 +23,12 @@ export default function register(program) {
         // Default to list when no action given
         if (!action || action === 'list') {
           const config = loadConfig();
-          for (const [k, v] of getScalars(config)) {
+          const scalars = [...getScalars(config)];
+          if (scalars.length === 0) {
+            console.log("no configuration set. run 'vit login <handle>' to get started.");
+            return;
+          }
+          for (const [k, v] of scalars) {
             console.log(`${k}=${v}`);
           }
           return;

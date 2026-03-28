@@ -16,7 +16,7 @@ describe('vit vet (skill refs)', () => {
   test('rejects when run inside a coding agent (skill ref)', () => {
     const result = run('vet skill-agent-test', undefined, { CLAUDECODE: '1' });
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain('vit vet is for human review');
+    expect(result.stderr).toContain('vit vet is for operator review');
     expect(result.stderr).toContain('vit vet skill-agent-test');
     expect(result.stderr).toContain('--trust --confirm');
   });

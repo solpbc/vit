@@ -90,6 +90,6 @@ describe('vit following', () => {
   test('shows message when no followings', () => {
     const result = run('following', tmpDir);
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('no followings');
+    expect(result.stdout).toContain('not following anyone yet');
   });
 });
