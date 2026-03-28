@@ -154,6 +154,12 @@ export async function handleRequest(request, env) {
       bindings.push(tag);
     }
 
+    const dids = searchParams.getAll('did');
+    if (dids.length > 0) {
+      conditions.push('s.did IN (' + dids.map(function() { return '?'; }).join(', ') + ')');
+      bindings.push(...dids);
+    }
+
     if (cursor) {
       conditions.push('s.id < ?');
       bindings.push(cursor);
