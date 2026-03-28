@@ -18,10 +18,194 @@ function unavailableMessage(baseUrl) {
   }
 }
 
+function timeAgo(iso) {
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} day${days !== 1 ? 's' : ''} ago`;
+  const months = Math.floor(days / 30);
+  return `${months} month${months !== 1 ? 's' : ''} ago`;
+}
+
+function mergeExploreOpts(opts, command) {
+  return {
+    ...(command?.parent?.opts?.() || {}),
+    ...(command?.opts?.() || opts || {}),
+  };
+}
+
+async function fetchAndShowStats(opts) {
+  const baseUrl = resolveUrl(opts);
+
+  try {
+    const url = new URL('/api/stats', baseUrl);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`explore API returned ${res.status}`);
+    const data = await res.json();
+
+    if (opts.json) {
+      jsonOk(data);
+      return;
+    }
+
+    console.log(`${brand} explore stats`);
+    console.log(`  caps: ${data.total_caps}  skills: ${data.total_skills}`);
+    console.log(`  vouches: ${data.total_vouches}  beacons: ${data.total_beacons}`);
+    console.log(`  active dids: ${data.active_dids}  skill publishers: ${data.skill_publishers}`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const finalMsg = msg.startsWith('explore API returned ')
+      ? msg
+      : unavailableMessage(baseUrl);
+    if (opts.json) {
+      jsonError(finalMsg);
+      return;
+    }
+    console.error(finalMsg);
+    process.exitCode = 1;
+  }
+}
+
 export default function register(program) {
   const explore = program
     .command('explore')
-    .description('Query the explore index for caps, skills, beacons, vouches, and stats');
+    .description('Query the explore index for caps, skills, beacons, vouches, and stats')
+    .option('--json', 'Output as JSON')
+    .option('--explore-url <url>', 'Explore API base URL')
+    .action(async (opts) => {
+      await fetchAndShowStats(opts);
+    });
+
+  explore
+    .command('cap')
+    .argument('<ref>', 'Cap ref to look up')
+    .description('Show details for a single cap')
+    .option('--beacon <beacon>', 'Scope lookup to a beacon')
+    .option('--json', 'Output as JSON')
+    .option('--explore-url <url>', 'Explore API base URL')
+    .action(async (ref, opts, command) => {
+      opts = mergeExploreOpts(opts, command);
+      const baseUrl = resolveUrl(opts);
+
+      try {
+        const url = new URL('/api/cap', baseUrl);
+        url.searchParams.set('ref', ref);
+        if (opts.beacon) url.searchParams.set('beacon', opts.beacon);
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`explore API returned ${res.status}`);
+        const data = await res.json();
+
+        if (!data.cap) {
+          const msg = `no cap found with ref '${ref}'`;
+          if (opts.json) {
+            jsonError(msg);
+            return;
+          }
+          console.error(msg);
+          process.exitCode = 1;
+          return;
+        }
+
+        if (opts.json) {
+          jsonOk(data.cap);
+          return;
+        }
+
+        const record = JSON.parse(data.cap.record_json);
+        console.log(`${brand} explore cap`);
+        console.log(`  ${data.cap.title} [${record.kind}]`);
+        console.log(`  ${data.cap.description}`);
+        console.log();
+        console.log(`  beacon:  ${data.cap.beacon}`);
+        console.log(`  author:  @${data.cap.handle}`);
+        console.log(`  ref:     ${data.cap.ref}`);
+        console.log(`  posted:  ${timeAgo(data.cap.created_at)}`);
+        if (record.text) {
+          console.log();
+          console.log(`  ${record.text}`);
+        }
+        console.log();
+        console.log(`  vouches: ${data.cap.vouch_count}`);
+        console.log();
+        console.log(`  vit vet ${data.cap.ref}     - inspect before adopting`);
+        console.log(`  vit remix ${data.cap.ref}   - remix this cap`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const finalMsg = msg.startsWith('explore API returned ')
+          ? msg
+          : unavailableMessage(baseUrl);
+        if (opts.json) {
+          jsonError(finalMsg);
+          return;
+        }
+        console.error(finalMsg);
+        process.exitCode = 1;
+      }
+    });
+
+  explore
+    .command('skill')
+    .argument('<name>', 'Skill name to look up')
+    .description('Show details for a single skill')
+    .option('--json', 'Output as JSON')
+    .option('--explore-url <url>', 'Explore API base URL')
+    .action(async (name, opts, command) => {
+      opts = mergeExploreOpts(opts, command);
+      const baseUrl = resolveUrl(opts);
+
+      try {
+        const url = new URL('/api/skill', baseUrl);
+        url.searchParams.set('name', name);
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`explore API returned ${res.status}`);
+        const data = await res.json();
+
+        if (!data.skill) {
+          const msg = `no skill found with name '${name}'`;
+          if (opts.json) {
+            jsonError(msg);
+            return;
+          }
+          console.error(msg);
+          process.exitCode = 1;
+          return;
+        }
+
+        if (opts.json) {
+          jsonOk(data.skill);
+          return;
+        }
+
+        const record = JSON.parse(data.skill.record_json);
+        console.log(`${brand} explore skill`);
+        console.log(`  /${data.skill.name} v${data.skill.version}`);
+        console.log(`  ${data.skill.description}`);
+        console.log();
+        console.log(`  author:   @${data.skill.handle}`);
+        if (record.license) console.log(`  license:  ${record.license}`);
+        if (data.skill.tags) console.log(`  tags:     ${data.skill.tags}`);
+        console.log(`  vouches:  ${data.skill.vouch_count}`);
+        console.log();
+        console.log(`  vit learn skill-${data.skill.name}   - install this skill`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const finalMsg = msg.startsWith('explore API returned ')
+          ? msg
+          : unavailableMessage(baseUrl);
+        if (opts.json) {
+          jsonError(finalMsg);
+          return;
+        }
+        console.error(finalMsg);
+        process.exitCode = 1;
+      }
+    });
 
   explore
     .command('caps')
@@ -31,7 +215,8 @@ export default function register(program) {
     .option('--cursor <id>', 'Pagination cursor')
     .option('--json', 'Output as JSON')
     .option('--explore-url <url>', 'Explore API base URL')
-    .action(async (opts) => {
+    .action(async (opts, command) => {
+      opts = mergeExploreOpts(opts, command);
       const baseUrl = resolveUrl(opts);
 
       try {
@@ -100,7 +285,8 @@ export default function register(program) {
     .option('--cursor <id>', 'Pagination cursor')
     .option('--json', 'Output as JSON')
     .option('--explore-url <url>', 'Explore API base URL')
-    .action(async (opts) => {
+    .action(async (opts, command) => {
+      opts = mergeExploreOpts(opts, command);
       const baseUrl = resolveUrl(opts);
 
       try {
@@ -150,7 +336,8 @@ export default function register(program) {
     .description('List active beacons from the explore index')
     .option('--json', 'Output as JSON')
     .option('--explore-url <url>', 'Explore API base URL')
-    .action(async (opts) => {
+    .action(async (opts, command) => {
+      opts = mergeExploreOpts(opts, command);
       const baseUrl = resolveUrl(opts);
 
       try {
@@ -196,7 +383,8 @@ export default function register(program) {
     .option('--beacon <beacon>', 'Filter ref lookup by beacon')
     .option('--json', 'Output as JSON')
     .option('--explore-url <url>', 'Explore API base URL')
-    .action(async (opts) => {
+    .action(async (opts, command) => {
+      opts = mergeExploreOpts(opts, command);
       const baseUrl = resolveUrl(opts);
 
       try {
@@ -279,35 +467,8 @@ export default function register(program) {
     .description('Show network-wide stats from the explore index')
     .option('--json', 'Output as JSON')
     .option('--explore-url <url>', 'Explore API base URL')
-    .action(async (opts) => {
-      const baseUrl = resolveUrl(opts);
-
-      try {
-        const url = new URL('/api/stats', baseUrl);
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`explore API returned ${res.status}`);
-        const data = await res.json();
-
-        if (opts.json) {
-          jsonOk(data);
-          return;
-        }
-
-        console.log(`${brand} explore stats`);
-        console.log(`  caps: ${data.total_caps}  skills: ${data.total_skills}`);
-        console.log(`  vouches: ${data.total_vouches}  beacons: ${data.total_beacons}`);
-        console.log(`  active dids: ${data.active_dids}  skill publishers: ${data.skill_publishers}`);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const finalMsg = msg.startsWith('explore API returned ')
-          ? msg
-          : unavailableMessage(baseUrl);
-        if (opts.json) {
-          jsonError(finalMsg);
-          return;
-        }
-        console.error(finalMsg);
-        process.exitCode = 1;
-      }
+    .action(async (opts, command) => {
+      opts = mergeExploreOpts(opts, command);
+      await fetchAndShowStats(opts);
     });
 }
