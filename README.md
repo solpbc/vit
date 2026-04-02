@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://v-it.org">
-    <img src="docs/brand/vit-wordmark.svg" alt="vit" height="48">
+    <img src="docs/brand/vit-wordmark.svg" alt="vit" height="40">
   </a>
 </p>
 
