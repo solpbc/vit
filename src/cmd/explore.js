@@ -212,6 +212,7 @@ export default function register(program) {
     .command('caps')
     .description('List recent caps from the explore index')
     .option('--beacon <beacon>', 'Filter by beacon')
+    .option('--kind <kind>', 'Filter by cap kind (e.g. request, feat, fix)')
     .option('--limit <n>', 'Limit number of caps')
     .option('--cursor <id>', 'Pagination cursor')
     .option('--json', 'Output as JSON')
@@ -240,6 +241,7 @@ export default function register(program) {
 
         const url = new URL('/api/caps', baseUrl);
         if (beacon) url.searchParams.set('beacon', beacon);
+        if (opts.kind) url.searchParams.set('kind', opts.kind);
         if (opts.limit) url.searchParams.set('limit', opts.limit);
         if (opts.cursor) url.searchParams.set('cursor', opts.cursor);
 

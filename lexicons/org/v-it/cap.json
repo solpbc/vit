@@ -96,7 +96,7 @@
             "type": "string",
             "maxLength": 64,
             "maxGraphemes": 32,
-            "knownValues": ["feat", "fix", "test", "docs", "refactor", "chore", "perf", "style"],
+            "knownValues": ["feat", "fix", "test", "docs", "refactor", "chore", "perf", "style", "request"],
             "description": "Category of the capability."
           },
           "createdAt": {

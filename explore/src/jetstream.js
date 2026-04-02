@@ -66,16 +66,19 @@ async function processCapEvent(env, did, commit) {
       .first();
     const prevBeacon = beaconValue(existing?.beacon);
 
+    const capKind = typeof record?.kind === 'string' && record.kind.length > 0 ? record.kind : null;
+
     const stmts = [
       env.DB.prepare(
-        `INSERT INTO caps (did, rkey, uri, cid, title, description, ref, beacon, record_json, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO caps (did, rkey, uri, cid, title, description, ref, beacon, kind, record_json, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(did, rkey) DO UPDATE SET
            cid = excluded.cid,
            title = excluded.title,
            description = excluded.description,
            ref = excluded.ref,
            beacon = excluded.beacon,
+           kind = excluded.kind,
            record_json = excluded.record_json,
            created_at = excluded.created_at`,
       ).bind(
@@ -87,6 +90,7 @@ async function processCapEvent(env, did, commit) {
         record.description || '',
         record.ref,
         nextBeacon,
+        capKind,
         JSON.stringify(record),
         record.createdAt,
       ),
@@ -136,15 +140,18 @@ async function processVouchEvent(env, did, commit) {
       .first();
     const prevBeacon = beaconValue(existing?.beacon);
 
+    const vouchKind = typeof record?.kind === 'string' && record.kind.length > 0 ? record.kind : 'endorse';
+
     const stmts = [
       env.DB.prepare(
-        `INSERT INTO vouches (did, rkey, uri, cid, cap_uri, ref, beacon, record_json, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO vouches (did, rkey, uri, cid, cap_uri, ref, beacon, kind, record_json, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(did, rkey) DO UPDATE SET
            cid = excluded.cid,
            cap_uri = excluded.cap_uri,
            ref = excluded.ref,
            beacon = excluded.beacon,
+           kind = excluded.kind,
            record_json = excluded.record_json,
            created_at = excluded.created_at`,
       ).bind(
@@ -154,7 +161,8 @@ async function processVouchEvent(env, did, commit) {
         cid ?? null,
         record.subject?.uri,
         record.ref,
-        record.beacon,
+        record.beacon ?? null,
+        vouchKind,
         JSON.stringify(record),
         record.createdAt,
       ),

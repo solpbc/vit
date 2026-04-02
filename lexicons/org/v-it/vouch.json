@@ -26,6 +26,13 @@
             "maxLength": 512,
             "description": "Beacon URI scoping this vouch to a project. Included for cap vouches, omitted for skill vouches."
           },
+          "kind": {
+            "type": "string",
+            "maxLength": 64,
+            "maxGraphemes": 32,
+            "knownValues": ["endorse", "want"],
+            "description": "Intent of the vouch. 'endorse' = quality signal (I've vetted this). 'want' = demand signal (I want this implemented). Omitted kind treated as 'endorse' for backwards compatibility."
+          },
           "createdAt": {
             "type": "string",
             "format": "datetime",

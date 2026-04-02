@@ -14,6 +14,43 @@ import { isValidSkillName, skillRefFromName } from '../lib/skill-ref.js';
 import { name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
+import { toBeacon } from '../lib/beacon.js';
+import { hashTo3Words } from '../lib/cap-ref.js';
+
+const STOP_WORDS = new Set([
+  'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+  'of', 'with', 'by', 'from', 'is', 'was', 'be', 'has', 'have', 'had',
+  'this', 'that', 'these', 'those', 'it', 'its', 'not', 'no', 'as', 'if', 'so',
+]);
+
+function slugifyTitle(title) {
+  const words = title.toLowerCase()
+    .replace(/[^a-z\s]/g, '')
+    .split(/\s+/)
+    .filter(Boolean);
+  const significant = words.filter(w => !STOP_WORDS.has(w));
+  const chosen = significant.length >= 3 ? significant.slice(0, 3) : words.slice(0, 3);
+  return chosen.join('-');
+}
+
+function generateRef(title, existingRefs) {
+  const base = slugifyTitle(title);
+  if (base && base.split('-').length >= 3 && !existingRefs.has(base)) {
+    return base;
+  }
+  // Fall back to hash-based 3-word ref (always valid, collision-resistant)
+  const hashed = hashTo3Words(title);
+  if (!existingRefs.has(hashed)) return hashed;
+  // Hash of title + timestamp to break hash collision
+  const hashed2 = hashTo3Words(title + Date.now());
+  if (!existingRefs.has(hashed2)) return hashed2;
+  return null;
+}
+
+function normalizeBeacon(input) {
+  if (input.startsWith('vit:')) return input;
+  return 'vit:' + toBeacon(input);
+}
 
 function parseFrontmatter(text) {
   const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
@@ -335,16 +372,47 @@ async function shipCap(opts) {
 
   // preflight: beacon
   const projectConfig = readProjectConfig();
-  if (!projectConfig.beacon) {
-    if (opts.json) {
-      jsonError('no beacon set', "run 'vit init' first");
+  const isRequest = opts.kind === 'request';
+
+  let beacon;
+  if (isRequest) {
+    // Request caps: --beacon flag or project config (in that order)
+    if (opts.beacon) {
+      try {
+        beacon = normalizeBeacon(opts.beacon);
+      } catch (err) {
+        if (opts.json) {
+          jsonError(`invalid --beacon: ${err.message}`);
+          return;
+        }
+        console.error(`error: invalid --beacon: ${err.message}`);
+        process.exitCode = 1;
+        return;
+      }
+    } else if (projectConfig.beacon) {
+      beacon = projectConfig.beacon;
+    } else {
+      if (opts.json) {
+        jsonError('request caps must be addressed to a project', 'use --beacon <github-url> or run from a vit-initialized directory');
+        return;
+      }
+      console.error('error: request caps must be addressed to a project. use --beacon <github-url> or run from a vit-initialized directory.');
+      process.exitCode = 1;
       return;
     }
-    console.error(`no beacon set. run '${name} init' in a project directory first.`);
-    process.exitCode = 1;
-    return;
+  } else {
+    if (!projectConfig.beacon) {
+      if (opts.json) {
+        jsonError('no beacon set', "run 'vit init' first");
+        return;
+      }
+      console.error(`no beacon set. run '${name} init' in a project directory first.`);
+      process.exitCode = 1;
+      return;
+    }
+    beacon = projectConfig.beacon;
   }
-  if (verbose) vlog(`[verbose] beacon: ${projectConfig.beacon}`);
+  if (verbose) vlog(`[verbose] beacon: ${beacon}`);
 
   let text;
   try {
@@ -352,7 +420,7 @@ async function shipCap(opts) {
   } catch {
     text = '';
   }
-  if (!text) {
+  if (!text && !isRequest) {
     if (opts.json) {
       jsonError('cap body is required via stdin');
       return;
@@ -362,7 +430,27 @@ async function shipCap(opts) {
     return;
   }
 
-  if (!REF_PATTERN.test(opts.ref)) {
+  // ref: required for non-request caps; auto-generated for request caps
+  let ref = opts.ref;
+  if (!ref && isRequest) {
+    const caps = readLog('caps.jsonl');
+    const existingRefs = new Set(caps.map(e => e.ref));
+    ref = generateRef(opts.title || '', existingRefs);
+    if (!ref) {
+      if (opts.json) {
+        jsonError('could not auto-generate ref from title', 'provide --ref explicitly');
+        return;
+      }
+      console.error('error: could not auto-generate a 3-word ref from the title. provide --ref explicitly.');
+      process.exitCode = 1;
+      return;
+    }
+    if (verbose || !opts.json) {
+      vlog(`ref: ${ref}`);
+    }
+  }
+
+  if (!REF_PATTERN.test(ref)) {
     if (opts.json) {
       jsonError('--ref must be exactly three lowercase words separated by dashes');
       return;
@@ -393,7 +481,7 @@ async function shipCap(opts) {
   }
 
   if (opts.kind) {
-    const validKinds = ['feat', 'fix', 'test', 'docs', 'refactor', 'chore', 'perf', 'style'];
+    const validKinds = ['feat', 'fix', 'test', 'docs', 'refactor', 'chore', 'perf', 'style', 'request'];
     if (!validKinds.includes(opts.kind)) {
       if (opts.json) {
         jsonError(`--kind must be one of: ${validKinds.join(', ')}`);
@@ -461,13 +549,13 @@ async function shipCap(opts) {
 
   const record = {
     $type: CAP_COLLECTION,
-    text,
+    text: text || '',
     title: opts.title,
     description: opts.description,
-    ref: opts.ref,
+    ref,
     createdAt: now,
   };
-  if (projectConfig.beacon) record.beacon = projectConfig.beacon;
+  if (beacon) record.beacon = beacon;
   if (opts.kind) record.kind = opts.kind;
   if (opts.recap) record.recap = { uri: recapUri, ref: opts.recap };
   const rkey = TID.nextStr();
@@ -486,7 +574,7 @@ async function shipCap(opts) {
       ts: now,
       did,
       rkey,
-      ref: opts.ref,
+      ref,
       collection: CAP_COLLECTION,
       pds: session.serverMetadata?.issuer,
       uri: putRes.data.uri,
@@ -497,11 +585,19 @@ async function shipCap(opts) {
   }
   if (verbose) vlog(`[verbose] Log written to caps.jsonl`);
   if (opts.json) {
-    jsonOk({ ref: opts.ref, uri: putRes.data.uri });
+    const out = { ref, uri: putRes.data.uri };
+    if (opts.kind) out.kind = opts.kind;
+    jsonOk(out);
     return;
   }
-  console.log(`shipped: ${opts.ref}`);
-  console.log(`uri: ${putRes.data.uri}`);
+  if (isRequest) {
+    console.log(`shipped: ${ref} (kind: request)`);
+    console.log(`beacon:  ${beacon}`);
+    console.log(`anyone can implement this. share the ref to build demand.`);
+  } else {
+    console.log(`shipped: ${ref}`);
+    console.log(`uri: ${putRes.data.uri}`);
+  }
   if (verbose) {
     vlog(
       JSON.stringify({
@@ -524,9 +620,10 @@ export default function register(program) {
     .option('--did <did>', 'DID to use (reads saved DID from config if not provided)')
     .option('--title <title>', 'Short title for the cap')
     .option('--description <description>', 'Description of the cap')
-    .option('--ref <ref>', 'Three lowercase words with dashes (e.g. fast-cache-invalidation)')
+    .option('--ref <ref>', 'Three lowercase words with dashes (e.g. fast-cache-invalidation); auto-generated from title when --kind request')
+    .option('--beacon <beacon>', 'Beacon URI or GitHub URL for the cap (required when --kind request outside a vit-initialized dir)')
     .option('--recap <ref>', 'Ref of the cap this derives from (quote-post semantics)')
-    .option('--kind <kind>', 'Category: feat, fix, test, docs, refactor, chore, perf, style')
+    .option('--kind <kind>', 'Category: feat, fix, test, docs, refactor, chore, perf, style, request')
     .option('--skill <path>', 'Publish a skill directory (reads SKILL.md + resources)')
     .option('--tags <tags>', 'Comma-separated discovery tags (for skills)')
     .option('--version <version>', 'Version string (for skills, overrides frontmatter)')
@@ -555,7 +652,7 @@ export default function register(program) {
             process.exitCode = 1;
             return;
           }
-          if (!opts.ref) {
+          if (!opts.ref && opts.kind !== 'request') {
             if (opts.json) {
               jsonError("required option '--ref <ref>' not specified");
               return;
@@ -586,8 +683,12 @@ Authoring guidance (for coding agents):
     --description    One sentence explaining what this cap does
     --ref            Three lowercase words with dashes (your-ref-name)
     --recap <ref>    Optional. Ref of the cap this derives from (links back to original)
-    --kind <kind>    Category: feat, fix, test, docs, refactor, chore, perf, style
-    body (stdin)     Full cap content, piped or via heredoc
+    --kind <kind>    Category: feat, fix, test, docs, refactor, chore, perf, style, request
+    body (stdin)     Full cap content, piped or via heredoc (optional when --kind request)
+
+  Request caps (--kind request):
+    --beacon <url>   GitHub URL or vit: URI for the project being requested (auto-read from .vit if omitted)
+    --ref            Optional; auto-generated from title if not provided
 
   Skill fields:
     --skill <path>   Path to skill directory containing SKILL.md

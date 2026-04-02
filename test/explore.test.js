@@ -130,6 +130,22 @@ describe('vit explore', () => {
     expect(data.error).toContain("no skill found with name 'nonexistent-skill-xyz'");
   });
 
+  test('caps --kind filter passes kind to API', () => {
+    const result = run('explore caps --kind request --json --limit 2', '/tmp');
+    expect(result.exitCode).toBe(0);
+    const data = JSON.parse(result.stdout);
+    expect(data.ok).toBe(true);
+    expect(Array.isArray(data.caps)).toBe(true);
+  });
+
+  test('caps gracefully degrades on unreachable URL with --kind', () => {
+    const result = run('explore caps --kind request --explore-url http://localhost:1 --json', '/tmp');
+    expect(result.exitCode).not.toBe(0);
+    const data = JSON.parse(result.stdout);
+    expect(data.ok).toBe(false);
+    expect(data.error).toContain('unavailable');
+  });
+
   test('bare explore returns stats JSON', () => {
     const result = run('explore --json', '/tmp');
     expect(result.exitCode).toBe(0);

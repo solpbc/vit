@@ -374,7 +374,20 @@ export default function register(program) {
             return;
           }
 
+          const isRequestCap = record.kind === 'request';
+
           if (opts.trust) {
+            if (isRequestCap) {
+              if (opts.json) {
+                jsonOk({ trusted: false, ref, uri: match.uri, note: 'request caps cannot be trusted — vouch with --kind want to signal demand' });
+                return;
+              }
+              console.log(`this is a request cap — there is nothing to trust or apply.`);
+              console.log(`to signal demand, run:`);
+              console.log('');
+              console.log(`  vit vouch ${ref} --kind want`);
+              return;
+            }
             appendLog('trusted.jsonl', {
               ref,
               uri: match.uri,
@@ -394,14 +407,19 @@ export default function register(program) {
           const text = record.text || '';
 
           if (opts.json) {
-            jsonOk({ ref, type: 'cap', author, title, description, text });
+            jsonOk({ ref, type: 'cap', author, title, description, text, ...(record.kind && { kind: record.kind }) });
             return;
           }
 
           console.log(`=== ${brand} cap review ===`);
-          console.log('Review this cap carefully before trusting it.');
+          if (isRequestCap) {
+            console.log('This is a request cap — review the need, then vouch to signal demand.');
+          } else {
+            console.log('Review this cap carefully before trusting it.');
+          }
           console.log('');
           console.log(`  Ref:     ${ref}`);
+          if (record.kind) console.log(`  Kind:    ${record.kind}`);
           if (title) console.log(`  Title:   ${title}`);
           console.log(`  Author:  ${author}`);
           if (description) {
@@ -415,9 +433,15 @@ export default function register(program) {
             console.log('---');
           }
           console.log('');
-          console.log('To trust this cap, run:');
-          console.log('');
-          console.log(`  vit vet ${ref} --trust`);
+          if (isRequestCap) {
+            console.log('This is a request cap — review the need, then:');
+            console.log('');
+            console.log(`  vit vouch ${ref} --kind want`);
+          } else {
+            console.log('To trust this cap, run:');
+            console.log('');
+            console.log(`  vit vet ${ref} --trust`);
+          }
         } else {
           // Skill vet — no beacon required
           const skillName = nameFromSkillRef(ref);

@@ -28,4 +28,10 @@ describe('vit skim', () => {
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain('no beacon set');
   });
+
+  test('--kind flag is accepted (shown in help)', () => {
+    const result = run('skim --help');
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('--kind');
+  });
 });

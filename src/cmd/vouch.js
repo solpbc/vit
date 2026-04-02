@@ -17,8 +17,9 @@ export default function register(program) {
   program
     .command('vouch')
     .argument('<ref>', 'Cap or skill reference (e.g. fast-cache-invalidation or skill-agent-test-patterns)')
-    .description('Publicly endorse a vetted cap or skill')
+    .description('Publicly endorse a vetted cap or skill, or signal demand with --kind want')
     .option('--did <did>', 'DID to use')
+    .option('--kind <kind>', 'Vouch intent: endorse (default, quality signal) or want (demand signal)')
     .option('--json', 'Output as JSON')
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (ref, opts) => {
@@ -26,6 +27,20 @@ export default function register(program) {
         const { verbose } = opts;
         const vlog = opts.json ? (...a) => console.error(...a) : console.log;
         const isSkill = isSkillRef(ref);
+
+        // Validate --kind if provided
+        if (opts.kind) {
+          const validVouchKinds = ['endorse', 'want'];
+          if (!validVouchKinds.includes(opts.kind)) {
+            if (opts.json) {
+              jsonError(`--kind must be one of: ${validVouchKinds.join(', ')}`);
+              return;
+            }
+            console.error(`error: --kind must be one of: ${validVouchKinds.join(', ')}`);
+            process.exitCode = 1;
+            return;
+          }
+        }
 
         // Validate ref format
         if (isSkill) {
@@ -159,37 +174,43 @@ export default function register(program) {
           }
           console.log(`${mark} vouched: ${ref} (${match.uri})`);
         } else {
-          // Cap vouch — requires beacon (check beacon before trusted, matching original behavior)
-          const beaconSet = readBeaconSet();
-          if (beaconSet.size === 0) {
-            if (opts.json) {
-              jsonError('no beacon set', "run 'vit init' first");
-              return;
-            }
-            console.error(`no beacon set. run '${name} init' in a project directory first.`);
-            process.exitCode = 1;
-            return;
-          }
-          if (verbose) vlog(`[verbose] beacons: ${[...beaconSet].join(', ')}`);
+          const vouchKind = opts.kind || 'endorse';
+          const isWant = vouchKind === 'want';
 
-          const trusted = readLog('trusted.jsonl');
-          const trustedEntry = trusted.find(e => e.ref === ref);
-          if (!trustedEntry) {
-            if (opts.json) {
-              jsonError(`cap '${ref}' is not yet vetted`, `run 'vit vet ${ref}' first`);
+          // Cap vouch — beacon required unless want-vouching (demand signal)
+          const beaconSet = readBeaconSet();
+
+          if (!isWant) {
+            if (beaconSet.size === 0) {
+              if (opts.json) {
+                jsonError('no beacon set', "run 'vit init' first");
+                return;
+              }
+              console.error(`no beacon set. run '${name} init' in a project directory first.`);
+              process.exitCode = 1;
               return;
             }
-            console.error(`cap '${ref}' is not yet vetted. vet it first:`);
-            console.error('');
-            console.error(`  vit vet ${ref}`);
-            console.error('');
-            console.error('after reviewing, trust it with:');
-            console.error('');
-            console.error(`  vit vet ${ref} --trust`);
-            process.exitCode = 1;
-            return;
+            if (verbose) vlog(`[verbose] beacons: ${[...beaconSet].join(', ')}`);
+
+            const trusted = readLog('trusted.jsonl');
+            const trustedEntry = trusted.find(e => e.ref === ref);
+            if (!trustedEntry) {
+              if (opts.json) {
+                jsonError(`cap '${ref}' is not yet vetted`, `run 'vit vet ${ref}' first`);
+                return;
+              }
+              console.error(`cap '${ref}' is not yet vetted. vet it first:`);
+              console.error('');
+              console.error(`  vit vet ${ref}`);
+              console.error('');
+              console.error('after reviewing, trust it with:');
+              console.error('');
+              console.error(`  vit vet ${ref} --trust`);
+              process.exitCode = 1;
+              return;
+            }
+            if (verbose) vlog(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
           }
-          if (verbose) vlog(`[verbose] trusted entry found, uri: ${trustedEntry.uri}`);
 
           const { agent } = await restoreAgent(did);
           if (verbose) vlog('[verbose] session restored');
@@ -207,7 +228,7 @@ export default function register(program) {
           let match = null;
           for (const records of allRecords) {
             for (const rec of records) {
-              if (!beaconSet.has(rec.value.beacon)) continue;
+              if (!isWant && !beaconSet.has(rec.value.beacon)) continue;
               const recRef = resolveRef(rec.value, rec.cid);
               if (recRef === ref) {
                 if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {
@@ -219,10 +240,10 @@ export default function register(program) {
 
           if (!match) {
             if (opts.json) {
-              jsonError(`no cap found with ref '${ref}' for this beacon`);
+              jsonError(`no cap found with ref '${ref}'${!isWant ? ' for this beacon' : ''}`);
               return;
             }
-            console.error(`no cap found with ref '${ref}' for this beacon.`);
+            console.error(`no cap found with ref '${ref}'${!isWant ? ' for this beacon' : ''}.`);
             console.error('');
             console.error('hint: caps only appear from accounts you follow and your own.');
             console.error(`  vit following          check who you're following`);
@@ -232,7 +253,7 @@ export default function register(program) {
           }
 
           const now = new Date().toISOString();
-          const projBeacon = [...beaconSet][0];
+          const projBeacon = beaconSet.size > 0 ? [...beaconSet][0] : (match.value.beacon || null);
           const vouchRecord = {
             $type: VOUCH_COLLECTION,
             subject: {
@@ -241,16 +262,17 @@ export default function register(program) {
             },
             createdAt: now,
             ref,
-            beacon: projBeacon,
+            kind: vouchKind,
           };
-          if (verbose) vlog(`[verbose] creating vouch for ${match.uri}`);
+          if (projBeacon) vouchRecord.beacon = projBeacon;
+          if (verbose) vlog(`[verbose] creating vouch (${vouchKind}) for ${match.uri}`);
           const rkey = TID.nextStr();
           const res = await agent.com.atproto.repo.putRecord({
             repo: did,
             collection: VOUCH_COLLECTION,
             rkey,
             record: vouchRecord,
-            validate: true,
+            validate: false,
           });
 
           try {
@@ -259,6 +281,7 @@ export default function register(program) {
               uri: match.uri,
               cid: match.cid,
               vouchUri: res.data.uri,
+              kind: vouchKind,
               beacon: projBeacon,
               ts: now,
             });
@@ -268,10 +291,15 @@ export default function register(program) {
           if (verbose) vlog('[verbose] logged to vouched.jsonl');
 
           if (opts.json) {
-            jsonOk({ ref, uri: match.uri, vouchUri: res.data.uri });
+            jsonOk({ ref, uri: match.uri, vouchUri: res.data.uri, kind: vouchKind });
             return;
           }
-          console.log(`${mark} vouched: ${ref} (${match.uri})`);
+          if (isWant) {
+            console.log(`${mark} vouched (want): ${ref}`);
+            console.log(`  demand signal recorded. vouch count visible in vit explore vouches.`);
+          } else {
+            console.log(`${mark} vouched: ${ref} (${match.uri})`);
+          }
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);

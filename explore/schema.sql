@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS caps (
   description TEXT,
   ref TEXT NOT NULL,
   beacon TEXT,
+  kind TEXT,
   record_json TEXT NOT NULL,
   created_at TEXT NOT NULL,
   indexed_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -17,6 +18,7 @@ CREATE TABLE IF NOT EXISTS caps (
 CREATE INDEX IF NOT EXISTS idx_caps_beacon ON caps(beacon);
 CREATE INDEX IF NOT EXISTS idx_caps_created_at ON caps(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_caps_ref ON caps(ref);
+CREATE INDEX IF NOT EXISTS idx_caps_kind ON caps(kind);
 
 CREATE TABLE IF NOT EXISTS vouches (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,7 +28,8 @@ CREATE TABLE IF NOT EXISTS vouches (
   cid TEXT,
   cap_uri TEXT NOT NULL,
   ref TEXT NOT NULL,
-  beacon TEXT NOT NULL,
+  beacon TEXT,
+  kind TEXT,
   record_json TEXT NOT NULL,
   created_at TEXT NOT NULL,
   indexed_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -35,6 +38,7 @@ CREATE TABLE IF NOT EXISTS vouches (
 
 CREATE INDEX IF NOT EXISTS idx_vouches_cap_uri ON vouches(cap_uri);
 CREATE INDEX IF NOT EXISTS idx_vouches_beacon ON vouches(beacon);
+CREATE INDEX IF NOT EXISTS idx_vouches_kind ON vouches(kind);
 
 CREATE TABLE IF NOT EXISTS beacons (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

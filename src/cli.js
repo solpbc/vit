@@ -22,6 +22,7 @@ import registerFollow from './cmd/follow.js';
 import registerSetup from './cmd/setup.js';
 import registerHack from './cmd/hack.js';
 import registerLink from './cmd/link.js';
+import registerInbox from './cmd/inbox.js';
 
 const program = new Command();
 program
@@ -48,5 +49,6 @@ registerFollow(program);
 registerSetup(program);
 registerHack(program);
 registerLink(program);
+registerInbox(program);
 
 export { program };

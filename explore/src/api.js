@@ -47,6 +47,8 @@ export async function handleRequest(request, env) {
     const cursor = parseCursor(searchParams.get('cursor'));
     const limit = parseLimit(searchParams.get('limit'));
     const beacon = searchParams.get('beacon');
+    const kind = searchParams.get('kind');
+    const sort = searchParams.get('sort');
 
     const conditions = [];
     const bindings = [];
@@ -58,16 +60,28 @@ export async function handleRequest(request, env) {
       bindings.push(...beacons);
     }
 
+    if (kind) {
+      conditions.push('c.kind = ?');
+      bindings.push(kind);
+    }
+
     if (cursor) {
       conditions.push('c.id < ?');
       bindings.push(cursor);
     }
 
-    let sql = 'SELECT c.*, h.handle FROM caps c LEFT JOIN handles h ON c.did = h.did';
+    let sql = `SELECT c.*, h.handle,
+      (SELECT COUNT(*) FROM vouches v WHERE v.cap_uri = c.uri AND v.kind = 'want') as want_vouch_count
+     FROM caps c LEFT JOIN handles h ON c.did = h.did`;
     if (conditions.length > 0) {
       sql += ` WHERE ${conditions.join(' AND ')}`;
     }
-    sql += ' ORDER BY c.id DESC LIMIT ?';
+    if (sort === 'want-vouches') {
+      sql += ' ORDER BY want_vouch_count DESC, c.id DESC';
+    } else {
+      sql += ' ORDER BY c.id DESC';
+    }
+    sql += ' LIMIT ?';
     bindings.push(limit);
 
     const { results } = await env.DB.prepare(sql).bind(...bindings).all();

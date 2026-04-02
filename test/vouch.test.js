@@ -39,6 +39,28 @@ describe('vit vouch', () => {
     expect(result.stderr).toContain('no beacon set');
   });
 
+  test('--kind want is accepted (does not error on kind validation)', () => {
+    const result = run('vouch fast-cache-invalidation --kind want --did did:plc:test123', '/tmp');
+    // Should not fail on kind validation — will fail at network lookup
+    expect(result.stderr).not.toContain('--kind must be one of');
+  });
+
+  test('--kind endorse is accepted', () => {
+    const result = run('vouch fast-cache-invalidation --kind endorse --did did:plc:test123', '/tmp');
+    expect(result.stderr).not.toContain('--kind must be one of');
+  });
+
+  test('rejects invalid --kind value', () => {
+    const result = run('vouch fast-cache-invalidation --kind badkind --did did:plc:test123', '/tmp');
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain('--kind must be one of');
+  });
+
+  test('shows --kind in help', () => {
+    const result = run('vouch --help');
+    expect(result.stdout).toContain('--kind');
+  });
+
   test('works from both agent and non-agent contexts', () => {
     const inAgent = run('vouch fast-cache-invalidation --did did:plc:test123', '/tmp', { CLAUDECODE: '1' });
     expect(inAgent.stderr).not.toContain('must be run by a human');

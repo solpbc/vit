@@ -21,6 +21,7 @@ export default function register(program) {
     .option('--json', 'Output as JSON array')
     .option('--caps', 'Show only caps')
     .option('--skills', 'Show only skills')
+    .option('--kind <kind>', 'Filter caps by kind (e.g. request, feat, fix)')
     .option('-v, --verbose', 'Show step-by-step details')
     .action(async (opts) => {
       try {
@@ -92,7 +93,10 @@ export default function register(program) {
           // Fetch caps (filtered by beacon)
           if (wantCaps && beaconSet.size > 0) {
             const res = await listRecordsFromPds(pds, repoDid, CAP_COLLECTION, 50);
-            const caps = res.records.filter(r => beaconSet.has(r.value.beacon));
+            let caps = res.records.filter(r => beaconSet.has(r.value.beacon));
+            if (opts.kind) {
+              caps = caps.filter(r => r.value.kind === opts.kind);
+            }
             if (verbose) console.log(`[verbose] ${repoDid}: ${res.records.length} caps, ${caps.length} matching beacon`);
             for (const cap of caps) {
               cap._handle = handleMap.get(repoDid) || repoDid;
