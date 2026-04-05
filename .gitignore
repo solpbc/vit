@@ -7,9 +7,8 @@ bun.lock
 .env
 .npmrc
 
-# Skills — symlinks to skills/ are tracked; contents are not
-.agents/*
-!.agents/skills
+# Skills
+.agents/
 .claude/skills/
 skills-lock.json
 
