@@ -57,7 +57,7 @@ Options:
 - None.
 
 Output format:
-- Text diagnostics for setup and beacon status.
+- Text diagnostics for install and beacon status.
 
 Error conditions:
 - Config read/parse failures.
@@ -194,22 +194,6 @@ Examples:
 - `vit beacon vit:github.com/org/repo`
 
 ## Human-Only Commands
-
-### `vit setup`
-Usage: `vit setup`
-
-Options:
-- None.
-
-Gate:
-- `requireNotAgent()`
-
-Output format:
-- Text status for tool prerequisites and login state.
-
-Error conditions:
-- Running in an agent context.
-- Missing required tools (`git` or `bun`).
 
 ### `vit login <handle>`
 Usage: `vit login <handle>`

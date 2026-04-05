@@ -17,12 +17,12 @@ run these one-time steps to join vit's own project:
 **you run this** (terminal):
 
 ```bash
-vit setup
+npm install -g vit
 vit login <your-handle>.bsky.social
 vit adopt vit:github.com/solpbc/vit
 ```
 
-`setup` checks prerequisites and installs the vit skill for your agent.
+installing vit auto-installs the agent skill.
 `login` authenticates with Bluesky via browser OAuth.
 `adopt` forks or clones the vit repo and initializes it.
 

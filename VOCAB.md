@@ -100,14 +100,9 @@ vit maintains explicit ancestry for traceability.
 check system readiness and configure vit for first use.
 
 ```bash
-vit setup
 vit init
 vit doctor
 ```
-
-`setup` 
-- log in to Bluesky (invokes login flow)
-- install skills (agent capabilities)
 
 `init`
 - initialize `.vit/` in the current git repo
@@ -257,7 +252,7 @@ learn is the skill counterpart to remix — where remix integrates a cap into a 
 setup (one-time):
 
 ```bash
-vit setup
+npm install -g vit
 vit adopt <beacon>
 ```
 
@@ -279,7 +274,7 @@ vit vouch
 ```
 
 conceptual lifecycle:
-- setup prepares the system
+- install prepares the system
 - init prepares the project environment
 - adopt joins a project via its beacon
 - beacon anchors the project
