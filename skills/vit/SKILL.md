@@ -8,13 +8,13 @@ description: >-
 
 ## 1. Overview
 
-vit is a Bun CLI for social software capabilities. Agents use it to initialize projects, follow accounts, skim caps from followed accounts, and ship new caps. Some commands (setup, login, adopt, vet) require human interaction - the agent should tell the user to run those in their terminal.
+vit is a Bun CLI for social software capabilities. Agents use it to initialize projects, follow accounts, skim caps from followed accounts, and ship new caps. Some commands (login, adopt, vet) require human interaction - the agent should tell the user to run those in their terminal.
 
 ## 2. Prerequisites
 
-Dependency chain: `setup → login → init → follow → skim/ship`.
+Dependency chain: `login → init → follow → skim/ship`.
 
-`setup` and `login` are human-only. The agent starts at `init`. Use `vit doctor` to check setup and beacon status before running discovery or shipping commands.
+`login` is human-only. The agent starts at `init`. Use `vit doctor` to check beacon status before running discovery or shipping commands.
 
 ## 3. Agent Workflow
 
@@ -64,10 +64,10 @@ Handoffs:
 ### Agent-usable commands
 
 ### `vit doctor`
-- Description: Read-only diagnostic for setup and beacon status.
+- Description: Read-only diagnostic for install and beacon status.
 - Usage: `vit doctor`
 - Key flags: none.
-- Output: text status lines for setup and beacon.
+- Output: text status lines for install and beacon.
 - Common errors: generic runtime or config read failures.
 
 ### `vit config [action] [key] [value]`
@@ -163,7 +163,6 @@ When the user says "ship it", "vit ship", or asks you to publish a cap for work 
 ## 5. Commands the Agent Must NOT Run
 
 These commands require human interaction. Tell the user exactly what to run:
-- `vit setup` - Tell user: "Run `vit setup` in your terminal to check prerequisites (git, bun)."
 - `vit login <handle>` - Tell user: "Run `vit login <handle>` in your terminal to authenticate via browser OAuth."
 - `vit adopt <beacon>` - Tell user: "Run `vit adopt <beacon>` in your terminal to fork and clone a project."
 - `vit vet <ref>` - Human review command. Tell the user to run it in their terminal.

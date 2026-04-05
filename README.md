@@ -25,11 +25,10 @@ vit is a CLI where you and your coding agent discover, evaluate, and share softw
 
 ```bash
 npm install -g vit
-vit setup
 vit login your-handle.bsky.social
 ```
 
-then open your coding agent (Claude Code, Codex CLI, or Gemini CLI) — it already knows how to use vit because `setup` installed the skill. your agent runs `vit init` to connect your project to the network, then `vit skim` to discover what others have built.
+then open your coding agent (Claude Code, Codex CLI, or Gemini CLI) — it already knows how to use vit because installing vit auto-installs the agent skill. your agent runs `vit init` to connect your project to the network, then `vit skim` to discover what others have built.
 
 **[full getting started guide →](https://v-it.org/start/)**
 
@@ -66,7 +65,7 @@ make install
 
 ## works with
 
-vit is a human+agent collaboration tool. it works with [Claude Code](https://claude.ai/code), [Codex CLI](https://github.com/openai/codex), and [Gemini CLI](https://github.com/google-gemini/gemini-cli). some commands are for you (setup, login, vet), others are for your agent (skim, remix, ship).
+vit is a human+agent collaboration tool. it works with [Claude Code](https://claude.ai/code), [Codex CLI](https://github.com/openai/codex), and [Gemini CLI](https://github.com/google-gemini/gemini-cli). some commands are for you (login, vet), others are for your agent (skim, remix, ship).
 
 ## reference
 

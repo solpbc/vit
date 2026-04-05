@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 sol pbc
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { requireDid } from '../lib/config.js';
 import { SKILL_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
@@ -169,47 +170,60 @@ export default function register(program) {
         const record = match.value;
         if (verbose) vlog(`[verbose] found skill: ${record.name} from ${match.uri}`);
 
-        // Determine install path
-        let installDir;
-        if (isUserInstall) {
-          installDir = join(homedir(), '.claude', 'skills', skillName);
-        } else {
-          installDir = join(process.cwd(), '.claude', 'skills', skillName);
-        }
+        // Install via skills CLI
+        const tempDir = mkdtempSync(join(tmpdir(), 'vit-learn-'));
+        try {
+          writeFileSync(join(tempDir, 'SKILL.md'), record.text);
+          if (verbose) vlog('[verbose] wrote SKILL.md to temp dir');
 
-        mkdirSync(installDir, { recursive: true });
+          // Download resource blobs to temp dir
+          if (record.resources && record.resources.length > 0) {
+            const authorDid = match.uri.split('/')[2];
+            const pds = await resolvePds(authorDid);
 
-        // Write SKILL.md from text field — verbatim, no reconstruction
-        writeFileSync(join(installDir, 'SKILL.md'), record.text);
-        if (verbose) vlog(`[verbose] wrote SKILL.md to ${installDir}`);
+            for (const resource of record.resources) {
+              const resourcePath = join(tempDir, resource.path);
+              mkdirSync(dirname(resourcePath), { recursive: true });
 
-        // Download and write resource blobs
-        if (record.resources && record.resources.length > 0) {
-          const authorDid = match.uri.split('/')[2];
-          const pds = await resolvePds(authorDid);
-
-          for (const resource of record.resources) {
-            const resourcePath = join(installDir, resource.path);
-            mkdirSync(dirname(resourcePath), { recursive: true });
-
-            try {
-              // Download blob from PDS
-              const blobCid = resource.blob?.ref?.$link || resource.blob?.cid;
-              if (blobCid) {
-                const blobUrl = new URL('/xrpc/com.atproto.sync.getBlob', pds);
-                blobUrl.searchParams.set('did', authorDid);
-                blobUrl.searchParams.set('cid', blobCid);
-                const blobRes = await fetch(blobUrl);
-                if (!blobRes.ok) throw new Error(`blob fetch failed: ${blobRes.status}`);
-                const blobData = Buffer.from(await blobRes.arrayBuffer());
-                writeFileSync(resourcePath, blobData);
-                if (verbose) vlog(`[verbose] wrote resource: ${resource.path}`);
+              try {
+                // Download blob from PDS
+                const blobCid = resource.blob?.ref?.$link || resource.blob?.cid;
+                if (blobCid) {
+                  const blobUrl = new URL('/xrpc/com.atproto.sync.getBlob', pds);
+                  blobUrl.searchParams.set('did', authorDid);
+                  blobUrl.searchParams.set('cid', blobCid);
+                  const blobRes = await fetch(blobUrl);
+                  if (!blobRes.ok) throw new Error(`blob fetch failed: ${blobRes.status}`);
+                  const blobData = Buffer.from(await blobRes.arrayBuffer());
+                  writeFileSync(resourcePath, blobData);
+                  if (verbose) vlog(`[verbose] wrote resource: ${resource.path}`);
+                }
+              } catch (err) {
+                console.error(`warning: failed to download resource ${resource.path}: ${err.message}`);
               }
-            } catch (err) {
-              console.error(`warning: failed to download resource ${resource.path}: ${err.message}`);
             }
           }
+
+          // Delegate to skills CLI
+          const addArgs = ['skills', 'add', tempDir, '-a', 'claude-code', '-y'];
+          if (isUserInstall) addArgs.push('-g');
+          const addResult = spawnSync('npx', addArgs, {
+            encoding: 'utf-8',
+            stdio: ['pipe', 'pipe', 'pipe'],
+          });
+          if (addResult.status !== 0) {
+            const errText = (addResult.stderr || addResult.stdout || '').trim();
+            throw new Error(`skill install failed: ${errText || 'unknown error'}`);
+          }
+          if (verbose) vlog('[verbose] installed via npx skills add');
+        } finally {
+          try { rmSync(tempDir, { recursive: true, force: true }); } catch {}
         }
+
+        // Determine install path for logging
+        const installDir = isUserInstall
+          ? join(homedir(), '.claude', 'skills', skillName)
+          : join(process.cwd(), '.claude', 'skills', skillName);
 
         // Log to learned.jsonl
         try {

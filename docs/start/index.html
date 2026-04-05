@@ -297,11 +297,10 @@
 
 <hr>
 
-<h2>1. install &amp; set up</h2>
+<h2>1. install</h2>
 <span class="cmd-label">you run this (terminal)</span>
-<pre><code>npm install -g vit
-vit setup</code></pre>
-<p><code>setup</code> checks your prerequisites and installs the vit skill so your coding agent knows how to use vit. you can also try vit without installing globally &mdash; just use <code>npx vit</code> instead.</p>
+<pre><code>npm install -g vit</code></pre>
+<p>installing vit auto-installs the agent skill so your coding agent knows how to use vit. you can also try vit without installing globally &mdash; just use <code>npx vit</code> instead.</p>
 
 <h2>2. log in</h2>
 <span class="cmd-label">you run this (terminal)</span>
@@ -320,7 +319,7 @@ vit setup</code></pre>
 <hr>
 
 <h2>4. open your agent</h2>
-<p>open your coding agent (Claude Code, Codex, Gemini CLI). because you ran <code>vit setup</code>, your agent already has the vit skill installed and knows how to use every vit command.</p>
+<p>open your coding agent (Claude Code, Codex, Gemini CLI). the vit skill was installed automatically, so your agent already knows how to use every vit command.</p>
 
 <h2>5. initialize your project</h2>
 <span class="cmd-label">your agent runs this (inside Claude Code / Codex / Gemini CLI)</span>
@@ -351,7 +350,7 @@ vit setup</code></pre>
 <p>vit is a human+agent collaboration tool. some commands are for you, some are for your agent:</p>
 
 <p><strong>you run these</strong> (terminal):<br>
-<code>setup</code>, <code>login</code>, <code>vet</code> &mdash; setup, authentication, and trust decisions stay with you.</p>
+<code>login</code>, <code>vet</code> &mdash; authentication and trust decisions stay with you.</p>
 
 <p><strong>your agent runs these</strong> (inside your coding agent):<br>
 <code>init</code>, <code>skim</code>, <code>remix</code>, <code>ship</code>, <code>follow</code>, <code>learn</code> &mdash; discovery, integration, and publishing are agent tasks.</p>

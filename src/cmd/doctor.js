@@ -41,10 +41,6 @@ export default function register(program) {
   async function checkHealth(opts) {
     try {
       const config = loadConfig();
-      const setup = {
-        done: !!config.setup_at,
-        at: config.setup_at ? new Date(config.setup_at * 1000).toISOString() : null,
-      };
       let installType = 'not on PATH';
       let vitPath = which(name);
       let installPath = vitPath || null;
@@ -54,13 +50,6 @@ export default function register(program) {
       let userSkills = [];
       let blueskyOk = false;
       let pds = null;
-
-      if (config.setup_at) {
-        const when = new Date(config.setup_at * 1000).toISOString();
-        if (!opts.json) console.log(`${mark} setup: ok (${when})`);
-      } else {
-        if (!opts.json) console.log(`${mark} setup: not done (run ${name} setup)`);
-      }
 
       if (!vitPath) {
         installType = 'not on PATH';
@@ -91,12 +80,13 @@ export default function register(program) {
         if (!opts.json) console.log(`${mark} beacon: not set (run vit init)`);
       }
 
-      const skillPath = join(process.cwd(), '.claude', 'skills', 'using-vit', 'SKILL.md');
-      skillInstalled = existsSync(skillPath);
-      if (existsSync(skillPath)) {
+      const projectSkillPath = join(process.cwd(), '.claude', 'skills', 'using-vit', 'SKILL.md');
+      const userSkillPath = join(homedir(), '.claude', 'skills', 'using-vit', 'SKILL.md');
+      skillInstalled = existsSync(projectSkillPath) || existsSync(userSkillPath);
+      if (skillInstalled) {
         if (!opts.json) console.log(`${mark} skill: ok (using-vit)`);
       } else {
-        if (!opts.json) console.log(`${mark} skill: not installed (run ${name} setup)`);
+        if (!opts.json) console.log(`${mark} skill: not installed (reinstall vit)`);
       }
 
       // Report installed skills
@@ -162,7 +152,6 @@ export default function register(program) {
 
       if (opts.json) {
         jsonOk({
-          setup,
           install: { type: installType, path: installPath },
           beacon,
           skill: skillInstalled,

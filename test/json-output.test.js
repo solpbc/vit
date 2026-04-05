@@ -62,7 +62,7 @@ describe('--json flag', () => {
       const r = run('doctor --json');
       const j = parseJson(r.stdout);
       expect(j.ok).toBe(true);
-      expect(j).toHaveProperty('setup');
+      expect(j).toHaveProperty('install');
       expect(j).toHaveProperty('beacon');
       expect(j).toHaveProperty('bluesky');
     });

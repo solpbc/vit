@@ -5,11 +5,6 @@ import { describe, test, expect } from 'bun:test';
 import { run } from './helpers.js';
 
 describe('vit doctor', () => {
-  test('reports setup status', () => {
-    const result = run('doctor');
-    expect(result.stdout).toMatch(/setup:/);
-  });
-
   test('reports beacon status', () => {
     const result = run('doctor');
     expect(result.stdout).toMatch(/beacon:/);
@@ -32,6 +27,6 @@ describe('vit doctor', () => {
 
   test('vit status is an alias for doctor', () => {
     const result = run('status');
-    expect(result.stdout).toMatch(/setup:/);
+    expect(result.stdout).toMatch(/install:/);
   });
 });

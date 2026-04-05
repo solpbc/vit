@@ -9,19 +9,7 @@ vit is a human+agent collaboration tool. commands are labeled by who runs them:
 
 ---
 
-## setup commands
-
-### setup
-
-**you run this** (terminal)
-
-check prerequisites and install the vit skill for your coding agent.
-
-```bash
-vit setup
-```
-
-this is the first command you run. it verifies your environment (Node.js, git) and installs the agent skill so your coding agent knows how to use vit.
+## getting started
 
 ### login
 

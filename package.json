@@ -8,10 +8,13 @@
   },
   "files": [
     "bin/",
-    "src/"
+    "src/",
+    "skills/vit/"
   ],
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "postinstall": "node src/postinstall.js"
+  },
   "engines": {
     "node": ">=20.0.0"
   },
