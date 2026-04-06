@@ -61,6 +61,14 @@ export async function resolveHandleFromDid(did) {
   }
 }
 
+export async function resolveHandle(handle) {
+  const url = `https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=${encodeURIComponent(handle)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`could not resolve handle: ${handle}`);
+  const data = await res.json();
+  return data.did;
+}
+
 export async function batchQuery(items, fn, { batchSize = 10, verbose = false } = {}) {
   if (verbose) console.log(`[verbose] querying ${items.length} accounts in batches of ${batchSize}`);
   const results = [];

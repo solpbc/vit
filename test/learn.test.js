@@ -112,4 +112,66 @@ describe('vit learn', () => {
       rmSync(tmp, { recursive: true, force: true });
     });
   });
+
+  describe('vit learn @handle/', () => {
+    test('parses @handle/name format', () => {
+      const r = run('learn @test.example/my-skill', '/tmp');
+      expect(r.exitCode).not.toBe(0);
+      expect(r.stderr).not.toContain('invalid skill ref');
+    });
+
+    test('rejects @handle/ with no skill name', () => {
+      const r = run('learn @test.example/', '/tmp');
+      expect(r.exitCode).not.toBe(0);
+      expect(r.stderr).toContain('invalid ref');
+    });
+
+    test('rejects @/name with no handle', () => {
+      const r = run('learn @/my-skill', '/tmp');
+      expect(r.exitCode).not.toBe(0);
+      expect(r.stderr).toContain('invalid ref');
+    });
+
+    test('rejects handle without dot', () => {
+      const r = run('learn @localhost/my-skill', '/tmp');
+      expect(r.exitCode).not.toBe(0);
+      expect(r.stderr).toContain('invalid handle');
+    });
+
+    test('rejects invalid skill name', () => {
+      const r = run('learn @test.example/Bad-Name', '/tmp');
+      expect(r.exitCode).not.toBe(0);
+      expect(r.stderr).toContain('invalid skill name');
+    });
+
+    test('trailing dot sets project-local', () => {
+      const r = run('learn @test.example/my-skill.', '/tmp');
+      expect(r.exitCode).not.toBe(0);
+      expect(r.stderr).not.toContain('invalid skill name');
+    });
+
+    test('@handle/ path does NOT require agent env', () => {
+      const r = run('learn @test.example/my-skill', '/tmp', { CLAUDECODE: '', GEMINI_CLI: '', CODEX_CI: '' });
+      expect(r.exitCode).not.toBe(0);
+      expect(r.stderr).not.toContain('should be run by a coding agent');
+    });
+
+    test('@handle/ path does NOT require .vit/ dir', () => {
+      const r = run('learn @test.example/my-skill', '/tmp');
+      expect(r.exitCode).not.toBe(0);
+      expect(r.stderr).not.toContain('not yet vetted');
+    });
+
+    test('--project flag accepted', () => {
+      const r = run('learn @test.example/my-skill --project', '/tmp');
+      expect(r.exitCode).not.toBe(0);
+      expect(r.stderr).not.toContain('unknown option');
+    });
+
+    test('--dry-run flag accepted', () => {
+      const r = run('learn @test.example/my-skill --dry-run', '/tmp');
+      expect(r.exitCode).not.toBe(0);
+      expect(r.stderr).not.toContain('unknown option');
+    });
+  });
 });

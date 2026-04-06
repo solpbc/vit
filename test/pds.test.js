@@ -2,7 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { resolvePds, resolveHandleFromDid, listRecordsFromPds, batchQuery } from '../src/lib/pds.js';
+import { resolvePds, resolveHandleFromDid, resolveHandle, listRecordsFromPds, batchQuery } from '../src/lib/pds.js';
 
 function jsonResponse(data, { ok = true, status = 200, statusText = 'OK' } = {}) {
   return {
@@ -125,6 +125,25 @@ describe('pds', () => {
       };
 
       await expect(resolveHandleFromDid('did:web:example.com:fallback')).resolves.toBe('did:web:example.com:fallback');
+    });
+  });
+
+  describe('resolveHandle', () => {
+    test('resolves handle to DID', async () => {
+      let fetchedUrl;
+      global.fetch = async (input) => {
+        fetchedUrl = String(input);
+        return jsonResponse({ did: 'did:plc:test123' });
+      };
+
+      await expect(resolveHandle('test.example')).resolves.toBe('did:plc:test123');
+      expect(fetchedUrl).toBe('https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=test.example');
+    });
+
+    test('throws on non-ok response', async () => {
+      global.fetch = async () => jsonResponse({}, { ok: false, status: 404, statusText: 'Not Found' });
+
+      await expect(resolveHandle('nonexistent.test')).rejects.toThrow('could not resolve handle: nonexistent.test');
     });
   });
 
