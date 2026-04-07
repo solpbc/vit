@@ -29,6 +29,7 @@ make clean      # Remove node_modules
 - **Simple code** - Prefer plain functions. Keep scripts self-contained.
 - **DRY, KISS** - Extract common logic, prefer simple solutions.
 - **Fail fast** - Validate inputs and external state early. Clear error messages.
+- **Vocabulary alignment** - `VOCAB.md` is the source of truth for all project terminology. All project descriptions, CLI help strings, documentation, and skill files must use terminology consistent with VOCAB.md. When VOCAB.md is updated, propagate changes to every file that references vit's vocabulary in the same commit.
 
 ## Verification
 
