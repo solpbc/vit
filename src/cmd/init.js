@@ -80,7 +80,8 @@ export default function register(program) {
             if (hasVitDir) {
               console.log(`hint: run: ${name} init --beacon <canonical-git-url>`);
             } else {
-              console.log(`hint: run ${name} init from inside a git repository.`);
+              console.log(`hint: navigate to a git repository and run '${name} init' there.`);
+              console.log(`      to start fresh: git init && git remote add origin <your-repo-url>`);
             }
             return;
           }

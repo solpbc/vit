@@ -141,7 +141,8 @@ describe('vit init', () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('status: not initialized');
     expect(result.stdout).toContain('git: false');
-    expect(result.stdout).toContain('hint: run vit init from inside a git repository');
+    expect(result.stdout).toContain("hint: navigate to a git repository and run 'vit init' there.");
+    expect(result.stdout).toContain('to start fresh: git init && git remote add origin <your-repo-url>');
   });
 
   test('guides agent in fork repo with upstream and origin remotes', () => {
