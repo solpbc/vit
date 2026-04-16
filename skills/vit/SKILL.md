@@ -4,6 +4,9 @@ description: >-
   Helps coding agents use vit to discover, follow, skim, and ship software
   capabilities (caps) over ATProto. Activates when the user mentions vit,
   beacons, caps, shipping, skimming, following, vetting, or social coding.
+  Provides command reference for: vit init, vit skim, vit ship, vit follow,
+  vit following, vit learn, vit remix, vit doctor, vit config, vit beacon,
+  vit login.
 ---
 
 ## 1. Overview
