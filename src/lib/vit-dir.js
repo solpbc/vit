@@ -4,12 +4,12 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export function vitDir() {
-  return join(process.cwd(), '.vit');
+export function vitDir(dir) {
+  return join(dir || process.cwd(), '.vit');
 }
 
-export function readProjectConfig() {
-  const p = join(vitDir(), 'config.json');
+export function readProjectConfig(dir) {
+  const p = join(vitDir(dir), 'config.json');
   if (!existsSync(p)) return {};
   try {
     return JSON.parse(readFileSync(p, 'utf-8'));
@@ -18,8 +18,8 @@ export function readProjectConfig() {
   }
 }
 
-export function readBeaconSet() {
-  const config = readProjectConfig();
+export function readBeaconSet(dir) {
+  const config = readProjectConfig(dir);
   const set = new Set();
   if (config.beacon) set.add(config.beacon);
   if (config.secondaryBeacon) set.add(config.secondaryBeacon);
@@ -32,14 +32,14 @@ export function writeProjectConfig(obj, baseDir) {
   writeFileSync(join(dir, 'config.json'), JSON.stringify(obj, null, 2) + '\n');
 }
 
-export function appendLog(filename, record) {
-  const dir = vitDir();
-  mkdirSync(dir, { recursive: true });
-  appendFileSync(join(dir, filename), JSON.stringify(record) + '\n');
+export function appendLog(filename, record, dir) {
+  const d = vitDir(dir);
+  mkdirSync(d, { recursive: true });
+  appendFileSync(join(d, filename), JSON.stringify(record) + '\n');
 }
 
-export function readLog(filename) {
-  const p = join(vitDir(), filename);
+export function readLog(filename, dir) {
+  const p = join(vitDir(dir), filename);
   if (!existsSync(p)) return [];
   try {
     return readFileSync(p, 'utf-8')
@@ -52,8 +52,8 @@ export function readLog(filename) {
   }
 }
 
-export function readFollowing() {
-  const p = join(vitDir(), 'following.json');
+export function readFollowing(dir) {
+  const p = join(vitDir(dir), 'following.json');
   if (!existsSync(p)) return [];
   try {
     return JSON.parse(readFileSync(p, 'utf-8'));
@@ -62,8 +62,8 @@ export function readFollowing() {
   }
 }
 
-export function writeFollowing(list) {
-  const dir = vitDir();
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'following.json'), JSON.stringify(list, null, 2) + '\n');
+export function writeFollowing(list, dir) {
+  const d = vitDir(dir);
+  mkdirSync(d, { recursive: true });
+  writeFileSync(join(d, 'following.json'), JSON.stringify(list, null, 2) + '\n');
 }

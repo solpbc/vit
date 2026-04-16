@@ -12,8 +12,8 @@ const ACCEPT_FILE = 'dangerous-accept';
  * Returns { accepted: true } or { accepted: false }.
  * No TTL — once set, it's permanent until deleted.
  */
-export function checkDangerousAccept() {
-  const p = join(vitDir(), ACCEPT_FILE);
+export function checkDangerousAccept(dir) {
+  const p = join(vitDir(dir), ACCEPT_FILE);
   if (!existsSync(p)) return { accepted: false };
   try {
     JSON.parse(readFileSync(p, 'utf-8'));
@@ -30,8 +30,8 @@ export function checkDangerousAccept() {
  * Bypass condition: dangerous-accept flag is active.
  * Caller checks trusted.jsonl before calling this.
  */
-export function shouldBypassVet() {
-  const accept = checkDangerousAccept();
+export function shouldBypassVet(dir) {
+  const accept = checkDangerousAccept(dir);
   if (accept.accepted) {
     return { bypass: true, reason: 'dangerous-accept' };
   }

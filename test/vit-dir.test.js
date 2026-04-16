@@ -6,26 +6,21 @@ import { mkdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-// vit-dir functions use process.cwd(), so we save/restore it
-const originalCwd = process.cwd();
-
 describe('vit-dir', () => {
   let tmpDir;
 
   beforeEach(() => {
     tmpDir = join(tmpdir(), '.test-vit-dir-' + Math.random().toString(36).slice(2));
     mkdirSync(tmpDir, { recursive: true });
-    process.chdir(tmpDir);
   });
 
   afterEach(() => {
-    process.chdir(originalCwd);
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
   test('writeProjectConfig creates .vit/ and config.json', async () => {
     const { writeProjectConfig } = await import('../src/lib/vit-dir.js');
-    writeProjectConfig({ beacon: 'vit:github.com/org/repo' });
+    writeProjectConfig({ beacon: 'vit:github.com/org/repo' }, tmpDir);
     expect(existsSync(join(tmpDir, '.vit'))).toBe(true);
     const content = readFileSync(join(tmpDir, '.vit', 'config.json'), 'utf-8');
     const parsed = JSON.parse(content);
@@ -34,36 +29,36 @@ describe('vit-dir', () => {
 
   test('readProjectConfig reads written config', async () => {
     const { writeProjectConfig, readProjectConfig } = await import('../src/lib/vit-dir.js');
-    writeProjectConfig({ beacon: 'vit:github.com/org/repo' });
-    const config = readProjectConfig();
+    writeProjectConfig({ beacon: 'vit:github.com/org/repo' }, tmpDir);
+    const config = readProjectConfig(tmpDir);
     expect(config.beacon).toBe('vit:github.com/org/repo');
   });
 
   test('readProjectConfig returns {} when file missing', async () => {
     const { readProjectConfig } = await import('../src/lib/vit-dir.js');
-    const config = readProjectConfig();
+    const config = readProjectConfig(tmpDir);
     expect(config).toEqual({});
   });
 
   test('readBeaconSet returns empty Set when no config', async () => {
     const { readBeaconSet } = await import('../src/lib/vit-dir.js');
-    const set = readBeaconSet();
+    const set = readBeaconSet(tmpDir);
     expect(set).toBeInstanceOf(Set);
     expect(set.size).toBe(0);
   });
 
   test('readBeaconSet returns primary only when no secondary', async () => {
     const { writeProjectConfig, readBeaconSet } = await import('../src/lib/vit-dir.js');
-    writeProjectConfig({ beacon: 'vit:github.com/org/repo' });
-    const set = readBeaconSet();
+    writeProjectConfig({ beacon: 'vit:github.com/org/repo' }, tmpDir);
+    const set = readBeaconSet(tmpDir);
     expect(set.size).toBe(1);
     expect(set.has('vit:github.com/org/repo')).toBe(true);
   });
 
   test('readBeaconSet returns both when secondary is set', async () => {
     const { writeProjectConfig, readBeaconSet } = await import('../src/lib/vit-dir.js');
-    writeProjectConfig({ beacon: 'vit:github.com/org/repo', secondaryBeacon: 'vit:github.com/upstream/repo' });
-    const set = readBeaconSet();
+    writeProjectConfig({ beacon: 'vit:github.com/org/repo', secondaryBeacon: 'vit:github.com/upstream/repo' }, tmpDir);
+    const set = readBeaconSet(tmpDir);
     expect(set.size).toBe(2);
     expect(set.has('vit:github.com/org/repo')).toBe(true);
     expect(set.has('vit:github.com/upstream/repo')).toBe(true);
@@ -71,7 +66,7 @@ describe('vit-dir', () => {
 
   test('appendLog creates file and appends JSONL line', async () => {
     const { appendLog } = await import('../src/lib/vit-dir.js');
-    appendLog('caps.jsonl', { ts: '2026-01-01T00:00:00Z', did: 'did:plc:test' });
+    appendLog('caps.jsonl', { ts: '2026-01-01T00:00:00Z', did: 'did:plc:test' }, tmpDir);
     const content = readFileSync(join(tmpDir, '.vit', 'caps.jsonl'), 'utf-8');
     const lines = content.trim().split('\n');
     expect(lines.length).toBe(1);
@@ -80,8 +75,8 @@ describe('vit-dir', () => {
 
   test('appendLog appends to existing file', async () => {
     const { appendLog } = await import('../src/lib/vit-dir.js');
-    appendLog('caps.jsonl', { ts: '2026-01-01T00:00:00Z', n: 1 });
-    appendLog('caps.jsonl', { ts: '2026-01-02T00:00:00Z', n: 2 });
+    appendLog('caps.jsonl', { ts: '2026-01-01T00:00:00Z', n: 1 }, tmpDir);
+    appendLog('caps.jsonl', { ts: '2026-01-02T00:00:00Z', n: 2 }, tmpDir);
     const content = readFileSync(join(tmpDir, '.vit', 'caps.jsonl'), 'utf-8');
     const lines = content.trim().split('\n');
     expect(lines.length).toBe(2);

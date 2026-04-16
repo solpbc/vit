@@ -31,6 +31,14 @@ make clean      # Remove node_modules
 - **Fail fast** - Validate inputs and external state early. Clear error messages.
 - **Vocabulary alignment** - `VOCAB.md` is the source of truth for all project terminology. All project descriptions, CLI help strings, documentation, and skill files must use terminology consistent with VOCAB.md. When VOCAB.md is updated, propagate changes to every file that references vit's vocabulary in the same commit.
 
+## Testing Standards
+
+1. **No real home access** — tests must never read or write `~/.local`, `~/.config`, `~/.claude`, or any path under the real `$HOME`. Use `HOME` and `XDG_CONFIG_HOME` env overrides to redirect to temp dirs.
+2. **No live HTTP** — tests must not make requests to external hosts (`github.com`, `explore.v-it.org`, etc.). Use `Bun.serve()` local servers with canned responses, or `mock.module()` for dependencies that make HTTP calls.
+3. **No global mutation** — tests must not call `process.chdir()`. Pass directory arguments to functions instead. If `process.chdir` is unavoidable, wrap in `try/finally`.
+4. **Temp dir lifecycle** — create temp dirs with `join(tmpdir(), '.test-{name}-{random}')` in `beforeEach`, clean up with `rmSync(dir, { recursive: true, force: true })` in `afterEach`.
+5. **Subprocess isolation** — tests using `run()` isolate via env overrides and CLI flags. In-process tests may use `mock.module()` only when env/flag isolation is impossible (e.g., mocking `isomorphic-git` in beacon tests).
+
 ## Verification
 
 - Always run `make test` before committing — all tests must pass.
