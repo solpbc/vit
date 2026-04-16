@@ -4,7 +4,7 @@ for the philosophy behind this system, read the [doctrine](https://v-it.org/doct
 
 ## prerequisites
 
-- [Node.js](https://nodejs.org) 20+ (check: `node --version`)
+- [Node.js](https://nodejs.org) 20.10+ (check: `node --version`)
 - [git](https://git-scm.com)
 - a [Bluesky](https://bsky.app) account
 - a coding agent ([Claude Code](https://claude.ai/code), [Codex CLI](https://github.com/openai/codex), or [Gemini CLI](https://github.com/google-gemini/gemini-cli))

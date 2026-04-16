@@ -16,7 +16,7 @@
     "postinstall": "node src/postinstall.js"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.10.0"
   },
   "dependencies": {
     "@atproto/api": "^0.18.20",
