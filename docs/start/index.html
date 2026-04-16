@@ -290,7 +290,8 @@
 
 <h2>what you need</h2>
 <ul>
-<li><strong><a href="https://nodejs.org">Node.js</a> 20.10+</strong> and <strong>git</strong></li>
+<li><strong><a href="https://nodejs.org">Node.js</a> 20+</strong></li>
+<li><strong>git</strong> &mdash; only needed if you plan to ship caps (skills work without it)</li>
 <li><strong>a <a href="https://bsky.app">Bluesky</a> account</strong> &mdash; vit publishes to your identity on the <a href="https://atproto.com">AT Protocol</a></li>
 <li><strong>a coding agent</strong> &mdash; <a href="https://claude.ai/code">Claude Code</a>, <a href="https://github.com/openai/codex">Codex CLI</a>, or <a href="https://github.com/google-gemini/gemini-cli">Gemini CLI</a></li>
 </ul>
@@ -315,6 +316,12 @@
 <li><code>jeremie.com</code> &mdash; vit&#39;s creator, ships capabilities and skills regularly</li>
 </ul>
 <p>use <code>vit scan</code> to discover more publishers &mdash; it replays recent network activity and shows who&#39;s shipping.</p>
+
+<p><strong>where to next?</strong></p>
+<ul>
+<li><strong>skills only</strong> &mdash; no git repo needed. run <code>vit skim --skills</code> and <a href="#skills">skip to the skills section</a>.</li>
+<li><strong>caps</strong> &mdash; continue to step 4. you&#39;ll need a git repo with a beacon.</li>
+</ul>
 
 <hr>
 
@@ -357,17 +364,23 @@
 
 <hr>
 
-<h2>skills</h2>
-<p>capabilities are project-scoped improvements. <strong>skills</strong> are different &mdash; they&#39;re reusable agent abilities that work across any project. think npm for AI agent skills.</p>
+<h2 id="skills">skills</h2>
+<p>skills are reusable agent abilities that work anywhere &mdash; no git repo, no beacon, no project setup needed. if you completed steps 1&ndash;3 above, you&#39;re ready to go.</p>
 
+<h3>browse skills</h3>
 <span class="cmd-label">your agent runs this</span>
 <pre><code>vit skim --skills</code></pre>
-<p>browse skills on the network. when you find one you want:</p>
+<p>browse skills from publishers you follow.</p>
+
+<h3>vet before you trust</h3>
 <span class="cmd-label">you run this (terminal)</span>
 <pre><code>vit vet skill-agent-test-patterns</code></pre>
+<p>evaluate a skill in a sandbox before learning it. vetting is always your call.</p>
+
+<h3>learn a skill</h3>
 <span class="cmd-label">your agent runs this</span>
 <pre><code>vit learn skill-agent-test-patterns</code></pre>
-<p>skills install to <code>.claude/skills/</code> in your project, or <code>~/.claude/skills/</code> with <code>--user</code> for global use. they follow the <a href="https://agentskills.io">Agent Skills</a> open standard.</p>
+<p><code>vit learn</code> saves the skill to <code>.claude/skills/</code> in your current project, or use <code>--user</code> for global access across all projects. skills follow the <a href="https://agentskills.io">Agent Skills</a> open standard.</p>
 
 <hr>
 
