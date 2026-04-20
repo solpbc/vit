@@ -396,15 +396,15 @@
 
 <hr>
 
-<h3>login troubleshooting</h3>
-<p>if <code>vit login</code> fails, these are the usual fixes:</p>
+<h3>if login gets stuck</h3>
+<p>these are the four most common ways <code>vit login</code> fails, and what to do about them:</p>
 <ul>
-<li>make sure the handle is correct and resolves on Bluesky.</li>
-<li>open the printed URL in your browser, approve vit, and wait for the callback to finish.</li>
-<li>if you&#39;re on a remote machine, rerun with <code>vit login &lt;handle&gt; --remote</code> and paste the full callback URL.</li>
-<li>if you used an app password, create a fresh Bluesky app password and try again.</li>
-<li>check your DNS, firewall, or VPN settings if vit cannot reach Bluesky.</li>
+<li><strong>&ldquo;The data you submitted is invalid&rdquo; on Bluesky&rsquo;s page.</strong> you&rsquo;re probably already signed in as a different bsky account in that browser. sign out of bsky (or open an incognito window) and retry.</li>
+<li><strong>&ldquo;Failed to resolve identity&rdquo; on the CLI.</strong> your handle lookup is being blocked &mdash; often by a corporate network or VPN that blocks DNS-over-HTTPS. as a fallback, create a Bluesky app password at <a href="https://bsky.app/settings/app-passwords">bsky.app/settings/app-passwords</a> and run <code>vit login &lt;handle&gt; --app-password &lt;password&gt;</code>.</li>
+<li><strong>the CLI hangs after printing a URL.</strong> you&rsquo;re on a remote or SSH machine without a browser. rerun with <code>--remote</code> and paste the callback URL back by hand.</li>
+<li><strong>use your handle, not your DID.</strong> pass <code>alice.bsky.social</code>, not <code>did:plc:&hellip;</code>. the OAuth flow works much better with handles.</li>
 </ul>
+<p>for any login failure, <code>-v</code>/<code>--verbose</code> prints the full cause chain and stack traces.</p>
 <span class="cmd-label">you run this (terminal, on a remote machine)</span>
 <pre><code>vit login your-handle.bsky.social --remote</code></pre>
 
