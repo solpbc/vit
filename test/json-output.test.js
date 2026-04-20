@@ -6,6 +6,7 @@ import { run } from './helpers.js';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { jsonError } from '../src/lib/json-output.js';
 
 const agentEnv = { CLAUDECODE: '1' };
 
@@ -13,8 +14,28 @@ function parseJson(stdout) {
   return JSON.parse(stdout);
 }
 
+function captureJsonError(input, hintArg) {
+  const lines = [];
+  const originalLog = console.log;
+  const originalExitCode = process.exitCode;
+  console.log = (line) => lines.push(line);
+  process.exitCode = 0;
+
+  try {
+    jsonError(input, hintArg);
+    return {
+      exitCode: process.exitCode,
+      parsed: JSON.parse(lines.join('')),
+    };
+  } finally {
+    console.log = originalLog;
+    process.exitCode = originalExitCode;
+  }
+}
+
 describe('--json flag', () => {
   let tmpDir;
+  let tmpHome;
 
   beforeEach(() => {
     tmpDir = join(tmpdir(), '.test-json-' + Math.random().toString(36).slice(2));
@@ -23,7 +44,14 @@ describe('--json flag', () => {
 
   afterEach(() => {
     rmSync(tmpDir, { recursive: true, force: true });
+    if (tmpHome) rmSync(tmpHome, { recursive: true, force: true });
   });
+
+  function doctorEnv() {
+    tmpHome = join(tmpdir(), '.test-json-doctor-' + Math.random().toString(36).slice(2));
+    mkdirSync(tmpHome, { recursive: true });
+    return { HOME: tmpHome, XDG_CONFIG_HOME: join(tmpHome, '.config') };
+  }
 
   describe('init --json', () => {
     test('reports status as JSON when not initialized', () => {
@@ -59,7 +87,7 @@ describe('--json flag', () => {
 
   describe('doctor --json', () => {
     test('returns health report as JSON', () => {
-      const r = run('doctor --json');
+      const r = run('doctor --json', undefined, doctorEnv());
       const j = parseJson(r.stdout);
       expect(j.ok).toBe(true);
       expect(j).toHaveProperty('install');
@@ -68,7 +96,7 @@ describe('--json flag', () => {
     });
 
     test('status --json also works', () => {
-      const r = run('status --json');
+      const r = run('status --json', undefined, doctorEnv());
       const j = parseJson(r.stdout);
       expect(j.ok).toBe(true);
     });
@@ -248,6 +276,35 @@ describe('--json flag', () => {
       const j = parseJson(r.stdout);
       expect(j.ok).toBe(false);
       expect(j.error).toContain('--days must be a positive integer');
+    });
+  });
+
+  describe('jsonError throwable input', () => {
+    test('includes a causes array for nested causes', () => {
+      const root = new Error('top level');
+      const leaf = new Error('leaf');
+      root.cause = leaf;
+
+      const { parsed, exitCode } = captureJsonError(root);
+      expect(exitCode).toBe(1);
+      expect(parsed).toEqual({
+        ok: false,
+        error: 'top level',
+        causes: ['leaf'],
+      });
+    });
+
+    test('omits causes for flat errors', () => {
+      class XRPCError extends Error {}
+      const err = new XRPCError('Invalid identifier or password');
+
+      const { parsed, exitCode } = captureJsonError(err);
+      expect(exitCode).toBe(1);
+      expect(parsed).toEqual({
+        ok: false,
+        error: 'Invalid identifier or password',
+      });
+      expect(parsed).not.toHaveProperty('causes');
     });
   });
 });

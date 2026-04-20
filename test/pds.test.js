@@ -143,7 +143,9 @@ describe('pds', () => {
     test('throws on non-ok response', async () => {
       global.fetch = async () => jsonResponse({}, { ok: false, status: 404, statusText: 'Not Found' });
 
-      await expect(resolveHandle('nonexistent.test')).rejects.toThrow('could not resolve handle: nonexistent.test');
+      await expect(resolveHandle('nonexistent.test')).rejects.toThrow(
+        'GET https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=nonexistent.test returned 404',
+      );
     });
   });
 
@@ -197,7 +199,7 @@ describe('pds', () => {
       global.fetch = async () => jsonResponse({}, { ok: false, status: 500, statusText: 'Server Error' });
 
       await expect(listRecordsFromPds('https://pds.example.com', 'did:plc:three', 'app.test.record', 50)).rejects.toThrow(
-        'listRecords failed for did:plc:three: 500 Server Error',
+        'GET https://pds.example.com/xrpc/com.atproto.repo.listRecords?repo=did%3Aplc%3Athree&collection=app.test.record&limit=50 returned 500',
       );
     });
   });

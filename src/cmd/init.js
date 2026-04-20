@@ -9,6 +9,7 @@ import { vitDir, readProjectConfig, writeProjectConfig } from '../lib/vit-dir.js
 import { requireAgent } from '../lib/agent.js';
 import { mark, name, DOT_VIT_README } from '../lib/brand.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
+import { errorMessage, formatError } from '../lib/error-format.js';
 
 export default function register(program) {
   program
@@ -98,7 +99,8 @@ export default function register(program) {
               .trim()
               .split('\n')
               .filter(Boolean);
-          } catch {
+          } catch (err) {
+            console.warn(`warning: failed to list git remotes: ${errorMessage(err)}`);
             remoteNames = [];
           }
           if (verbose) vlog(`[verbose] remotes detected: ${remoteNames.length > 0 ? remoteNames.join(', ') : 'none'}`);
@@ -111,7 +113,9 @@ export default function register(program) {
                 stdio: ['pipe', 'pipe', 'pipe'],
               }).trim();
               if (url) remotes.push({ name, url });
-            } catch {}
+            } catch (err) {
+              console.warn(`warning: failed to read git remote ${name} url: ${errorMessage(err)}`);
+            }
           }
           if (verbose && remotes.length > 0) {
             vlog(`[verbose] remote urls: ${remotes.map(r => `${r.name}=${r.url}`).join(' ')}`);
@@ -231,12 +235,11 @@ export default function register(program) {
           console.log(`${mark} secondary beacon: ${merged.secondaryBeacon}`);
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
         if (opts.json) {
-          jsonError(msg);
+          jsonError(err);
           return;
         }
-        console.error(msg);
+        console.error(formatError(err, { verbose: opts.verbose }));
         process.exitCode = 1;
       }
     });

@@ -16,6 +16,7 @@ import { mark, name } from '../lib/brand.js';
 import { resolvePds, resolveHandle, listRecordsFromPds, batchQuery } from '../lib/pds.js';
 import { loadConfig } from '../lib/config.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
+import { errorMessage, formatError } from '../lib/error-format.js';
 
 async function installSkill({ match, skillName, isGlobal, opts, ref }) {
   const { verbose } = opts;
@@ -65,7 +66,11 @@ async function installSkill({ match, skillName, isGlobal, opts, ref }) {
     }
     if (verbose) vlog('[verbose] installed via npx skills add');
   } finally {
-    try { rmSync(tempDir, { recursive: true, force: true }); } catch {}
+    try {
+      rmSync(tempDir, { recursive: true, force: true });
+    } catch (err) {
+      console.warn(`warning: failed to remove temporary directory ${tempDir}: ${errorMessage(err)}`);
+    }
   }
 
   const installDir = isGlobal
@@ -404,12 +409,11 @@ Examples:
 
         await installSkill({ match, skillName, isGlobal: !!opts.user, opts, ref });
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
         if (opts.json) {
-          jsonError(msg);
+          jsonError(err);
           return;
         }
-        console.error(msg);
+        console.error(formatError(err, { verbose: opts.verbose }));
         process.exitCode = 1;
       }
     });

@@ -11,6 +11,14 @@ import { loadConfig, saveConfig } from '../lib/config.js';
 import { createOAuthClient, createSessionStore, createStore, checkSession } from '../lib/oauth.js';
 import { configDir, configPath } from '../lib/paths.js';
 import { vitDir } from '../lib/vit-dir.js';
+import { errorMessage, formatError } from '../lib/error-format.js';
+
+export const LOGIN_COMMON_ISSUES_FOOTER = `Common issues:
+  - make sure the handle is correct and resolves on Bluesky
+  - open the printed URL in your browser, approve vit, and wait for the callback to finish
+  - if you're on a remote machine, rerun with 'vit login <handle> --remote' and paste the full callback URL
+  - if you used an app password, create a fresh Bluesky app password and try again
+  - check your DNS, firewall, or VPN settings if vit cannot reach Bluesky`;
 
 function ensureGitignore(dir, entry) {
   const gitignorePath = join(dir, '.gitignore');
@@ -18,6 +26,42 @@ function ensureGitignore(dir, entry) {
   try { content = readFileSync(gitignorePath, 'utf-8'); } catch {}
   if (!content.split('\n').includes(entry)) {
     writeFileSync(gitignorePath, content + (content.endsWith('\n') ? '' : '\n') + entry + '\n');
+  }
+}
+
+export function cancelLogin({
+  server,
+  rl,
+  timer,
+  clearTimer = clearTimeout,
+  stderr = console.error,
+  exit = process.exit,
+  footer = LOGIN_COMMON_ISSUES_FOOTER,
+}) {
+  try {
+    if (server?.listening) server.close();
+  } catch {
+    // Ignore cleanup failures during cancellation.
+  }
+  try {
+    rl?.close();
+  } catch {
+    // Ignore cleanup failures during cancellation.
+  }
+  try {
+    if (timer) clearTimer(timer);
+  } catch {
+    // Ignore cleanup failures during cancellation.
+  }
+  stderr('\nLogin cancelled.');
+  stderr(footer);
+  exit(130);
+}
+
+export function printLoginFailure(err, { verbose = false, includeFooter = false } = {}) {
+  console.error(formatError(err, { verbose }));
+  if (includeFooter) {
+    console.error(LOGIN_COMMON_ISSUES_FOOTER);
   }
 }
 
@@ -60,7 +104,9 @@ export default function register(program) {
                   return;
                 }
               }
-            } catch {}
+            } catch (err) {
+              console.warn(`warning: failed to read ${localPath}: ${errorMessage(err)}`);
+            }
           }
         } else {
           const existing = loadConfig();
@@ -91,7 +137,13 @@ export default function register(program) {
           } else {
             const sessionFile = configPath('session.json');
             let data = {};
-            try { data = JSON.parse(readFileSync(sessionFile, 'utf-8')); } catch {}
+            if (existsSync(sessionFile)) {
+              try {
+                data = JSON.parse(readFileSync(sessionFile, 'utf-8'));
+              } catch (err) {
+                console.warn(`warning: failed to read ${sessionFile}: ${errorMessage(err)}`);
+              }
+            }
             data[did] = { type: 'app-password', service: 'https://bsky.social', session };
             mkdirSync(configDir, { recursive: true });
             writeFileSync(sessionFile, JSON.stringify(data, null, 2) + '\n');
@@ -102,7 +154,7 @@ export default function register(program) {
 
           console.log(`Logged in as ${did}`);
         } catch (err) {
-          console.error(err instanceof Error ? err.message : String(err));
+          printLoginFailure(err, { verbose: opts.verbose, includeFooter: true });
           process.exitCode = 1;
         }
         return;
@@ -111,6 +163,8 @@ export default function register(program) {
       let server;
       let timeout;
       let rl;
+      let loginStage = 'preflight';
+      let onSigint = () => {};
 
       try {
         let resolveCallback;
@@ -139,6 +193,12 @@ export default function register(program) {
           res.end('Not found');
         });
 
+        onSigint = () => {
+          process.off('SIGINT', onSigint);
+          cancelLogin({ server, rl, timer: timeout });
+        };
+        process.once('SIGINT', onSigint);
+
         await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
         const port = server.address().port;
 
@@ -156,6 +216,7 @@ export default function register(program) {
         const sessionStore = createSessionStore();
         const client = createOAuthClient({ stateStore, sessionStore, redirectUri });
 
+        loginStage = 'authorize';
         const authUrl = await client.authorize(handle, {
           scope: 'atproto transition:generic',
         });
@@ -182,6 +243,7 @@ export default function register(program) {
           console.log(`Open this URL in your browser:\n  ${authUrl.toString()}\n`);
         }
 
+        loginStage = 'callback';
         if (isRemote) {
           rl = createInterface({ input: process.stdin, output: process.stdout });
           rl.question('Paste the callback URL from your browser: ', (line) => {
@@ -229,6 +291,7 @@ export default function register(program) {
         }
 
         console.log('Exchanging token...');
+        loginStage = 'token';
         const { session } = await client.callback(params);
 
         if (verbose) {
@@ -247,9 +310,13 @@ export default function register(program) {
         }
         console.log(`Logged in as ${session.did}`);
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        printLoginFailure(err, {
+          verbose: opts.verbose,
+          includeFooter: loginStage !== 'preflight',
+        });
         process.exitCode = 1;
       } finally {
+        process.removeListener('SIGINT', onSigint);
         if (timeout) {
           clearTimeout(timeout);
         }

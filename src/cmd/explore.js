@@ -5,6 +5,7 @@ import { DEFAULT_EXPLORE_URL } from '../lib/constants.js';
 import { readProjectConfig } from '../lib/vit-dir.js';
 import { brand } from '../lib/brand.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
+import { errorMessage, formatError } from '../lib/error-format.js';
 
 function timeAgo(isoString) {
   const seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
@@ -25,11 +26,27 @@ function resolveUrl(opts) {
   return opts.exploreUrl || process.env.VIT_EXPLORE_URL || DEFAULT_EXPLORE_URL;
 }
 
-function unavailableMessage(baseUrl) {
+function requestErrorMessage(method, url, err) {
+  const code = err?.cause?.code || err?.code;
+  if (code === 'ECONNREFUSED') return `could not connect to ${url} (refused)`;
+  if (code === 'ENOTFOUND') return `could not resolve ${url}`;
+  if (code === 'ETIMEDOUT' || code === 'UND_ERR_CONNECT_TIMEOUT') {
+    return `timed out connecting to ${url}`;
+  }
+  return `request to ${url} failed: ${errorMessage(err)}`;
+}
+
+async function fetchExploreJson(url) {
+  const requestUrl = url.toString();
   try {
-    return `${new URL(baseUrl).host} is unavailable. try 'vit scan' for network-wide discovery or 'vit skim' for your followed accounts.`;
-  } catch {
-    return `${baseUrl} is unavailable. try 'vit scan' for network-wide discovery or 'vit skim' for your followed accounts.`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`GET ${requestUrl} returned ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith(`GET ${requestUrl} returned `)) {
+      throw err;
+    }
+    throw new Error(requestErrorMessage('GET', requestUrl, err), { cause: err });
   }
 }
 
@@ -44,9 +61,7 @@ async function fetchAndShowStats(opts) {
   const baseUrl = resolveUrl(opts);
   try {
     const url = new URL('/api/stats', baseUrl);
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`explore API returned ${res.status}`);
-    const data = await res.json();
+    const data = await fetchExploreJson(url);
 
     if (opts.json) {
       jsonOk(data);
@@ -58,15 +73,11 @@ async function fetchAndShowStats(opts) {
     console.log(`  vouches: ${data.total_vouches}  beacons: ${data.total_beacons}`);
     console.log(`  active dids: ${data.active_dids}  skill publishers: ${data.skill_publishers}`);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const finalMsg = msg.startsWith('explore API returned ')
-      ? msg
-      : unavailableMessage(baseUrl);
     if (opts.json) {
-      jsonError(finalMsg);
+      jsonError(err);
       return;
     }
-    console.error(finalMsg);
+    console.error(formatError(err, { verbose: false }));
     process.exitCode = 1;
   }
 }
@@ -97,9 +108,7 @@ export default function register(program) {
         url.searchParams.set('ref', ref);
         if (opts.beacon) url.searchParams.set('beacon', opts.beacon);
 
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`explore API returned ${res.status}`);
-        const data = await res.json();
+        const data = await fetchExploreJson(url);
 
         if (!data.cap) {
           const msg = `no cap found with ref '${ref}'`;
@@ -136,15 +145,11 @@ export default function register(program) {
         console.log(`  vit vet ${data.cap.ref}     - inspect before adopting`);
         console.log(`  vit remix ${data.cap.ref}   - remix this cap`);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const finalMsg = msg.startsWith('explore API returned ')
-          ? msg
-          : unavailableMessage(baseUrl);
         if (opts.json) {
-          jsonError(finalMsg);
+          jsonError(err);
           return;
         }
-        console.error(finalMsg);
+        console.error(formatError(err, { verbose: false }));
         process.exitCode = 1;
       }
     });
@@ -163,9 +168,7 @@ export default function register(program) {
         const url = new URL('/api/skill', baseUrl);
         url.searchParams.set('name', name);
 
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`explore API returned ${res.status}`);
-        const data = await res.json();
+        const data = await fetchExploreJson(url);
 
         if (!data.skill) {
           const msg = `no skill found with name '${name}'`;
@@ -195,15 +198,11 @@ export default function register(program) {
         console.log();
         console.log(`  vit learn skill-${data.skill.name}   - install this skill`);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const finalMsg = msg.startsWith('explore API returned ')
-          ? msg
-          : unavailableMessage(baseUrl);
         if (opts.json) {
-          jsonError(finalMsg);
+          jsonError(err);
           return;
         }
-        console.error(finalMsg);
+        console.error(formatError(err, { verbose: false }));
         process.exitCode = 1;
       }
     });
@@ -245,9 +244,7 @@ export default function register(program) {
         if (opts.limit) url.searchParams.set('limit', opts.limit);
         if (opts.cursor) url.searchParams.set('cursor', opts.cursor);
 
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`explore API returned ${res.status}`);
-        const data = await res.json();
+        const data = await fetchExploreJson(url);
 
         if (opts.json) {
           jsonOk({ caps: data.caps, cursor: data.cursor });
@@ -271,15 +268,11 @@ export default function register(program) {
           console.log(`\nnext: --cursor ${data.cursor}`);
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const finalMsg = msg.startsWith('explore API returned ')
-          ? msg
-          : unavailableMessage(baseUrl);
         if (opts.json) {
-          jsonError(finalMsg);
+          jsonError(err);
           return;
         }
-        console.error(finalMsg);
+        console.error(formatError(err, { verbose: false }));
         process.exitCode = 1;
       }
     });
@@ -302,9 +295,7 @@ export default function register(program) {
         if (opts.limit) url.searchParams.set('limit', opts.limit);
         if (opts.cursor) url.searchParams.set('cursor', opts.cursor);
 
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`explore API returned ${res.status}`);
-        const data = await res.json();
+        const data = await fetchExploreJson(url);
 
         if (opts.json) {
           jsonOk({ skills: data.skills, cursor: data.cursor });
@@ -326,15 +317,11 @@ export default function register(program) {
           console.log(`\nnext: --cursor ${data.cursor}`);
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const finalMsg = msg.startsWith('explore API returned ')
-          ? msg
-          : unavailableMessage(baseUrl);
         if (opts.json) {
-          jsonError(finalMsg);
+          jsonError(err);
           return;
         }
-        console.error(finalMsg);
+        console.error(formatError(err, { verbose: false }));
         process.exitCode = 1;
       }
     });
@@ -350,9 +337,7 @@ export default function register(program) {
 
       try {
         const url = new URL('/api/beacons', baseUrl);
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`explore API returned ${res.status}`);
-        const data = await res.json();
+        const data = await fetchExploreJson(url);
 
         if (opts.json) {
           jsonOk({ beacons: data.beacons });
@@ -371,15 +356,11 @@ export default function register(program) {
           console.log(`    caps: ${beacon.cap_count}  vouches: ${beacon.vouch_count}  last active: ${beacon.last_activity}`);
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const finalMsg = msg.startsWith('explore API returned ')
-          ? msg
-          : unavailableMessage(baseUrl);
         if (opts.json) {
-          jsonError(finalMsg);
+          jsonError(err);
           return;
         }
-        console.error(finalMsg);
+        console.error(formatError(err, { verbose: false }));
         process.exitCode = 1;
       }
     });
@@ -413,9 +394,7 @@ export default function register(program) {
           const capsUrl = new URL('/api/caps', baseUrl);
           if (opts.beacon) capsUrl.searchParams.set('beacon', opts.beacon);
 
-          const capsRes = await fetch(capsUrl);
-          if (!capsRes.ok) throw new Error(`explore API returned ${capsRes.status}`);
-          const capsData = await capsRes.json();
+          const capsData = await fetchExploreJson(capsUrl);
           const match = capsData.caps?.find((cap) => cap.ref === opts.ref);
 
           if (!match) {
@@ -435,9 +414,7 @@ export default function register(program) {
         const url = new URL('/api/vouches', baseUrl);
         url.searchParams.set('cap_uri', capUri);
 
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`explore API returned ${res.status}`);
-        const data = await res.json();
+        const data = await fetchExploreJson(url);
 
         if (opts.json) {
           jsonOk({ vouches: data.vouches, cap_uri: capUri });
@@ -458,15 +435,11 @@ export default function register(program) {
           if (ref) console.log(`    ${ref}`);
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const finalMsg = msg.startsWith('explore API returned ')
-          ? msg
-          : unavailableMessage(baseUrl);
         if (opts.json) {
-          jsonError(finalMsg);
+          jsonError(err);
           return;
         }
-        console.error(finalMsg);
+        console.error(formatError(err, { verbose: false }));
         process.exitCode = 1;
       }
     });

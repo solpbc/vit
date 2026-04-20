@@ -16,6 +16,7 @@ import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
 import { toBeacon } from '../lib/beacon.js';
 import { hashTo3Words } from '../lib/cap-ref.js';
+import { formatError } from '../lib/error-format.js';
 
 const STOP_WORDS = new Set([
   'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
@@ -664,12 +665,11 @@ export default function register(program) {
           await shipCap(opts);
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
         if (opts.json) {
-          jsonError(msg);
+          jsonError(err);
           return;
         }
-        console.error(msg);
+        console.error(formatError(err, { verbose: opts.verbose }));
         process.exitCode = 1;
       }
     })

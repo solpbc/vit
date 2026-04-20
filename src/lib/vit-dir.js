@@ -3,6 +3,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { errorMessage } from './error-format.js';
 
 export function vitDir(dir) {
   return join(dir || process.cwd(), '.vit');
@@ -13,7 +14,8 @@ export function readProjectConfig(dir) {
   if (!existsSync(p)) return {};
   try {
     return JSON.parse(readFileSync(p, 'utf-8'));
-  } catch {
+  } catch (err) {
+    console.warn(`warning: failed to read ${p}: ${errorMessage(err)}`);
     return {};
   }
 }
@@ -45,9 +47,17 @@ export function readLog(filename, dir) {
     return readFileSync(p, 'utf-8')
       .split('\n')
       .filter(line => line.trim())
-      .map(line => { try { return JSON.parse(line); } catch { return null; } })
+      .map((line, index) => {
+        try {
+          return JSON.parse(line);
+        } catch (err) {
+          console.warn(`warning: skipping malformed line ${index + 1} in ${p}: ${errorMessage(err)}`);
+          return null;
+        }
+      })
       .filter(Boolean);
-  } catch {
+  } catch (err) {
+    console.warn(`warning: failed to read ${p}: ${errorMessage(err)}`);
     return [];
   }
 }
@@ -57,7 +67,8 @@ export function readFollowing(dir) {
   if (!existsSync(p)) return [];
   try {
     return JSON.parse(readFileSync(p, 'utf-8'));
-  } catch {
+  } catch (err) {
+    console.warn(`warning: failed to read ${p}: ${errorMessage(err)}`);
     return [];
   }
 }

@@ -6,6 +6,7 @@ import { restoreAgent } from '../lib/oauth.js';
 import { readFollowing, writeFollowing } from '../lib/vit-dir.js';
 import { mark } from '../lib/brand.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
+import { formatError } from '../lib/error-format.js';
 
 export default function register(program) {
   program
@@ -55,12 +56,11 @@ export default function register(program) {
         }
         console.log(`${mark} following ${handle} (${targetDid})`);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
         if (opts.json) {
-          jsonError(msg);
+          jsonError(err);
           return;
         }
-        console.error(msg);
+        console.error(formatError(err, { verbose: opts.verbose }));
         process.exitCode = 1;
       }
     });
@@ -97,12 +97,11 @@ export default function register(program) {
         }
         console.log(`${mark} unfollowed ${handle}`);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
         if (opts.json) {
-          jsonError(msg);
+          jsonError(err);
           return;
         }
-        console.error(msg);
+        console.error(formatError(err, { verbose: opts.verbose }));
         process.exitCode = 1;
       }
     });
@@ -134,12 +133,11 @@ export default function register(program) {
           console.log(`${e.handle} (${e.did})`);
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
         if (opts.json) {
-          jsonError(msg);
+          jsonError(err);
           return;
         }
-        console.error(msg);
+        console.error(formatError(err, { verbose: opts.verbose }));
         process.exitCode = 1;
       }
     });

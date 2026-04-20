@@ -5,6 +5,7 @@ import { DEFAULT_EXPLORE_URL } from '../lib/constants.js';
 import { readBeaconSet } from '../lib/vit-dir.js';
 import { brand } from '../lib/brand.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
+import { errorMessage, formatError } from '../lib/error-format.js';
 
 function timeAgo(isoString) {
   const seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
@@ -67,7 +68,7 @@ export default function register(program) {
           if (!res.ok) throw new Error(`explore API returned ${res.status}`);
           data = await res.json();
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
+          const msg = errorMessage(err);
           const finalMsg = msg.startsWith('explore API returned ')
             ? msg
             : unavailableMessage(baseUrl);
@@ -119,12 +120,11 @@ export default function register(program) {
         console.log(`tip: 'vit vouch <ref> --kind want' to signal demand`);
         console.log(`     'vit ship --recap <ref>' to ship an implementation`);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
         if (opts.json) {
-          jsonError(msg);
+          jsonError(err);
           return;
         }
-        console.error(msg);
+        console.error(formatError(err, { verbose: false }));
         process.exitCode = 1;
       }
     });

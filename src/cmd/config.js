@@ -2,6 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { loadConfig, saveConfig, getScalars } from '../lib/config.js';
+import { formatError } from '../lib/error-format.js';
 
 function coerceValue(str) {
   if (str === 'true') return true;
@@ -61,7 +62,7 @@ export default function register(program) {
         console.error(`Unknown action: ${action}`);
         process.exitCode = 1;
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        console.error(formatError(err, { verbose: false }));
         process.exitCode = 1;
       }
     });

@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { configDir, configPath } from './paths.js';
+import { errorMessage } from './error-format.js';
 
 const vitJsonPath = configPath('vit.json');
 
@@ -11,7 +12,8 @@ export function loadConfig() {
   if (!existsSync(vitJsonPath)) return {};
   try {
     return JSON.parse(readFileSync(vitJsonPath, 'utf-8'));
-  } catch {
+  } catch (err) {
+    console.warn(`warning: failed to read ${vitJsonPath}: ${errorMessage(err)}`);
     return {};
   }
 }
@@ -26,13 +28,15 @@ export function saveConfig(obj) {
 
 export function requireDid(opts) {
   if (opts?.did) return opts.did;
+  const localLogin = join(process.cwd(), '.vit', 'login.json');
   try {
-    const localLogin = join(process.cwd(), '.vit', 'login.json');
     if (existsSync(localLogin)) {
       const local = JSON.parse(readFileSync(localLogin, 'utf-8'));
       if (local.did) return local.did;
     }
-  } catch {}
+  } catch (err) {
+    console.warn(`warning: failed to read ${localLogin}: ${errorMessage(err)}`);
+  }
   const did = loadConfig().did;
   if (!did) {
     console.error("no DID configured. run 'vit login <handle>' first or pass --did.");

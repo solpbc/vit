@@ -10,6 +10,8 @@ import { resolveRef } from '../lib/cap-ref.js';
 import { skillRefFromName } from '../lib/skill-ref.js';
 import { name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
+import { jsonError } from '../lib/json-output.js';
+import { formatError } from '../lib/error-format.js';
 
 export default function register(program) {
   program
@@ -208,7 +210,11 @@ export default function register(program) {
           }
         }
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        if (opts.json) {
+          jsonError(err);
+          return;
+        }
+        console.error(formatError(err, { verbose: opts.verbose }));
         process.exitCode = 1;
       }
     });

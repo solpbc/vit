@@ -6,6 +6,7 @@ import { NodeOAuthClient } from '@atproto/oauth-client-node';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { configDir, configPath } from './paths.js';
+import { errorMessage } from './error-format.js';
 
 const requestLock = async (_name, fn) => await fn();
 
@@ -44,9 +45,13 @@ export function createStore() {
 export function createSessionStore() {
   const sessionFile = configPath('session.json');
   let data = {};
-  try {
-    data = JSON.parse(readFileSync(sessionFile, 'utf-8'));
-  } catch {}
+  if (existsSync(sessionFile)) {
+    try {
+      data = JSON.parse(readFileSync(sessionFile, 'utf-8'));
+    } catch (err) {
+      console.warn(`warning: failed to read ${sessionFile}: ${errorMessage(err)}`);
+    }
+  }
   return {
     set: async (key, value) => {
       data[key] = value;
@@ -64,18 +69,22 @@ export function createSessionStore() {
 
 export function checkSession(did) {
   // Check project-local app-password session
+  const localPath = join(process.cwd(), '.vit', 'login.json');
   try {
-    const localPath = join(process.cwd(), '.vit', 'login.json');
     if (existsSync(localPath)) {
       const local = JSON.parse(readFileSync(localPath, 'utf-8'));
       if (local.did === did && local.type === 'app-password' && local.session?.accessJwt) {
         return did;
       }
     }
-  } catch {}
+  } catch (err) {
+    console.warn(`warning: failed to read ${localPath}: ${errorMessage(err)}`);
+  }
 
+  const sessionFile = configPath('session.json');
+  if (!existsSync(sessionFile)) return null;
   try {
-    const raw = readFileSync(configPath('session.json'), 'utf-8');
+    const raw = readFileSync(sessionFile, 'utf-8');
     const data = JSON.parse(raw);
     const entry = data[did];
     if (!entry) return null;
@@ -89,7 +98,8 @@ export function checkSession(did) {
     const accessValid = tokenSet.expires_at && new Date(tokenSet.expires_at) > new Date();
     if (accessValid || tokenSet.refresh_token) return did;
     return null;
-  } catch {
+  } catch (err) {
+    console.warn(`warning: failed to read ${sessionFile}: ${errorMessage(err)}`);
     return null;
   }
 }
@@ -108,8 +118,8 @@ export function createOAuthClient({ stateStore, sessionStore, redirectUri }) {
 
 export async function restoreAgent(did) {
   // Check project-local app-password session
+  const localPath = join(process.cwd(), '.vit', 'login.json');
   try {
-    const localPath = join(process.cwd(), '.vit', 'login.json');
     if (existsSync(localPath)) {
       const local = JSON.parse(readFileSync(localPath, 'utf-8'));
       if (local.did === did && local.type === 'app-password' && local.session) {
@@ -118,19 +128,26 @@ export async function restoreAgent(did) {
         return { agent, session: { did: local.did, handle: local.handle } };
       }
     }
-  } catch {}
+  } catch (err) {
+    console.warn(`warning: failed to read ${localPath}: ${errorMessage(err)}`);
+  }
 
   // Check global app-password session
+  const sessionFile = configPath('session.json');
   try {
-    const raw = readFileSync(configPath('session.json'), 'utf-8');
-    const data = JSON.parse(raw);
-    const entry = data[did];
-    if (entry?.type === 'app-password' && entry.session) {
-      const agent = new AtpAgent({ service: entry.service || 'https://bsky.social' });
-      await agent.resumeSession(entry.session);
-      return { agent, session: { did, handle: entry.session.handle } };
+    if (existsSync(sessionFile)) {
+      const raw = readFileSync(sessionFile, 'utf-8');
+      const data = JSON.parse(raw);
+      const entry = data[did];
+      if (entry?.type === 'app-password' && entry.session) {
+        const agent = new AtpAgent({ service: entry.service || 'https://bsky.social' });
+        await agent.resumeSession(entry.session);
+        return { agent, session: { did, handle: entry.session.handle } };
+      }
     }
-  } catch {}
+  } catch (err) {
+    console.warn(`warning: failed to read ${sessionFile}: ${errorMessage(err)}`);
+  }
 
   // Existing OAuth restore path
   const sessionStore = createSessionStore();

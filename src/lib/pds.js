@@ -1,8 +1,34 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 sol pbc
 
+import { errorMessage } from './error-format.js';
+
 const PLC_DIRECTORY = 'https://plc.directory';
 const pdsCache = new Map();
+
+function requestErrorMessage(method, url, err) {
+  const code = err?.cause?.code || err?.code;
+  if (code === 'ECONNREFUSED') return `could not connect to ${url} (refused)`;
+  if (code === 'ENOTFOUND') return `could not resolve ${url}`;
+  if (code === 'ETIMEDOUT' || code === 'UND_ERR_CONNECT_TIMEOUT') {
+    return `timed out connecting to ${url}`;
+  }
+  return `request to ${url} failed: ${errorMessage(err)}`;
+}
+
+async function fetchJson(method, url) {
+  const requestUrl = url.toString();
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${method} ${requestUrl} returned ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith(`${method} ${requestUrl} returned `)) {
+      throw err;
+    }
+    throw new Error(requestErrorMessage(method, requestUrl, err), { cause: err });
+  }
+}
 
 async function fetchDidDocument(did) {
   let url;
@@ -19,9 +45,7 @@ async function fetchDidDocument(did) {
     url = `${PLC_DIRECTORY}/${did}`;
   }
 
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`failed to resolve DID document for ${did}: ${res.status} ${res.statusText}`);
-  return res.json();
+  return fetchJson('GET', url);
 }
 
 export async function resolvePds(did) {
@@ -42,9 +66,7 @@ export async function listRecordsFromPds(pdsUrl, repo, collection, limit) {
     url.searchParams.set('collection', collection);
     if (limit) url.searchParams.set('limit', String(limit));
     if (cursor) url.searchParams.set('cursor', cursor);
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`listRecords failed for ${repo}: ${res.status} ${res.statusText}`);
-    const data = await res.json();
+    const data = await fetchJson('GET', url);
     records.push(...data.records);
     cursor = data.cursor;
   } while (cursor);
@@ -56,16 +78,15 @@ export async function resolveHandleFromDid(did) {
     const doc = await fetchDidDocument(did);
     const aka = doc.alsoKnownAs?.find(a => a.startsWith('at://'));
     return aka ? aka.replace('at://', '') : did;
-  } catch {
+  } catch (err) {
+    console.warn(`warning: failed to resolve handle for ${did}: ${errorMessage(err)}`);
     return did;
   }
 }
 
 export async function resolveHandle(handle) {
   const url = `https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=${encodeURIComponent(handle)}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`could not resolve handle: ${handle}`);
-  const data = await res.json();
+  const data = await fetchJson('GET', url);
   return data.did;
 }
 

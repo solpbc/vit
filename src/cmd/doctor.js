@@ -11,6 +11,7 @@ import { mark, name } from '../lib/brand.js';
 import { which } from '../lib/compat.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
 import { configPath } from '../lib/paths.js';
+import { errorMessage, formatError } from '../lib/error-format.js';
 
 function scanSkillDir(dir) {
   const skills = [];
@@ -29,11 +30,15 @@ function scanSkillDir(dir) {
             const versionMatch = match[1].match(/^version:\s*(.+)$/m);
             if (versionMatch) version = versionMatch[1].trim();
           }
-        } catch { /* ignore read errors */ }
+        } catch (err) {
+          console.warn(`warning: failed to read ${skillMd}: ${errorMessage(err)}`);
+        }
         skills.push({ name: entry.name, version });
       }
     }
-  } catch { /* ignore dir read errors */ }
+  } catch (err) {
+    console.warn(`warning: failed to read skill directory ${dir}: ${errorMessage(err)}`);
+  }
   return skills;
 }
 
@@ -66,7 +71,8 @@ export default function register(program) {
             installType = 'source';
             if (!opts.json) console.log(`${mark} install: source (${vitPath})`);
           }
-        } catch {
+        } catch (err) {
+          console.warn(`warning: failed to inspect install path ${vitPath}: ${errorMessage(err)}`);
           installType = 'source';
           if (!opts.json) console.log(`${mark} install: source (${vitPath})`);
         }
@@ -124,16 +130,23 @@ export default function register(program) {
             authType = local.type || 'oauth';
           }
         }
-      } catch {}
+      } catch (err) {
+        console.warn(`warning: failed to read ${localLoginPath}: ${errorMessage(err)}`);
+      }
 
       if (!identitySource && effectiveDid) identitySource = 'global';
 
       if (identitySource === 'global' && effectiveDid) {
+        const sessionFile = configPath('session.json');
         try {
-          const raw = readFileSync(configPath('session.json'), 'utf-8');
-          const sessionData = JSON.parse(raw);
-          if (sessionData[effectiveDid]?.type === 'app-password') authType = 'app-password';
-        } catch {}
+          if (existsSync(sessionFile)) {
+            const raw = readFileSync(sessionFile, 'utf-8');
+            const sessionData = JSON.parse(raw);
+            if (sessionData[effectiveDid]?.type === 'app-password') authType = 'app-password';
+          }
+        } catch (err) {
+          console.warn(`warning: failed to read ${sessionFile}: ${errorMessage(err)}`);
+        }
       }
 
       if (!effectiveDid) {
@@ -144,7 +157,8 @@ export default function register(program) {
           blueskyOk = true;
           pds = session.serverMetadata?.issuer || null;
           if (!opts.json) console.log(`${mark} bluesky: ok (${session.did || effectiveDid}${pds ? ', ' + pds : ''})`);
-        } catch {
+        } catch (err) {
+          console.warn(`warning: failed to validate Bluesky session: ${errorMessage(err)}`);
           if (!opts.json) console.log(`${mark} bluesky: token expired or invalid (run ${name} login <handle>)`);
         }
         if (!opts.json) console.log(`${mark} identity: ${identitySource} (${authType})`);
@@ -161,12 +175,11 @@ export default function register(program) {
         });
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
       if (opts.json) {
-        jsonError(msg);
+        jsonError(err);
         return;
       }
-      console.error(msg);
+      console.error(formatError(err, { verbose: false }));
       process.exitCode = 1;
     }
   }

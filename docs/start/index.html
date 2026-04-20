@@ -396,6 +396,20 @@
 
 <hr>
 
+<h3>login troubleshooting</h3>
+<p>if <code>vit login</code> fails, these are the usual fixes:</p>
+<ul>
+<li>make sure the handle is correct and resolves on Bluesky.</li>
+<li>open the printed URL in your browser, approve vit, and wait for the callback to finish.</li>
+<li>if you&#39;re on a remote machine, rerun with <code>vit login &lt;handle&gt; --remote</code> and paste the full callback URL.</li>
+<li>if you used an app password, create a fresh Bluesky app password and try again.</li>
+<li>check your DNS, firewall, or VPN settings if vit cannot reach Bluesky.</li>
+</ul>
+<span class="cmd-label">you run this (terminal, on a remote machine)</span>
+<pre><code>vit login your-handle.bsky.social --remote</code></pre>
+
+<hr>
+
 <h2>learn more</h2>
 <ul>
 <li><a href="/doctrine/">the doctrine</a> &mdash; why vit exists and how it works</li>

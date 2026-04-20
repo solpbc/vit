@@ -5,6 +5,7 @@ import { loadConfig } from '../lib/config.js';
 import { CAP_COLLECTION, DEFAULT_JETSTREAM_URL } from '../lib/constants.js';
 import { resolveRef } from '../lib/cap-ref.js';
 import { brand } from '../lib/brand.js';
+import { formatError } from '../lib/error-format.js';
 
 let ws = null;
 let shuttingDown = false;
@@ -72,7 +73,7 @@ function connect(opts, cursor) {
     try {
       msg = JSON.parse(event.data);
     } catch {
-      console.log('Warning: failed to parse message as JSON; skipping');
+      console.warn('warning: failed to parse message as JSON; skipping');
       return;
     }
 
@@ -152,7 +153,7 @@ export default function register(program) {
 
         connect(opts, null);
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        console.error(formatError(err, { verbose: opts.verbose }));
         process.exitCode = 1;
       }
     });

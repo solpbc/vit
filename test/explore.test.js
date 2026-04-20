@@ -161,7 +161,7 @@ describe('vit explore', () => {
     expect(result.exitCode).not.toBe(0);
     const data = JSON.parse(result.stdout);
     expect(data.ok).toBe(false);
-    expect(data.error).toContain('unavailable');
+    expect(data.error).toContain('request to http://localhost:1/api/stats failed');
   });
 
   test('graceful error on invalid URL', () => {
@@ -169,7 +169,7 @@ describe('vit explore', () => {
     expect(result.exitCode).not.toBe(0);
     const data = JSON.parse(result.stdout);
     expect(data.ok).toBe(false);
-    expect(data.error).toContain('unavailable');
+    expect(data.error).toContain('not-a-url');
   });
 
   test('vouches requires --cap or --ref', () => {
@@ -184,7 +184,7 @@ describe('vit explore', () => {
     expect(result.exitCode).not.toBe(0);
     const data = JSON.parse(result.stdout);
     expect(data.ok).toBe(false);
-    expect(data.error).toContain('unavailable');
+    expect(data.error).toContain('request to http://localhost:1/api/stats failed');
   });
 
   test('flag overrides env var', () => {
@@ -259,7 +259,7 @@ describe('vit explore', () => {
     expect(result.exitCode).not.toBe(0);
     const data = JSON.parse(result.stdout);
     expect(data.ok).toBe(false);
-    expect(data.error).toContain('unavailable');
+    expect(data.error).toContain('request to http://localhost:1/api/caps?kind=request failed');
   });
 
   test('bare explore returns stats JSON', () => {

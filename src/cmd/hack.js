@@ -6,6 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { which } from '../lib/compat.js';
 import { mark, name } from '../lib/brand.js';
+import { errorMessage, formatError } from '../lib/error-format.js';
 
 export default function register(program) {
   program
@@ -69,14 +70,16 @@ export default function register(program) {
         if (opts.from && cloned) {
           try {
             execFileSync('git', ['remote', 'add', 'upstream', 'https://github.com/solpbc/vit.git'], { stdio: 'inherit' });
-          } catch {}
+          } catch (err) {
+            console.warn(`warning: failed to add upstream remote: ${errorMessage(err)}`);
+          }
         }
 
         console.log('');
         console.log(`${mark} ${name} installed from source`);
         console.log(`run: cd ${dirName}`);
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        console.error(formatError(err, { verbose: false }));
         process.exitCode = 1;
       }
     });

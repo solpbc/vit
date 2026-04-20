@@ -4,6 +4,7 @@
 import { existsSync, mkdirSync, symlinkSync, unlinkSync, readlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { mark, name } from '../lib/brand.js';
+import { formatError } from '../lib/error-format.js';
 
 export default function register(program) {
   program
@@ -68,7 +69,7 @@ export default function register(program) {
           console.log(`${mark} PATH: ok`);
         }
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        console.error(formatError(err, { verbose: false }));
         process.exitCode = 1;
       }
     });

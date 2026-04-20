@@ -6,6 +6,7 @@ import http from 'isomorphic-git/http/node';
 import { memfs } from 'memfs';
 import { beaconToHttps } from '../lib/beacon.js';
 import { mark } from '../lib/brand.js';
+import { errorMessage, formatError } from '../lib/error-format.js';
 
 async function readTreeFile(fs, dir, treeOid, pathParts) {
   for (let i = 0; i < pathParts.length; i++) {
@@ -47,7 +48,9 @@ export default function register(program) {
         let beacon;
         try {
           beacon = content && JSON.parse(content).beacon;
-        } catch {}
+        } catch (err) {
+          console.warn(`warning: failed to parse .vit/config.json from ${url}: ${errorMessage(err)}`);
+        }
 
         if (beacon) {
           console.log(`${mark} beacon: lit ${beacon}`);
@@ -56,7 +59,7 @@ export default function register(program) {
           console.log("the maintainer can light the beacon by running 'vit init' inside the repo.");
         }
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        console.error(formatError(err, { verbose: opts.verbose }));
         process.exitCode = 1;
       }
     });

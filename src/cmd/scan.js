@@ -7,6 +7,7 @@ import { resolveHandleFromDid } from '../lib/pds.js';
 import { brand } from '../lib/brand.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
 import { readBeaconSet } from '../lib/vit-dir.js';
+import { formatError } from '../lib/error-format.js';
 
 export default function register(program) {
   program
@@ -91,7 +92,12 @@ export default function register(program) {
 
           ws.onmessage = (event) => {
             let msg;
-            try { msg = JSON.parse(event.data); } catch { return; }
+            try {
+              msg = JSON.parse(event.data);
+            } catch {
+              console.warn('warning: failed to parse Jetstream event as JSON; skipping');
+              return;
+            }
 
             if (msg.kind !== 'commit' || msg.commit?.operation !== 'create') return;
 
@@ -197,12 +203,11 @@ export default function register(program) {
           console.log(`    ${parts.join('  ')}`);
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
         if (opts.json) {
-          jsonError(msg);
+          jsonError(err);
           return;
         }
-        console.error(msg);
+        console.error(formatError(err, { verbose: opts.verbose }));
         process.exitCode = 1;
       }
     });

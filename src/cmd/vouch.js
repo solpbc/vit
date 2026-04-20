@@ -12,6 +12,7 @@ import { mark, name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
 import { loadConfig } from '../lib/config.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
+import { formatError } from '../lib/error-format.js';
 
 export default function register(program) {
   program
@@ -302,12 +303,11 @@ export default function register(program) {
           }
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
         if (opts.json) {
-          jsonError(msg);
+          jsonError(err);
           return;
         }
-        console.error(msg);
+        console.error(formatError(err, { verbose: opts.verbose }));
         process.exitCode = 1;
       }
     });

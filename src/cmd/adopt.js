@@ -8,6 +8,7 @@ import { parseGitUrl, toBeacon, beaconToHttps } from '../lib/beacon.js';
 import { requireNotAgent } from '../lib/agent.js';
 import { which } from '../lib/compat.js';
 import { mark, name } from '../lib/brand.js';
+import { formatError } from '../lib/error-format.js';
 
 export default function register(program) {
   program
@@ -85,7 +86,7 @@ export default function register(program) {
         console.log('');
         console.log(`next: start your agent and ask it to run '${name} init'`);
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        console.error(formatError(err, { verbose: opts.verbose }));
         process.exitCode = 1;
       }
     });
