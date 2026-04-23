@@ -11,10 +11,11 @@ try {
   const skillDir = join(currentDir, '..', 'skills', 'vit');
   const result = spawnSync(
     'npx',
-    ['skills', 'add', skillDir, '-g', '-a', 'claude-code', '-y'],
+    ['--yes', 'skills', 'add', skillDir, '-g', '-a', 'claude-code', '-y'],
     {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, CI: 'true' },
     }
   );
 

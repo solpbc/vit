@@ -54,11 +54,12 @@ async function installSkill({ match, skillName, isGlobal, opts, ref }) {
       }
     }
 
-    const addArgs = ['skills', 'add', tempDir, '-a', 'claude-code', '-y'];
+    const addArgs = ['--yes', 'skills', 'add', tempDir, '-a', 'claude-code', '-y'];
     if (isGlobal) addArgs.push('-g');
     const addResult = spawnSync('npx', addArgs, {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, CI: 'true' },
     });
     if (addResult.status !== 0) {
       const errText = (addResult.stderr || addResult.stdout || '').trim();
