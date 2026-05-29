@@ -67,7 +67,7 @@ Handoffs:
 ### Agent-usable commands
 
 ### `vit doctor`
-- Description: Read-only diagnostic for install and beacon status.
+- Description: Verify install and beacon status, and self-install the using-vit skill into `~/.claude/skills` and `~/.agents/skills` if missing.
 - Usage: `vit doctor`
 - Key flags: none.
 - Output: text status lines for install and beacon.

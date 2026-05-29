@@ -1,14 +1,66 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 sol pbc
 
-import { describe, test, expect, spyOn } from 'bun:test';
+import { afterAll, describe, test, expect, mock, spyOn } from 'bun:test';
 import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import * as os from 'node:os';
 import { join } from 'node:path';
 import { run } from './helpers.js';
-import { cancelLogin, printLoginFailure, LOGIN_COMMON_ISSUES_FOOTER } from '../src/cmd/login.js';
+
+const realHomedir = os.homedir;
+const realTmpdir = os.tmpdir;
+const fallbackConfigHome = join(realTmpdir(), '.test-login-config-' + process.pid);
+
+mock.module('node:os', () => ({
+  ...os,
+  homedir: () => globalThis.__vitTestHome || realHomedir(),
+}));
+
+mock.module('@atproto/api', () => ({
+  AtpAgent: class {
+    async login({ identifier }) {
+      if (globalThis.__vitLoginShouldReject) throw new Error('mock login failed');
+      return {
+        data: {
+          did: 'did:plc:test',
+          handle: identifier,
+          accessJwt: 'a',
+          refreshJwt: 'r',
+        },
+      };
+    }
+  },
+  Agent: class {},
+}));
+
+mock.module('../src/lib/config.js', () => ({
+  loadConfig: () => ({ ...(globalThis.__vitSavedConfig || {}) }),
+  saveConfig: (config) => {
+    globalThis.__vitSavedConfig = { ...config };
+  },
+}));
+
+mock.module('../src/lib/paths.js', () => ({
+  configDir: join(fallbackConfigHome, 'vit'),
+  configPath: (filename) => join(fallbackConfigHome, 'vit', filename),
+}));
+
+mock.module('../src/lib/oauth.js', () => ({
+  checkSession: () => null,
+  createOAuthClient: () => {
+    throw new Error('OAuth path should not run in login tests');
+  },
+  createSessionStore: () => ({}),
+  createStore: () => ({}),
+}));
+
+const { cancelLogin, printLoginFailure, LOGIN_COMMON_ISSUES_FOOTER } = await import('../src/cmd/login.js?login-test');
 
 describe('login', () => {
+  afterAll(() => {
+    rmSync(fallbackConfigHome, { recursive: true, force: true });
+  });
+
   test('--help shows --remote and --browser options', () => {
     const { stdout, exitCode } = run('login --help');
     expect(exitCode).toBe(0);
@@ -35,7 +87,7 @@ describe('login', () => {
   });
 
   test('--local without .vit/ directory fails', () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'vit-test-'));
+    const tmp = mkdtempSync(join(realTmpdir(), 'vit-test-'));
     try {
       const result = run('login testhandle --local', tmp);
       expect(result.exitCode).not.toBe(0);

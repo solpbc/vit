@@ -12,6 +12,8 @@ import { createOAuthClient, createSessionStore, createStore, checkSession } from
 import { configDir, configPath } from '../lib/paths.js';
 import { vitDir } from '../lib/vit-dir.js';
 import { errorMessage, formatError } from '../lib/error-format.js';
+import { mark } from '../lib/brand.js';
+import { ensureSkill, skillInstallReason } from '../lib/skill-install.js';
 
 export const LOGIN_COMMON_ISSUES_FOOTER = `Common issues:
   - make sure the handle is correct and resolves on Bluesky
@@ -65,6 +67,15 @@ export function printLoginFailure(err, { verbose = false, includeFooter = false 
   }
 }
 
+function printSkillReadiness(skillResult) {
+  if (skillResult.ok) {
+    console.log(`${mark} skill: ready (using-vit)`);
+    return;
+  }
+
+  console.log(`${mark} skill: install failed — ${skillInstallReason(skillResult)}; check write permissions on ~/.claude and ~/.agents, or reinstall vit`);
+}
+
 export default function register(program) {
   program
     .command('login')
@@ -80,6 +91,8 @@ export default function register(program) {
       const { verbose, force, remote, browser, appPassword, local: localLogin } = opts;
       const isRemote = remote || !!(process.env.SSH_CONNECTION || process.env.SSH_TTY || process.env.SSH_CLIENT);
       handle = handle.replace(/^@/, '');
+      const skillResult = ensureSkill();
+      printSkillReadiness(skillResult);
 
       if (localLogin) {
         const dir = vitDir();

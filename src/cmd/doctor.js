@@ -12,6 +12,9 @@ import { which } from '../lib/compat.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
 import { configPath } from '../lib/paths.js';
 import { errorMessage, formatError } from '../lib/error-format.js';
+import { ensureSkill, skillInstallReason } from '../lib/skill-install.js';
+
+const USING_VIT_SKILL = 'using-vit';
 
 function scanSkillDir(dir) {
   const skills = [];
@@ -40,6 +43,18 @@ function scanSkillDir(dir) {
     console.warn(`warning: failed to read skill directory ${dir}: ${errorMessage(err)}`);
   }
   return skills;
+}
+
+function formatSkillLine(skillResult) {
+  if (skillResult.ok) {
+    const paths = skillResult.results.map(result => result.path).join(', ');
+    if (skillResult.results.every(result => result.status === 'already-present')) {
+      return `${mark} skill: ok (${USING_VIT_SKILL})`;
+    }
+    return `${mark} skill: installed (${USING_VIT_SKILL}) → ${paths}`;
+  }
+
+  return `${mark} skill: install failed — ${skillInstallReason(skillResult)}; check write permissions on ~/.claude and ~/.agents, or reinstall vit`;
 }
 
 export default function register(program) {
@@ -86,19 +101,23 @@ export default function register(program) {
         if (!opts.json) console.log(`${mark} beacon: not set (run vit init)`);
       }
 
-      const projectSkillPath = join(process.cwd(), '.claude', 'skills', 'using-vit', 'SKILL.md');
-      const userSkillPath = join(homedir(), '.claude', 'skills', 'using-vit', 'SKILL.md');
-      skillInstalled = existsSync(projectSkillPath) || existsSync(userSkillPath);
-      if (skillInstalled) {
-        if (!opts.json) console.log(`${mark} skill: ok (using-vit)`);
+      const skillResult = ensureSkill();
+      const home = homedir();
+      const projectClaude = join(process.cwd(), '.claude', 'skills', USING_VIT_SKILL, 'SKILL.md');
+      const userClaude = join(home, '.claude', 'skills', USING_VIT_SKILL, 'SKILL.md');
+      const userAgents = join(home, '.agents', 'skills', USING_VIT_SKILL, 'SKILL.md');
+      skillInstalled = existsSync(projectClaude) || existsSync(userClaude) || existsSync(userAgents);
+      const skillLine = formatSkillLine(skillResult);
+      if (opts.json) {
+        console.error(skillLine);
       } else {
-        if (!opts.json) console.log(`${mark} skill: not installed (reinstall vit)`);
+        console.log(skillLine);
       }
 
       // Report installed skills
       const projectSkillDir = join(process.cwd(), '.claude', 'skills');
       projectSkills = scanSkillDir(projectSkillDir);
-      const userSkillDir = join(homedir(), '.claude', 'skills');
+      const userSkillDir = join(home, '.claude', 'skills');
       userSkills = scanSkillDir(userSkillDir);
 
       if (!opts.json && projectSkills.length > 0) {
@@ -169,6 +188,7 @@ export default function register(program) {
           install: { type: installType, path: installPath },
           beacon,
           skill: skillInstalled,
+          skillInstall: { ok: skillResult.ok, results: skillResult.results },
           projectSkills,
           userSkills,
           bluesky: { ok: blueskyOk, did: effectiveDid || null, pds, source: identitySource, authType },
@@ -189,6 +209,10 @@ export default function register(program) {
     .option('--json', 'Output as JSON')
     .action(checkHealth);
   program.command('status')
+    .description('Alias for doctor')
+    .option('--json', 'Output as JSON')
+    .action(checkHealth);
+  program.command('setup')
     .description('Alias for doctor')
     .option('--json', 'Output as JSON')
     .action(checkHealth);

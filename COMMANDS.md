@@ -38,7 +38,7 @@ verify system environment and project configuration.
 vit doctor
 ```
 
-checks Node.js version, git availability, login status, and (if in a repo) `.vit/` configuration. also available as `vit status`.
+checks Node.js version, git availability, login status, and (if in a repo) `.vit/` configuration. also available as `vit status` and `vit setup`.
 
 ---
 

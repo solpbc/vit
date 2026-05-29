@@ -57,7 +57,7 @@ Options:
 - None.
 
 Output format:
-- Text diagnostics for install and beacon status.
+- Text diagnostics for install and beacon status; self-installs the using-vit skill into `~/.claude/skills` and `~/.agents/skills` if missing.
 
 Error conditions:
 - Config read/parse failures.

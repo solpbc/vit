@@ -2,6 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { Command } from 'commander';
+import { readFileSync } from 'node:fs';
 import { brand } from './lib/brand.js';
 import registerAdopt from './cmd/adopt.js';
 import registerBeacon from './cmd/beacon.js';
@@ -23,11 +24,13 @@ import registerHack from './cmd/hack.js';
 import registerLink from './cmd/link.js';
 import registerInbox from './cmd/inbox.js';
 
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
+
 const program = new Command();
 program
   .name('vit')
   .description(`${brand} \u2014 social open source`)
-  .version('0.1.0');
+  .version(pkg.version);
 
 registerAdopt(program);
 registerBeacon(program);
