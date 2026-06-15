@@ -11,7 +11,7 @@ description: >-
 
 ## 1. Overview
 
-vit is a Bun CLI for social software capabilities. Agents use it to initialize projects, follow accounts, skim caps from followed accounts, and ship new caps. Some commands (login, adopt, vet) require human interaction - the agent should tell the user to run those in their terminal.
+vit is a Node CLI for social software capabilities. Agents use it to initialize projects, follow accounts, skim caps from followed accounts, and ship new caps. Some commands (login, adopt, vet) require human interaction - the agent should tell the user to run those in their terminal.
 
 ## 2. Prerequisites
 

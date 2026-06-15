@@ -4,7 +4,7 @@ Development guidelines for vit, a social toolkit for personalized software built
 
 ## Project Overview
 
-vit is a Bun CLI for discovering, vetting, remixing, and shipping software capabilities:
+vit is a Node CLI for discovering, vetting, remixing, and shipping software capabilities:
 - `vit login`, `vit init`, `vit doctor` — authentication and environment setup
 - `vit beacon`, `vit config` — project beacon inspection and user configuration
 - `vit firehose` — listen to Jetstream for cap events
