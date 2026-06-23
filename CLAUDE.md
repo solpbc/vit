@@ -28,7 +28,9 @@ make clean      # Remove node_modules
 
 - **Simple code** - Prefer plain functions. Keep scripts self-contained.
 - **DRY, KISS** - Extract common logic, prefer simple solutions.
-- **Fail fast** - Validate inputs and external state early. Clear error messages.
+- **YAGNI** - Don't build for cases that don't exist yet; no speculative flags, options, or abstractions. No backwards-compatibility shims — update call sites directly when you rename or move something.
+- **Fail fast** - Validate inputs and external state early. Clear error messages. Surface failures, don't swallow them into a success-looking result.
+- **Verify before you claim** - Recall is a hypothesis, not evidence. Verify atproto/Jetstream behavior, an API shape, or a dependency's defaults against the live source before it lands in code or a commit — a quick check beats a reversal. Contract tests round-trip the real serialization boundary, not a mock of both sides.
 - **Vocabulary alignment** - `VOCAB.md` is the source of truth for all project terminology. All project descriptions, CLI help strings, documentation, and skill files must use terminology consistent with VOCAB.md. When VOCAB.md is updated, propagate changes to every file that references vit's vocabulary in the same commit.
 
 ## Testing Standards
