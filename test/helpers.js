@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { execSync } from 'node:child_process';
 
 const vitBin = join(import.meta.dir, '..', 'bin', 'vit.js');
+const nonAgentEnv = { CLAUDECODE: '', GEMINI_CLI: '', CODEX_CI: '', OPENCODE: '' };
 
 export function run(args, cwd, env, input) {
   try {
@@ -14,7 +15,7 @@ export function run(args, cwd, env, input) {
         encoding: 'utf-8',
         timeout: 30000,
         stdio: ['pipe', 'pipe', 'pipe'],
-        env: env ? { ...process.env, ...env } : undefined,
+        env: { ...process.env, ...nonAgentEnv, ...(env || {}) },
         input,
       }).trim(),
       exitCode: 0,

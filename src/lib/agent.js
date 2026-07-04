@@ -5,6 +5,7 @@ const CODING_AGENTS = {
   CLAUDECODE: 'claude code',
   GEMINI_CLI: 'gemini cli',
   CODEX_CI: 'codex',
+  OPENCODE: 'opencode',
 };
 
 export function detectCodingAgent() {

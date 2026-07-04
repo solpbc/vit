@@ -8,14 +8,17 @@ describe('agent', () => {
   let originalClaudeCode;
   let originalGeminiCli;
   let originalCodexCi;
+  let originalOpencode;
 
   beforeEach(() => {
     originalClaudeCode = process.env.CLAUDECODE;
     originalGeminiCli = process.env.GEMINI_CLI;
     originalCodexCi = process.env.CODEX_CI;
+    originalOpencode = process.env.OPENCODE;
     delete process.env.CLAUDECODE;
     delete process.env.GEMINI_CLI;
     delete process.env.CODEX_CI;
+    delete process.env.OPENCODE;
   });
 
   afterEach(() => {
@@ -27,6 +30,9 @@ describe('agent', () => {
 
     if (originalCodexCi === undefined) delete process.env.CODEX_CI;
     else process.env.CODEX_CI = originalCodexCi;
+
+    if (originalOpencode === undefined) delete process.env.OPENCODE;
+    else process.env.OPENCODE = originalOpencode;
   });
 
   describe('detectCodingAgent', () => {
@@ -49,6 +55,11 @@ describe('agent', () => {
       expect(detectCodingAgent()).toEqual({ name: 'codex', envVar: 'CODEX_CI' });
     });
 
+    test('returns opencode when OPENCODE=1', () => {
+      process.env.OPENCODE = '1';
+      expect(detectCodingAgent()).toEqual({ name: 'opencode', envVar: 'OPENCODE' });
+    });
+
     test('returns null when env var is 0', () => {
       process.env.CLAUDECODE = '0';
       expect(detectCodingAgent()).toBe(null);
@@ -56,6 +67,11 @@ describe('agent', () => {
 
     test('returns null when env var is empty', () => {
       process.env.CLAUDECODE = '';
+      expect(detectCodingAgent()).toBe(null);
+    });
+
+    test('returns null when OPENCODE is not 1', () => {
+      process.env.OPENCODE = 'true';
       expect(detectCodingAgent()).toBe(null);
     });
   });

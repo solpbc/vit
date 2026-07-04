@@ -29,7 +29,7 @@ function captureJsonError(input, hintArg) {
     };
   } finally {
     console.log = originalLog;
-    process.exitCode = originalExitCode;
+    process.exitCode = originalExitCode ?? 0;
   }
 }
 

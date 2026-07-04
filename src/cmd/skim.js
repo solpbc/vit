@@ -29,7 +29,7 @@ export default function register(program) {
       try {
         const gate = requireAgent();
         if (!gate.ok) {
-          console.error(`${name} skim should be run by a coding agent (e.g. claude code, gemini cli).`);
+          console.error(`${name} skim should be run by a coding agent (e.g. claude code, codex, gemini cli, opencode).`);
           console.error(`open your agent and ask it to run '${name} skim' for you.`);
           process.exitCode = 1;
           return;
