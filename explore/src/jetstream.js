@@ -19,6 +19,18 @@ function beaconValue(value) {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
+function enqueueRecordTask(recordTasks, key, task) {
+  const previous = recordTasks.get(key) ?? Promise.resolve();
+  const current = previous.catch(() => {}).then(task);
+  recordTasks.set(key, current);
+  void current.finally(() => {
+    if (recordTasks.get(key) === current) {
+      recordTasks.delete(key);
+    }
+  }).catch(() => {});
+  return current;
+}
+
 function incrementCapBeaconStatements(env, beacon) {
   return [
     env.DB.prepare(
@@ -262,6 +274,7 @@ export async function streamEvents(env, cursor) {
     let latestCursor = cursor || null;
     const newDids = new Set();
     const pending = new Set();
+    const recordTasks = new Map();
     const ws = new WebSocket(url.toString());
 
     const timeout = setTimeout(() => {
@@ -306,9 +319,13 @@ export async function streamEvents(env, cursor) {
         }
 
         if (commit.collection === CAP_COLLECTION) {
-          await processCapEvent(env, msg.did, commit);
+          await enqueueRecordTask(recordTasks, `${CAP_COLLECTION}:${msg.did}:${commit.rkey}`, () => (
+            processCapEvent(env, msg.did, commit)
+          ));
         } else if (commit.collection === VOUCH_COLLECTION) {
-          await processVouchEvent(env, msg.did, commit);
+          await enqueueRecordTask(recordTasks, `${VOUCH_COLLECTION}:${msg.did}:${commit.rkey}`, () => (
+            processVouchEvent(env, msg.did, commit)
+          ));
         } else if (commit.collection === SKILL_COLLECTION) {
           await processSkillEvent(env, msg.did, commit);
         }
