@@ -6,9 +6,12 @@ import { resolveHandles } from './resolve.js';
 const CAP_COLLECTION = 'org.v-it.cap';
 const VOUCH_COLLECTION = 'org.v-it.vouch';
 const SKILL_COLLECTION = 'org.v-it.skill';
-// jetstream1, not jetstream2: two independent live probes (2026-07-06, thermals
-// appview validation + rookery OAuth AS demo) caught jetstream2.us-east silently
-// dropping org.v-it.* commits that jetstream1 delivered for the same window.
+// Switched jetstream2 -> jetstream1 during the 2026-07-06 ingest investigation:
+// jetstream2.us-east was suspected of dropping org.v-it.* commits (thermals
+// appview validation). Ingest is verified working end-to-end on jetstream1;
+// the instances are meant to be equivalent, so switching back is safe if
+// jetstream1 ever misbehaves. The real durability gap is the cursorless
+// live-tail (see index.js scheduled handler).
 const JETSTREAM_URL = 'wss://jetstream1.us-east.bsky.network/subscribe';
 const STREAM_DURATION_MS = 55_000;
 
