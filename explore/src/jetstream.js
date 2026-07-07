@@ -73,7 +73,7 @@ function decrementVouchBeaconStatement(env, beacon) {
   ).bind(beacon);
 }
 
-async function processCapEvent(env, did, commit) {
+export async function processCapEvent(env, did, commit) {
   const { operation, rkey, record, cid } = commit;
   const uri = `at://${did}/${CAP_COLLECTION}/${rkey}`;
 
@@ -147,7 +147,7 @@ async function processCapEvent(env, did, commit) {
   }
 }
 
-async function processVouchEvent(env, did, commit) {
+export async function processVouchEvent(env, did, commit) {
   const { operation, rkey, record, cid } = commit;
   const uri = `at://${did}/${VOUCH_COLLECTION}/${rkey}`;
 
@@ -219,7 +219,7 @@ async function processVouchEvent(env, did, commit) {
   }
 }
 
-async function processSkillEvent(env, did, commit) {
+export async function processSkillEvent(env, did, commit) {
   const { operation, rkey, record, cid } = commit;
   const uri = `at://${did}/${SKILL_COLLECTION}/${rkey}`;
 
@@ -270,27 +270,88 @@ export async function streamEvents(env, cursor) {
     url.searchParams.set('cursor', cursor);
   }
 
-  return await new Promise((resolve) => {
-    let latestCursor = cursor || null;
+  return await new Promise((resolve, reject) => {
+    let observedCursor = null;
     const newDids = new Set();
     const pending = new Set();
     const recordTasks = new Map();
-    const ws = new WebSocket(url.toString());
+    let settled = false;
+    let ws;
+    let timeout;
 
-    const timeout = setTimeout(() => {
-      ws.close();
-    }, STREAM_DURATION_MS);
+    const asError = (err) => {
+      if (err instanceof Error) {
+        return err;
+      }
+      return new Error(err?.message || 'WebSocket error');
+    };
+
+    const clearWindow = () => {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+    };
+
+    const fail = (err) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearWindow();
+      try {
+        ws?.close();
+      } catch {
+        // Ignore close failures while rejecting the stream window.
+      }
+      reject(asError(err));
+    };
+
+    const succeed = () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearWindow();
+      resolve({ observedCursor });
+    };
 
     const finish = async () => {
-      clearTimeout(timeout);
-      if (pending.size > 0) {
-        await Promise.allSettled([...pending]);
+      if (settled) {
+        return;
       }
-      if (newDids.size > 0) {
-        await resolveHandles([...newDids], env);
+      clearWindow();
+      try {
+        if (pending.size > 0) {
+          await Promise.all([...pending]);
+        }
+        if (newDids.size > 0) {
+          try {
+            await resolveHandles([...newDids], env);
+          } catch {
+            // Handle resolution is best-effort and must not fail the window.
+          }
+        }
+        succeed();
+      } catch (err) {
+        fail(err);
       }
-      resolve({ latestCursor });
     };
+
+    try {
+      ws = new WebSocket(url.toString());
+    } catch (err) {
+      fail(err);
+      return;
+    }
+
+    timeout = setTimeout(() => {
+      try {
+        ws.close();
+      } catch (err) {
+        fail(err);
+      }
+    }, STREAM_DURATION_MS);
 
     ws.addEventListener('message', (event) => {
       const task = (async () => {
@@ -305,8 +366,11 @@ export async function streamEvents(env, cursor) {
           return;
         }
 
-        if (msg.time_us) {
-          latestCursor = String(msg.time_us);
+        if (msg.time_us != null) {
+          const timeUs = Number(msg.time_us);
+          if (Number.isFinite(timeUs) && (observedCursor === null || timeUs > Number(observedCursor))) {
+            observedCursor = String(msg.time_us);
+          }
         }
 
         if (msg.did) {
@@ -332,15 +396,16 @@ export async function streamEvents(env, cursor) {
       })();
 
       pending.add(task);
-      task.finally(() => pending.delete(task));
+      task.catch(fail);
+      task.finally(() => pending.delete(task)).catch(() => {});
     });
 
     ws.addEventListener('close', () => {
       void finish();
     });
 
-    ws.addEventListener('error', () => {
-      ws.close();
+    ws.addEventListener('error', (event) => {
+      fail(event?.error ?? event);
     });
   });
 }
