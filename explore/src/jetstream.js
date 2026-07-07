@@ -6,7 +6,10 @@ import { resolveHandles } from './resolve.js';
 const CAP_COLLECTION = 'org.v-it.cap';
 const VOUCH_COLLECTION = 'org.v-it.vouch';
 const SKILL_COLLECTION = 'org.v-it.skill';
-const JETSTREAM_URL = 'wss://jetstream2.us-east.bsky.network/subscribe';
+// jetstream1, not jetstream2: two independent live probes (2026-07-06, thermals
+// appview validation + rookery OAuth AS demo) caught jetstream2.us-east silently
+// dropping org.v-it.* commits that jetstream1 delivered for the same window.
+const JETSTREAM_URL = 'wss://jetstream1.us-east.bsky.network/subscribe';
 const STREAM_DURATION_MS = 55_000;
 
 function beaconValue(value) {
