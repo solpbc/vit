@@ -2,7 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { sha256 } from '@noble/hashes/sha256';
-import { wordlist } from '@scure/bip39/wordlists/english.js';
+import { wordlist } from '@scure/bip39/wordlists/english';
 
 export const REF_PATTERN = /^[a-z]+-[a-z]+-[a-z]+$/;
 
