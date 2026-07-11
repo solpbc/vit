@@ -6,6 +6,9 @@
   "bin": {
     "vit": "bin/vit.js"
   },
+  "exports": {
+    "./cap.js": "./src/lib/cap.js"
+  },
   "files": [
     "bin/",
     "src/",

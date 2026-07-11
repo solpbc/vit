@@ -17,6 +17,7 @@ import { jsonOk, jsonError } from '../lib/json-output.js';
 import { toBeacon } from '../lib/beacon.js';
 import { hashTo3Words } from '../lib/cap-ref.js';
 import { formatError } from '../lib/error-format.js';
+import { publishCap } from '../lib/cap.js';
 
 const STOP_WORDS = new Set([
   'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
@@ -345,7 +346,7 @@ async function shipSkill(opts) {
   }
 }
 
-async function shipCap(opts) {
+export async function shipCap(opts) {
   const gate = requireAgent();
   if (!gate.ok) {
     if (opts.json) {
@@ -548,28 +549,21 @@ async function shipCap(opts) {
     }
   }
 
-  const record = {
-    $type: CAP_COLLECTION,
-    text: text || '',
+  const rkey = TID.nextStr();
+  if (verbose) vlog(`[verbose] Record built, rkey: ${rkey}`);
+  if (verbose) vlog(`[verbose] putRecord ${CAP_COLLECTION} rkey=${rkey}`);
+  const { uri, cid, record, response } = await publishCap(agent, {
+    repo: did,
+    text,
     title: opts.title,
     description: opts.description,
     ref,
     createdAt: now,
-  };
-  if (beacon) record.beacon = beacon;
-  if (opts.kind) record.kind = opts.kind;
-  if (opts.recap) record.recap = { uri: recapUri, ref: opts.recap };
-  const rkey = TID.nextStr();
-  if (verbose) vlog(`[verbose] Record built, rkey: ${rkey}`);
-  const putArgs = {
-    repo: did,
-    collection: CAP_COLLECTION,
+    beacon,
+    kind: opts.kind,
+    recap: opts.recap ? { uri: recapUri, ref: opts.recap } : undefined,
     rkey,
-    record,
-    validate: false,
-  };
-  if (verbose) vlog(`[verbose] putRecord ${putArgs.collection} rkey=${rkey}`);
-  const putRes = await agent.com.atproto.repo.putRecord(putArgs);
+  });
   try {
     appendLog('caps.jsonl', {
       ts: now,
@@ -578,15 +572,15 @@ async function shipCap(opts) {
       ref,
       collection: CAP_COLLECTION,
       pds: session.serverMetadata?.issuer,
-      uri: putRes.data.uri,
-      cid: putRes.data.cid,
+      uri,
+      cid,
     });
   } catch (logErr) {
     console.error('warning: failed to write caps.jsonl:', logErr.message);
   }
   if (verbose) vlog(`[verbose] Log written to caps.jsonl`);
   if (opts.json) {
-    const out = { ref, uri: putRes.data.uri };
+    const out = { ref, uri };
     if (opts.kind) out.kind = opts.kind;
     jsonOk(out);
     return;
@@ -597,16 +591,17 @@ async function shipCap(opts) {
     console.log(`anyone can implement this. share the ref to build demand.`);
   } else {
     console.log(`shipped: ${ref}`);
-    console.log(`uri: ${putRes.data.uri}`);
+    console.log(`uri: ${uri}`);
   }
   if (verbose) {
+    const putArgs = { repo: did, collection: CAP_COLLECTION, rkey, record, validate: false };
     vlog(
       JSON.stringify({
         ts: now,
         pds: session.serverMetadata?.issuer,
         xrpc: 'com.atproto.repo.putRecord',
         request: putArgs,
-        response: putRes.data,
+        response,
       }),
     );
   }
