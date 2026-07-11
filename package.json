@@ -1,6 +1,6 @@
 {
   "name": "vit",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Social toolkit for personalized software",
   "license": "MIT",
   "bin": {
