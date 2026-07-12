@@ -207,6 +207,54 @@ describe('explore scheduled cursor', () => {
     expect(streamReader.calls.length).toBe(1);
     expect(store.putBodies).toEqual([]);
   });
+
+  test('clamps replay to the retention edge and logs a gap when the stored cursor predates retention', async () => {
+    // now (ms) large enough that the retention edge is a positive cursor the
+    // stale stored value falls behind: windowOpen = 400_000_000 * 1000 =
+    // 400_000_000_000 us; edge = windowOpen - 72h (259_200_000_000 us) =
+    // 140_800_000_000. A stored cursor of 1000 is far older than the edge.
+    const { env, store } = createCursorEnv({ stored: '1000' });
+    const streamReader = createStreamReader({ result: { observedCursor: null } });
+
+    const warnings = [];
+    const originalWarn = console.warn;
+    console.warn = (...args) => warnings.push(args.join(' '));
+    try {
+      await runScheduled(env, { streamReader, now: () => 400_000_000 });
+    } finally {
+      console.warn = originalWarn;
+    }
+
+    // Replay is bounded forward to the retention edge, not the stale cursor.
+    expect(streamReader.calls[0].startCursor).toBe(140_800_000_000);
+    // The gap is surfaced explicitly rather than silently swallowed.
+    expect(warnings.length).toBe(1);
+    expect(warnings[0]).toContain('older than the Jetstream retention edge');
+    // A quiet clamped window still advances the cursor to the window-open time.
+    expect(store.putBodies).toEqual(['400000000000']);
+  });
+
+  test('resumes from a within-retention cursor without clamping or logging a gap', async () => {
+    // Stored cursor sits ~30s behind window open — comfortably inside the ~72h
+    // retention window, so it is used verbatim and no gap is logged.
+    const windowOpenUs = 400_000_000_000;
+    const recentCursor = windowOpenUs - 30_000_000; // 30s of microseconds
+    const { env, store } = createCursorEnv({ stored: String(recentCursor) });
+    const streamReader = createStreamReader({ result: { observedCursor: String(windowOpenUs - 1_000_000) } });
+
+    const warnings = [];
+    const originalWarn = console.warn;
+    console.warn = (...args) => warnings.push(args.join(' '));
+    try {
+      await runScheduled(env, { streamReader, now: () => 400_000_000 });
+    } finally {
+      console.warn = originalWarn;
+    }
+
+    expect(streamReader.calls[0].startCursor).toBe(recentCursor);
+    expect(warnings.length).toBe(0);
+    expect(store.putBodies).toEqual([String(windowOpenUs - 1_000_000)]);
+  });
 });
 
 describe('explore event idempotency', () => {
