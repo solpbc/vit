@@ -4,7 +4,7 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { createSqliteEnv, splitSqlStatements } from './explore-d1.js';
+import { createSqliteEnv, splitSqlStatements } from './explore-d1-260727.js';
 
 const MIGRATION_PATH = join(
   import.meta.dir,

@@ -4,7 +4,7 @@
 import { describe, expect, test } from 'bun:test';
 import { handleRequest } from '../explore/src/api.js';
 import { processCapEvent } from '../explore/src/jetstream.js';
-import { createSqliteEnv } from './explore-d1.js';
+import { createSqliteEnv } from './explore-d1-260727.js';
 
 const CANONICAL = 'vit:github.com/solpbc/thermals';
 const HTTPS_ALIAS = 'https://github.com/solpbc/thermals';

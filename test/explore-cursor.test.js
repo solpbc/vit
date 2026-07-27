@@ -4,7 +4,7 @@
 import { describe, expect, test } from 'bun:test';
 import { runScheduled } from '../explore/src/index.js';
 import { processCapEvent, processSkillEvent, processVouchEvent } from '../explore/src/jetstream.js';
-import { createSqliteEnv } from './explore-d1.js';
+import { createSqliteEnv } from './explore-d1-260727.js';
 
 function createCursorEnv({
   stored = '',
