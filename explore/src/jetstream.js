@@ -2,6 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { resolveHandles } from './resolve.js';
+import { tryNormalizeBeacon } from '../../src/lib/beacon.js';
 
 const CAP_COLLECTION = 'org.v-it.cap';
 const VOUCH_COLLECTION = 'org.v-it.vouch';
@@ -14,9 +15,36 @@ const SKILL_COLLECTION = 'org.v-it.skill';
 // live-tail (see index.js scheduled handler).
 const JETSTREAM_URL = 'wss://jetstream1.us-east.bsky.network/subscribe';
 const STREAM_DURATION_MS = 55_000;
+const BEACON_WARNING_PREFIX = 'explore: beacon normalization failed class=invalid-beacon record=';
+const MAX_BEACON_WARNING_BYTES = 512;
+const TRUNCATION_MARKER = '...';
 
-function beaconValue(value) {
-  return typeof value === 'string' && value.length > 0 ? value : null;
+function formatBeaconWarning(uri) {
+  let renderedUri;
+  try {
+    renderedUri = encodeURI(String(uri));
+  } catch {
+    renderedUri = '[invalid-uri]';
+  }
+
+  const available = MAX_BEACON_WARNING_BYTES - BEACON_WARNING_PREFIX.length;
+  if (renderedUri.length <= available) {
+    return BEACON_WARNING_PREFIX + renderedUri;
+  }
+
+  let truncated = renderedUri.slice(0, available - TRUNCATION_MARKER.length);
+  while (/%[0-9A-F]?$/i.test(truncated)) {
+    truncated = truncated.slice(0, -1);
+  }
+  return BEACON_WARNING_PREFIX + truncated + TRUNCATION_MARKER;
+}
+
+function normalizeRecordBeacon(record, uri) {
+  const beacon = tryNormalizeBeacon(record?.beacon);
+  if (record?.beacon != null && beacon === null) {
+    console.warn(formatBeaconWarning(uri));
+  }
+  return beacon;
 }
 
 function enqueueRecordTask(recordTasks, key, task) {
@@ -73,16 +101,22 @@ function decrementVouchBeaconStatement(env, beacon) {
   ).bind(beacon);
 }
 
+function deleteEmptyBeaconStatement(env, beacon) {
+  return env.DB.prepare(
+    'DELETE FROM beacons WHERE name = ? AND cap_count = 0 AND vouch_count = 0',
+  ).bind(beacon);
+}
+
 export async function processCapEvent(env, did, commit) {
   const { operation, rkey, record, cid } = commit;
   const uri = `at://${did}/${CAP_COLLECTION}/${rkey}`;
 
   if (operation === 'create' || operation === 'update') {
-    const nextBeacon = beaconValue(record?.beacon);
+    const nextBeacon = normalizeRecordBeacon(record, uri);
     const existing = await env.DB.prepare('SELECT beacon FROM caps WHERE did = ? AND rkey = ?')
       .bind(did, rkey)
       .first();
-    const prevBeacon = beaconValue(existing?.beacon);
+    const prevBeacon = tryNormalizeBeacon(existing?.beacon);
 
     const capKind = typeof record?.kind === 'string' && record.kind.length > 0 ? record.kind : null;
 
@@ -119,6 +153,7 @@ export async function processCapEvent(env, did, commit) {
     } else if (existing && prevBeacon !== nextBeacon) {
       if (prevBeacon) {
         stmts.push(decrementCapBeaconStatement(env, prevBeacon));
+        stmts.push(deleteEmptyBeaconStatement(env, prevBeacon));
       }
       if (nextBeacon) {
         stmts.push(...incrementCapBeaconStatements(env, nextBeacon));
@@ -134,14 +169,13 @@ export async function processCapEvent(env, did, commit) {
       .bind(did, rkey)
       .first();
 
-    const stmts = [
-      env.DB.prepare('DELETE FROM caps WHERE did = ? AND rkey = ?').bind(did, rkey),
-    ];
-
-    const prevBeacon = beaconValue(existing?.beacon);
+    const stmts = [];
+    const prevBeacon = tryNormalizeBeacon(existing?.beacon);
     if (prevBeacon) {
-      stmts.unshift(decrementCapBeaconStatement(env, prevBeacon));
+      stmts.push(decrementCapBeaconStatement(env, prevBeacon));
+      stmts.push(deleteEmptyBeaconStatement(env, prevBeacon));
     }
+    stmts.push(env.DB.prepare('DELETE FROM caps WHERE did = ? AND rkey = ?').bind(did, rkey));
 
     await env.DB.batch(stmts);
   }
@@ -152,11 +186,11 @@ export async function processVouchEvent(env, did, commit) {
   const uri = `at://${did}/${VOUCH_COLLECTION}/${rkey}`;
 
   if (operation === 'create' || operation === 'update') {
-    const nextBeacon = beaconValue(record?.beacon);
+    const nextBeacon = normalizeRecordBeacon(record, uri);
     const existing = await env.DB.prepare('SELECT beacon FROM vouches WHERE did = ? AND rkey = ?')
       .bind(did, rkey)
       .first();
-    const prevBeacon = beaconValue(existing?.beacon);
+    const prevBeacon = tryNormalizeBeacon(existing?.beacon);
 
     const vouchKind = typeof record?.kind === 'string' && record.kind.length > 0 ? record.kind : 'endorse';
 
@@ -179,7 +213,7 @@ export async function processVouchEvent(env, did, commit) {
         cid ?? null,
         record.subject?.uri,
         record.ref,
-        record.beacon ?? null,
+        nextBeacon,
         vouchKind,
         JSON.stringify(record),
         record.createdAt,
@@ -191,6 +225,7 @@ export async function processVouchEvent(env, did, commit) {
     } else if (existing && prevBeacon !== nextBeacon) {
       if (prevBeacon) {
         stmts.push(decrementVouchBeaconStatement(env, prevBeacon));
+        stmts.push(deleteEmptyBeaconStatement(env, prevBeacon));
       }
       if (nextBeacon) {
         stmts.push(...incrementVouchBeaconStatements(env, nextBeacon));
@@ -206,14 +241,13 @@ export async function processVouchEvent(env, did, commit) {
       .bind(did, rkey)
       .first();
 
-    const stmts = [
-      env.DB.prepare('DELETE FROM vouches WHERE did = ? AND rkey = ?').bind(did, rkey),
-    ];
-
-    const prevBeacon = beaconValue(existing?.beacon);
+    const stmts = [];
+    const prevBeacon = tryNormalizeBeacon(existing?.beacon);
     if (prevBeacon) {
-      stmts.unshift(decrementVouchBeaconStatement(env, prevBeacon));
+      stmts.push(decrementVouchBeaconStatement(env, prevBeacon));
+      stmts.push(deleteEmptyBeaconStatement(env, prevBeacon));
     }
+    stmts.push(env.DB.prepare('DELETE FROM vouches WHERE did = ? AND rkey = ?').bind(did, rkey));
 
     await env.DB.batch(stmts);
   }

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 sol pbc
 
+import { BEACON_ACCEPTED_FORMS, tryNormalizeBeacon } from '../../src/lib/beacon.js';
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -31,6 +33,26 @@ function parseCursor(value) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+function parseBeaconFilter(value) {
+  if (!value) {
+    return [];
+  }
+
+  const beacons = [];
+  const seen = new Set();
+  for (const member of value.split(',')) {
+    const beacon = tryNormalizeBeacon(member.trim());
+    if (!beacon) {
+      return null;
+    }
+    if (!seen.has(beacon)) {
+      seen.add(beacon);
+      beacons.push(beacon);
+    }
+  }
+  return beacons;
+}
+
 export async function handleRequest(request, env) {
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -46,15 +68,18 @@ export async function handleRequest(request, env) {
   if (pathname === '/api/caps') {
     const cursor = parseCursor(searchParams.get('cursor'));
     const limit = parseLimit(searchParams.get('limit'));
-    const beacon = searchParams.get('beacon');
+    const beacons = parseBeaconFilter(searchParams.get('beacon'));
     const kind = searchParams.get('kind');
     const sort = searchParams.get('sort');
+
+    if (beacons === null) {
+      return json({ error: `invalid beacon filter: expected ${BEACON_ACCEPTED_FORMS}.` }, 400);
+    }
 
     const conditions = [];
     const bindings = [];
 
-    if (beacon) {
-      const beacons = beacon.split(',').filter(Boolean);
+    if (beacons.length > 0) {
       const placeholders = beacons.map(() => '?').join(', ');
       conditions.push(`c.beacon IN (${placeholders})`);
       bindings.push(...beacons);
@@ -94,7 +119,7 @@ export async function handleRequest(request, env) {
   if (pathname === '/api/cap') {
     const ref = searchParams.get('ref');
     const uri = searchParams.get('uri');
-    const beacon = searchParams.get('beacon');
+    const beacons = parseBeaconFilter(searchParams.get('beacon'));
 
     if (!ref && !uri) {
       return json({ error: 'ref or uri is required' }, 400);
@@ -102,6 +127,10 @@ export async function handleRequest(request, env) {
 
     if (ref && uri) {
       return json({ error: 'provide ref or uri, not both' }, 400);
+    }
+
+    if (beacons === null) {
+      return json({ error: `invalid beacon filter: expected ${BEACON_ACCEPTED_FORMS}.` }, 400);
     }
 
     const conditions = [];
@@ -116,8 +145,7 @@ export async function handleRequest(request, env) {
       conditions.push('c.ref = ?');
       bindings.push(ref);
 
-      if (beacon) {
-        const beacons = beacon.split(',').filter(Boolean);
+      if (beacons.length > 0) {
         const placeholders = beacons.map(() => '?').join(', ');
         conditions.push(`c.beacon IN (${placeholders})`);
         bindings.push(...beacons);

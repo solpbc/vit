@@ -2,11 +2,9 @@
 // Copyright (c) 2026 sol pbc
 
 import { describe, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { Database } from 'bun:sqlite';
 import { runScheduled } from '../explore/src/index.js';
 import { processCapEvent, processSkillEvent, processVouchEvent } from '../explore/src/jetstream.js';
+import { createSqliteEnv } from './explore-d1.js';
 
 function createCursorEnv({
   stored = '',
@@ -66,50 +64,6 @@ function createStreamReader({ result = { observedCursor: null }, error = null } 
   };
   streamReader.calls = calls;
   return streamReader;
-}
-
-function d1Statement(db, sql, args = []) {
-  return {
-    sql,
-    args,
-    bind(...nextArgs) {
-      return d1Statement(db, sql, nextArgs);
-    },
-    first() {
-      return db.query(sql).get(...args) ?? null;
-    },
-    run() {
-      return db.query(sql).run(...args);
-    },
-    all() {
-      return { results: db.query(sql).all(...args) };
-    },
-  };
-}
-
-function createD1(db) {
-  const executeBatch = db.transaction((statements) => statements.map((stmt) => {
-    if (/^\s*select\b/i.test(stmt.sql)) {
-      return stmt.all();
-    }
-    return stmt.run();
-  }));
-
-  return {
-    prepare(sql) {
-      return d1Statement(db, sql);
-    },
-    batch(statements) {
-      return executeBatch(statements);
-    },
-  };
-}
-
-function createSqliteEnv() {
-  const db = new Database(':memory:');
-  const schemaPath = join(import.meta.dir, '..', 'explore', 'schema.sql');
-  db.exec(readFileSync(schemaPath, 'utf8'));
-  return { db, env: { DB: createD1(db) } };
 }
 
 describe('explore scheduled cursor', () => {
@@ -270,7 +224,7 @@ describe('explore event idempotency', () => {
         title: 'Idempotent Cap',
         description: 'A cap inserted twice for testing.',
         ref: 'idempotent-cap-test',
-        beacon: 'vit:example/repo',
+        beacon: 'vit:example.com/org/repo',
         kind: 'test',
         createdAt: '2026-07-07T00:00:00.000Z',
       },
@@ -279,11 +233,11 @@ describe('explore event idempotency', () => {
     await processCapEvent(env, capDid, capCommit);
     const capAfterOne = db
       .query("SELECT (SELECT COUNT(*) FROM caps) AS rows, (SELECT cap_count FROM beacons WHERE name = ?) AS count")
-      .get('vit:example/repo');
+      .get('vit:example.com/org/repo');
     await processCapEvent(env, capDid, capCommit);
     const capAfterTwo = db
       .query("SELECT (SELECT COUNT(*) FROM caps) AS rows, (SELECT cap_count FROM beacons WHERE name = ?) AS count")
-      .get('vit:example/repo');
+      .get('vit:example.com/org/repo');
 
     expect(capAfterOne).toEqual({ rows: 1, count: 1 });
     expect(capAfterTwo).toEqual(capAfterOne);
@@ -296,7 +250,7 @@ describe('explore event idempotency', () => {
       record: {
         subject: { uri: 'at://did:plc:capauthor/org.v-it.cap/3lcap' },
         ref: 'idempotent-cap-test',
-        beacon: 'vit:example/repo',
+        beacon: 'vit:example.com/org/repo',
         kind: 'want',
         createdAt: '2026-07-07T00:00:01.000Z',
       },
@@ -305,11 +259,11 @@ describe('explore event idempotency', () => {
     await processVouchEvent(env, vouchDid, vouchCommit);
     const vouchAfterOne = db
       .query("SELECT (SELECT COUNT(*) FROM vouches) AS rows, (SELECT vouch_count FROM beacons WHERE name = ?) AS count")
-      .get('vit:example/repo');
+      .get('vit:example.com/org/repo');
     await processVouchEvent(env, vouchDid, vouchCommit);
     const vouchAfterTwo = db
       .query("SELECT (SELECT COUNT(*) FROM vouches) AS rows, (SELECT vouch_count FROM beacons WHERE name = ?) AS count")
-      .get('vit:example/repo');
+      .get('vit:example.com/org/repo');
 
     expect(vouchAfterOne).toEqual({ rows: 1, count: 1 });
     expect(vouchAfterTwo).toEqual(vouchAfterOne);
