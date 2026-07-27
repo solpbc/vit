@@ -3,13 +3,16 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { normalizeBeacon } from './beacon.js';
 import { errorMessage } from './error-format.js';
 
 export function vitDir(dir) {
   return join(dir || process.cwd(), '.vit');
 }
 
-export function readProjectConfig(dir) {
+// Exported only so vit init can replace corrupt beacon fields while preserving
+// unrelated config. Other command paths must use readProjectConfig.
+export function readRawProjectConfig(dir) {
   const p = join(vitDir(dir), 'config.json');
   if (!existsSync(p)) return {};
   try {
@@ -18,6 +21,25 @@ export function readProjectConfig(dir) {
     console.warn(`warning: failed to read ${p}: ${errorMessage(err)}`);
     return {};
   }
+}
+
+function normalizeProjectConfig(config) {
+  const normalized = { ...config };
+  if (Object.hasOwn(normalized, 'beacon')) {
+    normalized.beacon = normalizeBeacon(normalized.beacon, '.vit/config.json "beacon"');
+  }
+  if (Object.hasOwn(normalized, 'secondaryBeacon')) {
+    normalized.secondaryBeacon = normalizeBeacon(
+      normalized.secondaryBeacon,
+      '.vit/config.json "secondaryBeacon"',
+    );
+  }
+  return normalized;
+}
+
+export function readProjectConfig(dir) {
+  const config = readRawProjectConfig(dir);
+  return normalizeProjectConfig(config);
 }
 
 export function readBeaconSet(dir) {
@@ -30,8 +52,9 @@ export function readBeaconSet(dir) {
 
 export function writeProjectConfig(obj, baseDir) {
   const dir = baseDir ? join(baseDir, '.vit') : vitDir();
+  const normalized = normalizeProjectConfig(obj);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'config.json'), JSON.stringify(obj, null, 2) + '\n');
+  writeFileSync(join(dir, 'config.json'), JSON.stringify(normalized, null, 2) + '\n');
 }
 
 export function appendLog(filename, record, dir) {

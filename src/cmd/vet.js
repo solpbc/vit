@@ -18,6 +18,7 @@ import { loadConfig } from '../lib/config.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
 import { sandboxArgs } from '../lib/sandbox.js';
 import { formatError } from '../lib/error-format.js';
+import { tryNormalizeBeacon } from '../lib/beacon.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -290,7 +291,7 @@ export default function register(program) {
           let match = null;
           for (const records of allRecords) {
             for (const rec of records) {
-              if (!beaconSet.has(rec.value.beacon)) continue;
+              if (!beaconSet.has(tryNormalizeBeacon(rec.value.beacon))) continue;
               const recRef = resolveRef(rec.value, rec.cid);
               if (recRef === ref) {
                 if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {

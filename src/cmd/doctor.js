@@ -65,6 +65,7 @@ export default function register(program) {
       let vitPath = which(name);
       let installPath = vitPath || null;
       let beacon = null;
+      let beaconError = null;
       let skillInstalled = false;
       let projectSkills = [];
       let userSkills = [];
@@ -93,12 +94,19 @@ export default function register(program) {
         }
       }
 
-      const projConfig = readProjectConfig();
-      beacon = projConfig.beacon || null;
-      if (projConfig.beacon) {
-        if (!opts.json) console.log(`${mark} beacon: ${projConfig.beacon}`);
-      } else {
-        if (!opts.json) console.log(`${mark} beacon: not set (run vit init)`);
+      try {
+        const projConfig = readProjectConfig();
+        beacon = projConfig.beacon || null;
+        if (projConfig.beacon) {
+          if (!opts.json) console.log(`${mark} beacon: ${projConfig.beacon}`);
+        } else {
+          if (!opts.json) console.log(`${mark} beacon: not set (run vit init)`);
+        }
+      } catch (err) {
+        beaconError = errorMessage(err);
+        if (!opts.json) {
+          console.log(`${mark} beacon: invalid project identity in .vit/config.json (run vit init --beacon <canonical-git-url>)`);
+        }
       }
 
       const skillResult = ensureSkill();
@@ -184,7 +192,7 @@ export default function register(program) {
       }
 
       if (opts.json) {
-        jsonOk({
+        const result = {
           install: { type: installType, path: installPath },
           beacon,
           skill: skillInstalled,
@@ -192,8 +200,11 @@ export default function register(program) {
           projectSkills,
           userSkills,
           bluesky: { ok: blueskyOk, did: effectiveDid || null, pds, source: identitySource, authType },
-        });
+        };
+        if (beaconError) result.beaconError = beaconError;
+        jsonOk(result);
       }
+      if (beaconError) process.exitCode = 1;
     } catch (err) {
       if (opts.json) {
         jsonError(err);

@@ -2,43 +2,106 @@
 // Copyright (c) 2026 sol pbc
 
 import { describe, test, expect } from 'bun:test';
-import { toBeacon, parseGitUrl, beaconToHttps } from '../src/lib/beacon.js';
+import {
+  BEACON_ACCEPTED_FORMS,
+  beaconToHttps,
+  normalizeBeacon,
+  parseGitUrl,
+  tryNormalizeBeacon,
+} from '../src/lib/beacon.js';
 
-describe('toBeacon', () => {
-  test('SCP SSH with .git', () => expect(toBeacon('git@github.com:org/repo.git')).toBe('github.com/org/repo'));
-  test('SCP SSH without .git', () => expect(toBeacon('git@github.com:org/repo')).toBe('github.com/org/repo'));
+describe('normalizeBeacon', () => {
+  const canonical = 'vit:github.com/owner/repo';
 
-  test('SSH URL', () => expect(toBeacon('ssh://git@github.com/org/repo.git')).toBe('github.com/org/repo'));
-  test('SSH URL with port', () => expect(toBeacon('ssh://git@github.com:22/org/repo.git')).toBe('github.com/org/repo'));
+  test.each([
+    'vit:github.com/Owner/Repo',
+    'https://github.com/Owner/Repo.git',
+    'ssh://git@github.com/Owner/Repo.git',
+    'git@github.com:Owner/Repo.git',
+    'github.com/Owner/Repo',
+  ])('normalizes supported form %s', (input) => {
+    expect(normalizeBeacon(input, '--beacon')).toBe(canonical);
+  });
 
-  test('HTTPS with .git', () => expect(toBeacon('https://github.com/org/repo.git')).toBe('github.com/org/repo'));
-  test('HTTPS without .git', () => expect(toBeacon('https://github.com/org/repo')).toBe('github.com/org/repo'));
-  test('HTTPS trailing slash', () => expect(toBeacon('https://github.com/org/repo/')).toBe('github.com/org/repo'));
+  test('is idempotent', () => {
+    expect(normalizeBeacon(normalizeBeacon(canonical, '--beacon'), '--beacon')).toBe(canonical);
+  });
 
-  test('git protocol', () => expect(toBeacon('git://github.com/org/repo.git')).toBe('github.com/org/repo'));
+  test('SCP SSH without .git', () =>
+    expect(normalizeBeacon('git@github.com:org/repo', '--beacon')).toBe('vit:github.com/org/repo'));
+  test('SSH URL with port', () =>
+    expect(normalizeBeacon('ssh://git@github.com:22/org/repo.git', '--beacon')).toBe('vit:github.com/org/repo'));
+  test('HTTPS without .git', () =>
+    expect(normalizeBeacon('https://github.com/org/repo', '--beacon')).toBe('vit:github.com/org/repo'));
+  test('HTTPS trailing slash', () =>
+    expect(normalizeBeacon('https://github.com/org/repo/', '--beacon')).toBe('vit:github.com/org/repo'));
+  test('git protocol', () =>
+    expect(normalizeBeacon('git://github.com/org/repo.git', '--beacon')).toBe('vit:github.com/org/repo'));
+  test('bare slug with .git', () =>
+    expect(normalizeBeacon('github.com/org/repo.git', '--beacon')).toBe('vit:github.com/org/repo'));
 
-  test('bare slug', () => expect(toBeacon('github.com/org/repo')).toBe('github.com/org/repo'));
-  test('bare slug with .git', () => expect(toBeacon('github.com/org/repo.git')).toBe('github.com/org/repo'));
+  test('trims whitespace', () =>
+    expect(normalizeBeacon(' \n https://GitHub.Com/Owner/Repo.git \t', '--beacon')).toBe(canonical));
+  test('ignores query and fragment text without changing the path grammar', () => {
+    expect(normalizeBeacon('https://github.com/Owner/Repo.git?tab=readme#usage', '--beacon')).toBe(canonical);
+  });
 
-  test('case normalization', () => expect(toBeacon('GitHub.Com/Org/Repo.git')).toBe('github.com/org/repo'));
   test('SCP case normalization', () =>
-    expect(toBeacon('git@GitHub.Com:Org/Repo.git')).toBe('github.com/org/repo'));
-  test('HTTPS case normalization', () =>
-    expect(toBeacon('https://GitHub.Com/Org/Repo')).toBe('github.com/org/repo'));
+    expect(normalizeBeacon('git@GitHub.Com:Owner/Repo.git', '--beacon')).toBe(canonical));
 
-  test('no-org SCP (tilde)', () => expect(toBeacon('git@sr.ht:~user/repo.git')).toBe('sr.ht/~user/repo'));
-  test('no-org SCP single segment', () => expect(toBeacon('git@myhost.com:repo.git')).toBe('myhost.com//repo'));
-  test('no-org HTTPS', () => expect(toBeacon('https://myhost.com/repo.git')).toBe('myhost.com//repo'));
-  test('no-org bare slug', () => expect(toBeacon('myhost.com/repo')).toBe('myhost.com//repo'));
+  test('no-org SCP (tilde)', () =>
+    expect(normalizeBeacon('git@sr.ht:~user/repo.git', '--beacon')).toBe('vit:sr.ht/~user/repo'));
+  test('no-org SCP single segment', () =>
+    expect(normalizeBeacon('git@myhost.com:repo.git', '--beacon')).toBe('vit:myhost.com//repo'));
+  test('no-org HTTPS', () =>
+    expect(normalizeBeacon('https://myhost.com/repo.git', '--beacon')).toBe('vit:myhost.com//repo'));
+  test('no-org bare slug', () =>
+    expect(normalizeBeacon('myhost.com/repo', '--beacon')).toBe('vit:myhost.com//repo'));
+  test('ownerless vit URI double slash round-trips', () => {
+    const beacon = 'vit:knot.commonscomputer.com//did:plc:mfquhie7kthb4ig453glwgdk';
+    expect(normalizeBeacon(beacon, '--beacon')).toBe(beacon);
+  });
 
-  test('this repo (solpbc/vit)', () => expect(toBeacon('git@github.com:solpbc/vit.git')).toBe('github.com/solpbc/vit'));
+  test('dotted owner is preserved', () => {
+    expect(normalizeBeacon('https://tangled.org/solpbc.org/rookery', '--beacon'))
+      .toBe('vit:tangled.org/solpbc.org/rookery');
+  });
 
-  test('empty string throws', () => expect(() => toBeacon('')).toThrow('Invalid git URL'));
-  test('null throws', () => expect(() => toBeacon(null)).toThrow('Invalid git URL'));
-  test('undefined throws', () => expect(() => toBeacon(undefined)).toThrow('Invalid git URL'));
-  test('number throws', () => expect(() => toBeacon(123)).toThrow('Invalid git URL'));
-  test('bare word throws', () => expect(() => toBeacon('repo')).toThrow('Invalid git URL'));
-  test('too many segments throws', () => expect(() => toBeacon('github.com/a/b/c')).toThrow('Invalid git URL'));
+  test.each([
+    '',
+    '   ',
+    'vit:',
+    'repo',
+    'https://github.com/',
+    'github.com/a/b/c',
+    null,
+    undefined,
+    123,
+    {},
+  ])('rejects malformed or non-string input %#', (input) => {
+    expect(() => normalizeBeacon(input, '--beacon')).toThrow(
+      `Invalid beacon from --beacon: expected ${BEACON_ACCEPTED_FORMS}.`,
+    );
+  });
+
+  test('strict error names a config field without echoing its value', () => {
+    const bad = 'secret-not-a-url';
+    expect(() => normalizeBeacon(bad, '.vit/config.json "beacon"')).toThrow(
+      `Invalid beacon from .vit/config.json "beacon": expected ${BEACON_ACCEPTED_FORMS}.`,
+    );
+    try {
+      normalizeBeacon(bad, '.vit/config.json "beacon"');
+    } catch (err) {
+      expect(err.message).not.toContain(bad);
+    }
+  });
+
+  test('tolerant form returns canonical values or null', () => {
+    expect(tryNormalizeBeacon('https://github.com/Owner/Repo.git')).toBe(canonical);
+    expect(tryNormalizeBeacon(canonical)).toBe(canonical);
+    expect(tryNormalizeBeacon('not a url')).toBeNull();
+    expect(tryNormalizeBeacon(null)).toBeNull();
+  });
 });
 
 describe('parseGitUrl', () => {

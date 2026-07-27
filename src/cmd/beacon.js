@@ -4,7 +4,7 @@
 import git from 'isomorphic-git';
 import http from 'isomorphic-git/http/node';
 import { memfs } from 'memfs';
-import { beaconToHttps } from '../lib/beacon.js';
+import { beaconToHttps, normalizeBeacon, tryNormalizeBeacon } from '../lib/beacon.js';
 import { mark } from '../lib/brand.js';
 import { errorMessage, formatError } from '../lib/error-format.js';
 
@@ -31,7 +31,8 @@ export default function register(program) {
     .action(async (target, opts) => {
       try {
         const { verbose } = opts;
-        const url = beaconToHttps(target);
+        const canonicalTarget = normalizeBeacon(target, 'vit beacon <target>');
+        const url = beaconToHttps(canonicalTarget);
         if (verbose) console.log(`[verbose] Resolved URL: ${url}`);
         const { fs } = memfs();
         const dir = '/';
@@ -47,7 +48,7 @@ export default function register(program) {
 
         let beacon;
         try {
-          beacon = content && JSON.parse(content).beacon;
+          beacon = tryNormalizeBeacon(content && JSON.parse(content).beacon);
         } catch (err) {
           console.warn(`warning: failed to parse .vit/config.json from ${url}: ${errorMessage(err)}`);
         }

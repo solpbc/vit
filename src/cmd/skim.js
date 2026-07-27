@@ -12,6 +12,7 @@ import { name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
 import { jsonError } from '../lib/json-output.js';
 import { formatError } from '../lib/error-format.js';
+import { tryNormalizeBeacon } from '../lib/beacon.js';
 
 export default function register(program) {
   program
@@ -95,7 +96,7 @@ export default function register(program) {
           // Fetch caps (filtered by beacon)
           if (wantCaps && beaconSet.size > 0) {
             const res = await listRecordsFromPds(pds, repoDid, CAP_COLLECTION, 50);
-            let caps = res.records.filter(r => beaconSet.has(r.value.beacon));
+            let caps = res.records.filter(r => beaconSet.has(tryNormalizeBeacon(r.value.beacon)));
             if (opts.kind) {
               caps = caps.filter(r => r.value.kind === opts.kind);
             }

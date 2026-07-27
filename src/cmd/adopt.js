@@ -4,7 +4,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { parseGitUrl, toBeacon, beaconToHttps } from '../lib/beacon.js';
+import { parseGitUrl, normalizeBeacon, beaconToHttps } from '../lib/beacon.js';
 import { requireNotAgent } from '../lib/agent.js';
 import { which } from '../lib/compat.js';
 import { mark, name } from '../lib/brand.js';
@@ -30,9 +30,9 @@ export default function register(program) {
 
         // resolve beacon
         if (verbose) console.log(`[verbose] resolving beacon: ${beacon}`);
-        const httpsUrl = beaconToHttps(beacon);
+        const beaconUri = normalizeBeacon(beacon, 'vit adopt <beacon>');
+        const httpsUrl = beaconToHttps(beaconUri);
         const parsed = parseGitUrl(httpsUrl);
-        const beaconUri = 'vit:' + toBeacon(httpsUrl);
         if (verbose) console.log(`[verbose] beacon: ${beaconUri}`);
         if (verbose) console.log(`[verbose] https: ${httpsUrl}`);
 

@@ -13,6 +13,7 @@ import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
 import { loadConfig } from '../lib/config.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
 import { formatError } from '../lib/error-format.js';
+import { tryNormalizeBeacon } from '../lib/beacon.js';
 
 export default function register(program) {
   program
@@ -114,7 +115,7 @@ export default function register(program) {
         let match = null;
         for (const records of allRecords) {
           for (const rec of records) {
-            if (!beaconSet.has(rec.value.beacon)) continue;
+            if (!beaconSet.has(tryNormalizeBeacon(rec.value.beacon))) continue;
             const recRef = resolveRef(rec.value, rec.cid);
             if (recRef === ref) {
               if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {

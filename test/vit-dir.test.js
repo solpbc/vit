@@ -2,7 +2,7 @@
 // Copyright (c) 2026 sol pbc
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { mkdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
+import { mkdirSync, rmSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -34,6 +34,64 @@ describe('vit-dir', () => {
     expect(config.beacon).toBe('vit:github.com/org/repo');
   });
 
+  test('readProjectConfig normalizes primary and secondary aliases without rewriting', async () => {
+    const vitPath = join(tmpDir, '.vit');
+    mkdirSync(vitPath);
+    const raw = {
+      beacon: 'https://github.com/solpbc/thermals',
+      secondaryBeacon: 'https://tangled.org/solpbc.org/rookery',
+      untouched: true,
+    };
+    writeFileSync(join(vitPath, 'config.json'), JSON.stringify(raw));
+    const { readProjectConfig } = await import('../src/lib/vit-dir.js');
+
+    expect(readProjectConfig(tmpDir)).toEqual({
+      beacon: 'vit:github.com/solpbc/thermals',
+      secondaryBeacon: 'vit:tangled.org/solpbc.org/rookery',
+      untouched: true,
+    });
+    expect(JSON.parse(readFileSync(join(vitPath, 'config.json'), 'utf-8'))).toEqual(raw);
+  });
+
+  test('readRawProjectConfig preserves corrupt beacon fields for init repair', async () => {
+    const vitPath = join(tmpDir, '.vit');
+    mkdirSync(vitPath);
+    writeFileSync(join(vitPath, 'config.json'), JSON.stringify({
+      beacon: 'not a url',
+      secondaryBeacon: null,
+      untouched: 'yes',
+    }));
+    const { readRawProjectConfig } = await import('../src/lib/vit-dir.js');
+
+    expect(readRawProjectConfig(tmpDir)).toEqual({
+      beacon: 'not a url',
+      secondaryBeacon: null,
+      untouched: 'yes',
+    });
+  });
+
+  test('readProjectConfig raises corrupt beacon outside the JSON and IO fallback', async () => {
+    const vitPath = join(tmpDir, '.vit');
+    mkdirSync(vitPath);
+    writeFileSync(join(vitPath, 'config.json'), JSON.stringify({ beacon: 'not a url' }));
+    const { readProjectConfig } = await import('../src/lib/vit-dir.js');
+
+    expect(() => readProjectConfig(tmpDir)).toThrow('.vit/config.json "beacon"');
+  });
+
+  test('writeProjectConfig stores canonical primary and secondary values', async () => {
+    const { writeProjectConfig } = await import('../src/lib/vit-dir.js');
+    writeProjectConfig({
+      beacon: 'https://github.com/solpbc/thermals',
+      secondaryBeacon: 'https://tangled.org/solpbc.org/rookery',
+    }, tmpDir);
+
+    expect(JSON.parse(readFileSync(join(tmpDir, '.vit', 'config.json'), 'utf-8'))).toEqual({
+      beacon: 'vit:github.com/solpbc/thermals',
+      secondaryBeacon: 'vit:tangled.org/solpbc.org/rookery',
+    });
+  });
+
   test('readProjectConfig returns {} when file missing', async () => {
     const { readProjectConfig } = await import('../src/lib/vit-dir.js');
     const config = readProjectConfig(tmpDir);
@@ -62,6 +120,18 @@ describe('vit-dir', () => {
     expect(set.size).toBe(2);
     expect(set.has('vit:github.com/org/repo')).toBe(true);
     expect(set.has('vit:github.com/upstream/repo')).toBe(true);
+  });
+
+  test('readBeaconSet canonicalizes and deduplicates aliases', async () => {
+    const vitPath = join(tmpDir, '.vit');
+    mkdirSync(vitPath);
+    writeFileSync(join(vitPath, 'config.json'), JSON.stringify({
+      beacon: 'https://github.com/solpbc/thermals',
+      secondaryBeacon: 'vit:github.com/solpbc/thermals',
+    }));
+    const { readBeaconSet } = await import('../src/lib/vit-dir.js');
+
+    expect([...readBeaconSet(tmpDir)]).toEqual(['vit:github.com/solpbc/thermals']);
   });
 
   test('appendLog creates file and appends JSONL line', async () => {

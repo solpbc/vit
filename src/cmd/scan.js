@@ -8,6 +8,7 @@ import { brand } from '../lib/brand.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
 import { readBeaconSet } from '../lib/vit-dir.js';
 import { formatError } from '../lib/error-format.js';
+import { normalizeBeacon, tryNormalizeBeacon } from '../lib/beacon.js';
 
 export default function register(program) {
   program
@@ -53,7 +54,7 @@ export default function register(program) {
               return;
             }
           } else {
-            beaconSet = new Set([opts.beacon]);
+            beaconSet = new Set([normalizeBeacon(opts.beacon, '--beacon')]);
           }
         }
 
@@ -111,7 +112,8 @@ export default function register(program) {
             if (!isCapEvent && !isSkillEvent) return;
 
             // Apply filters
-            if (isCapEvent && beaconSet && !beaconSet.has(record.beacon)) return;
+            const recordBeacon = isCapEvent ? tryNormalizeBeacon(record.beacon) : null;
+            if (isCapEvent && beaconSet && !beaconSet.has(recordBeacon)) return;
             if (isSkillEvent && opts.tag) {
               const tags = record.tags || [];
               if (!tags.some(t => t.toLowerCase() === opts.tag.toLowerCase())) return;
@@ -125,7 +127,7 @@ export default function register(program) {
               if (isCapEvent) {
                 const title = record.title || '';
                 const refPart = ref ? ` (${ref})` : '';
-                vlog(`  ${didShort}: [cap] ${title}${refPart} [${record.beacon || 'no beacon'}]`);
+                vlog(`  ${didShort}: [cap] ${title}${refPart} [${recordBeacon || 'no beacon'}]`);
               } else {
                 const skillName = record.name || '';
                 const tags = record.tags ? ` [${record.tags.join(', ')}]` : '';
@@ -139,7 +141,7 @@ export default function register(program) {
             const entry = publishers.get(did);
             if (isCapEvent) {
               entry.capCount++;
-              if (record.beacon) entry.beacons.add(record.beacon);
+              if (recordBeacon) entry.beacons.add(recordBeacon);
             } else {
               entry.skillCount++;
               if (record.tags) {

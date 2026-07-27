@@ -6,6 +6,7 @@ import { readProjectConfig } from '../lib/vit-dir.js';
 import { brand } from '../lib/brand.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
 import { errorMessage, formatError } from '../lib/error-format.js';
+import { normalizeBeacon } from '../lib/beacon.js';
 
 function timeAgo(isoString) {
   const seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
@@ -104,9 +105,12 @@ export default function register(program) {
       const baseUrl = resolveUrl(opts);
 
       try {
+        const beacon = opts.beacon
+          ? normalizeBeacon(opts.beacon, '--beacon')
+          : null;
         const url = new URL('/api/cap', baseUrl);
         url.searchParams.set('ref', ref);
-        if (opts.beacon) url.searchParams.set('beacon', opts.beacon);
+        if (beacon) url.searchParams.set('beacon', beacon);
 
         const data = await fetchExploreJson(url);
 
@@ -236,6 +240,8 @@ export default function register(program) {
             return;
           }
           beacon = beacons.join(',');
+        } else if (beacon) {
+          beacon = normalizeBeacon(beacon, '--beacon');
         }
 
         const url = new URL('/api/caps', baseUrl);
@@ -389,10 +395,13 @@ export default function register(program) {
           return;
         }
 
+        const beacon = opts.beacon
+          ? normalizeBeacon(opts.beacon, '--beacon')
+          : null;
         let capUri = opts.cap;
         if (opts.ref) {
           const capsUrl = new URL('/api/caps', baseUrl);
-          if (opts.beacon) capsUrl.searchParams.set('beacon', opts.beacon);
+          if (beacon) capsUrl.searchParams.set('beacon', beacon);
 
           const capsData = await fetchExploreJson(capsUrl);
           const match = capsData.caps?.find((cap) => cap.ref === opts.ref);

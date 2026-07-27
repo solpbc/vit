@@ -13,6 +13,7 @@ import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
 import { loadConfig } from '../lib/config.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
 import { formatError } from '../lib/error-format.js';
+import { tryNormalizeBeacon } from '../lib/beacon.js';
 
 export default function register(program) {
   program
@@ -229,7 +230,7 @@ export default function register(program) {
           let match = null;
           for (const records of allRecords) {
             for (const rec of records) {
-              if (!isWant && !beaconSet.has(rec.value.beacon)) continue;
+              if (!isWant && !beaconSet.has(tryNormalizeBeacon(rec.value.beacon))) continue;
               const recRef = resolveRef(rec.value, rec.cid);
               if (recRef === ref) {
                 if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {
@@ -254,7 +255,9 @@ export default function register(program) {
           }
 
           const now = new Date().toISOString();
-          const projBeacon = beaconSet.size > 0 ? [...beaconSet][0] : (match.value.beacon || null);
+          const projBeacon = beaconSet.size > 0
+            ? [...beaconSet][0]
+            : tryNormalizeBeacon(match.value.beacon);
           const vouchRecord = {
             $type: VOUCH_COLLECTION,
             subject: {

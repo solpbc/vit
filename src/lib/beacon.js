@@ -81,9 +81,31 @@ export function parseGitUrl(input) {
   return { host, org, repo };
 }
 
-export function toBeacon(input) {
+function toBeacon(input) {
   const { host, org, repo } = parseGitUrl(input);
   return org ? `${host}/${org}/${repo}` : `${host}//${repo}`;
+}
+
+export const BEACON_ACCEPTED_FORMS = 'vit:host/owner/repo or a git URL (a scheme URL such as https://host/owner/repo, ssh://git@host/owner/repo, or git://host/owner/repo; SCP-style git@host:owner/repo; or host/owner/repo)';
+
+export function normalizeBeacon(input, source) {
+  try {
+    const trimmed = typeof input === 'string' ? input.trim() : input;
+    const gitUrl = typeof trimmed === 'string' && trimmed.startsWith('vit:')
+      ? trimmed.slice(4)
+      : trimmed;
+    return `vit:${toBeacon(gitUrl)}`;
+  } catch {
+    throw new Error(`Invalid beacon from ${source}: expected ${BEACON_ACCEPTED_FORMS}.`);
+  }
+}
+
+export function tryNormalizeBeacon(input) {
+  try {
+    return normalizeBeacon(input, 'untrusted value');
+  } catch {
+    return null;
+  }
 }
 
 export function beaconToHttps(input) {

@@ -35,7 +35,7 @@ describe('vit adopt', () => {
   test('fails with invalid beacon', () => {
     const result = run('adopt notaurl', tmpDir, NON_AGENT_ENV);
     expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain('Invalid git URL');
+    expect(result.stderr).toContain('Invalid beacon from vit adopt <beacon>');
   });
 
   test('fails if directory already exists', () => {

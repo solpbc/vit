@@ -4,12 +4,14 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { join } from 'node:path';
-import { toBeacon } from '../lib/beacon.js';
-import { vitDir, readProjectConfig, writeProjectConfig } from '../lib/vit-dir.js';
+import { normalizeBeacon, tryNormalizeBeacon } from '../lib/beacon.js';
+import { vitDir, readProjectConfig, readRawProjectConfig, writeProjectConfig } from '../lib/vit-dir.js';
 import { requireAgent } from '../lib/agent.js';
 import { mark, name, DOT_VIT_README } from '../lib/brand.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
 import { errorMessage, formatError } from '../lib/error-format.js';
+
+const BEACON_REPAIR_HINT = 'run vit init --beacon <canonical-git-url> to repair it';
 
 export default function register(program) {
   program
@@ -39,7 +41,13 @@ export default function register(program) {
         if (verbose) vlog(`[verbose] .vit dir: ${dir}`);
 
         if (!opts.beacon && !opts.secondary) {
-          const config = readProjectConfig();
+          let config;
+          try {
+            config = readProjectConfig();
+          } catch (err) {
+            err.hint = BEACON_REPAIR_HINT;
+            throw err;
+          }
           if (config.beacon) {
             if (opts.json) {
               const out = { beacon: config.beacon };
@@ -149,7 +157,7 @@ export default function register(program) {
         }
 
         if (opts.secondary && !opts.beacon) {
-          const config = readProjectConfig();
+          const config = readRawProjectConfig();
           if (!config.beacon) {
             if (opts.json) {
               jsonError("no primary beacon set — run 'vit init --beacon <url>' first");
@@ -160,8 +168,15 @@ export default function register(program) {
             return;
           }
 
-          const secondary = 'vit:' + toBeacon(opts.secondary);
-          const merged = { ...config, secondaryBeacon: secondary };
+          let primary;
+          try {
+            primary = normalizeBeacon(config.beacon, '.vit/config.json "beacon"');
+          } catch (err) {
+            err.hint = BEACON_REPAIR_HINT;
+            throw err;
+          }
+          const secondary = normalizeBeacon(opts.secondary, '--secondary');
+          const merged = { ...config, beacon: primary, secondaryBeacon: secondary };
           writeProjectConfig(merged);
           if (opts.json) {
             jsonOk({ beacon: merged.beacon, secondaryBeacon: merged.secondaryBeacon });
@@ -210,12 +225,20 @@ export default function register(program) {
           if (verbose) vlog(`[verbose] Read git remote ${usedRemote}: ${gitUrl}`);
         }
 
-        const beacon = 'vit:' + toBeacon(gitUrl);
+        const beacon = normalizeBeacon(gitUrl, '--beacon');
         if (verbose) vlog(`[verbose] Computed beacon: ${beacon}`);
-        const existing = readProjectConfig();
+        const existing = readRawProjectConfig();
         const merged = { ...existing, beacon };
         if (opts.secondary) {
-          merged.secondaryBeacon = 'vit:' + toBeacon(opts.secondary);
+          merged.secondaryBeacon = normalizeBeacon(opts.secondary, '--secondary');
+        } else if (Object.hasOwn(existing, 'secondaryBeacon')) {
+          const secondary = tryNormalizeBeacon(existing.secondaryBeacon);
+          if (secondary) {
+            merged.secondaryBeacon = secondary;
+          } else {
+            delete merged.secondaryBeacon;
+            console.warn('warning: dropping invalid .vit/config.json "secondaryBeacon" while repairing beacon');
+          }
         }
         writeProjectConfig(merged);
         if (verbose) vlog(`[verbose] Wrote config.json`);
@@ -239,7 +262,7 @@ export default function register(program) {
           jsonError(err);
           return;
         }
-        console.error(formatError(err, { verbose: opts.verbose }));
+        console.error(formatError(err, { hint: err?.hint, verbose: opts.verbose }));
         process.exitCode = 1;
       }
     });

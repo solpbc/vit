@@ -14,7 +14,7 @@ import { isValidSkillName, skillRefFromName } from '../lib/skill-ref.js';
 import { name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
-import { toBeacon } from '../lib/beacon.js';
+import { normalizeBeacon } from '../lib/beacon.js';
 import { hashTo3Words } from '../lib/cap-ref.js';
 import { formatError } from '../lib/error-format.js';
 import { publishCap } from '../lib/cap.js';
@@ -47,11 +47,6 @@ function generateRef(title, existingRefs) {
   const hashed2 = hashTo3Words(title + Date.now());
   if (!existingRefs.has(hashed2)) return hashed2;
   return null;
-}
-
-function normalizeBeacon(input) {
-  if (input.startsWith('vit:')) return input;
-  return 'vit:' + toBeacon(input);
 }
 
 function parseFrontmatter(text) {
@@ -381,13 +376,13 @@ export async function shipCap(opts) {
     // Request caps: --beacon flag or project config (in that order)
     if (opts.beacon) {
       try {
-        beacon = normalizeBeacon(opts.beacon);
+        beacon = normalizeBeacon(opts.beacon, '--beacon');
       } catch (err) {
         if (opts.json) {
-          jsonError(`invalid --beacon: ${err.message}`);
+          jsonError(err);
           return;
         }
-        console.error(`error: invalid --beacon: ${err.message}`);
+        console.error(formatError(err, { verbose }));
         process.exitCode = 1;
         return;
       }
