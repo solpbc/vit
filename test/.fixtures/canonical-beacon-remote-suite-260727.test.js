@@ -4,7 +4,6 @@
 // This lives under test/.fixtures/ so top-level `bun test` does not auto-discover
 // it in the shared process; its sibling wrapper executes it explicitly.
 import {
-  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -182,10 +181,6 @@ describe('canonical remote beacon behavior', () => {
     }
     process.exitCode = 0;
     rmSync(testDir, { recursive: true, force: true });
-  });
-
-  afterAll(() => {
-    mock.restore();
   });
 
   function logs() {
@@ -391,7 +386,7 @@ describe('canonical remote beacon behavior', () => {
     expect(output.publishers[0].beacons).toEqual(['vit:github.com/solpbc/thermals']);
   });
 
-  test('remote beacon display canonicalizes aliases and uses existing unlit wording for garbage', async () => {
+  test('remote beacon display canonicalizes aliases and distinguishes invalid config', async () => {
     remoteRepoConfig = { beacon: 'https://tangled.org/solpbc.org/rookery' };
     await runRegistered(registerBeacon, ['beacon', 'vit:github.com/solpbc/vit']);
     expect(logs()).toContain('beacon: lit vit:tangled.org/solpbc.org/rookery');
@@ -399,7 +394,17 @@ describe('canonical remote beacon behavior', () => {
     logSpy.mockClear();
     remoteRepoConfig = { beacon: 'not a url' };
     await runRegistered(registerBeacon, ['beacon', 'vit:github.com/solpbc/vit']);
-    expect(logs()).toContain('beacon: unlit');
+    expect(logs()).toContain(
+      'beacon: invalid — remote .vit/config.json does not contain a valid project identity',
+    );
+    expect(logs()).not.toContain('beacon: unlit');
     expect(logs()).not.toContain('not a url');
+
+    logSpy.mockClear();
+    remoteRepoConfig = {};
+    await runRegistered(registerBeacon, ['beacon', 'vit:github.com/solpbc/vit']);
+    expect(logs()).toContain(
+      'beacon: invalid — remote .vit/config.json does not contain a valid project identity',
+    );
   });
 });

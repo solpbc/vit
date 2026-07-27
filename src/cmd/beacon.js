@@ -6,7 +6,7 @@ import http from 'isomorphic-git/http/node';
 import { memfs } from 'memfs';
 import { beaconToHttps, normalizeBeacon, tryNormalizeBeacon } from '../lib/beacon.js';
 import { mark } from '../lib/brand.js';
-import { errorMessage, formatError } from '../lib/error-format.js';
+import { formatError } from '../lib/error-format.js';
 
 async function readTreeFile(fs, dir, treeOid, pathParts) {
   for (let i = 0; i < pathParts.length; i++) {
@@ -44,20 +44,25 @@ export default function register(program) {
         if (verbose) console.log(`[verbose] HEAD resolved: ${head}`);
         const commit = await git.readObject({ fs, dir, oid: head, format: 'parsed' });
         const content = await readTreeFile(fs, dir, commit.object.tree, ['.vit', 'config.json']);
-        if (verbose) console.log(`[verbose] Read .vit/config.json: ${content ? 'found' : 'not found'}`);
+        const configPresent = content !== null;
+        if (verbose) console.log(`[verbose] Read .vit/config.json: ${configPresent ? 'found' : 'not found'}`);
 
         let beacon;
-        try {
-          beacon = tryNormalizeBeacon(content && JSON.parse(content).beacon);
-        } catch (err) {
-          console.warn(`warning: failed to parse .vit/config.json from ${url}: ${errorMessage(err)}`);
+        if (configPresent) {
+          try {
+            beacon = tryNormalizeBeacon(JSON.parse(content).beacon);
+          } catch {
+            beacon = null;
+          }
         }
 
         if (beacon) {
           console.log(`${mark} beacon: lit ${beacon}`);
-        } else {
+        } else if (!configPresent) {
           console.log(`${mark} beacon: unlit — this repo hasn't initialized vit yet.`);
           console.log("the maintainer can light the beacon by running 'vit init' inside the repo.");
+        } else {
+          console.log(`${mark} beacon: invalid — remote .vit/config.json does not contain a valid project identity`);
         }
       } catch (err) {
         console.error(formatError(err, { verbose: opts.verbose }));

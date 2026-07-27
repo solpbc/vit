@@ -232,6 +232,8 @@ export default function register(program) {
         if (opts.secondary) {
           merged.secondaryBeacon = normalizeBeacon(opts.secondary, '--secondary');
         } else if (Object.hasOwn(existing, 'secondaryBeacon')) {
+          // Tolerant normalization is deliberate on this repair path: an invalid secondary
+          // must be dropped with a warning, not block repair of the primary beacon.
           const secondary = tryNormalizeBeacon(existing.secondaryBeacon);
           if (secondary) {
             merged.secondaryBeacon = secondary;
