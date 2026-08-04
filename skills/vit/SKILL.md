@@ -28,6 +28,10 @@ Dependency chain: `login → init → follow → skim/ship`.
 
 Handoffs:
 - If no DID is configured, tell the user to run `vit login <handle>`.
+- If `vit login <handle>` says “Already logged in” but a session has been
+  revoked or later fails server authentication, tell the user to rerun
+  `vit login <handle> --force`. The ordinary login check only sees local
+  session material and can false-green a revoked token.
 - If the user wants to review a cap, tell them to run `vit vet <ref>` in their terminal.
 
 ## 4. Commands the Agent Runs
@@ -166,7 +170,7 @@ When the user says "ship it", "vit ship", or asks you to publish a cap for work 
 ## 5. Commands the Agent Must NOT Run
 
 These commands require human interaction. Tell the user exactly what to run:
-- `vit login <handle>` - Tell user: "Run `vit login <handle>` in your terminal to authenticate via browser OAuth."
+- `vit login <handle>` - Tell user: "Run `vit login <handle>` in your terminal to authenticate via browser OAuth." If it falsely reports an existing login after revocation or a server-auth failure, add `--force` to restart authentication.
 - `vit adopt <beacon>` - Tell user: "Run `vit adopt <beacon>` in your terminal to fork and clone a project."
 - `vit vet <ref>` - Human review command. Tell the user to run it in their terminal.
   **Exception: sandboxed sub-agent vetting.** If you are a dedicated sub-agent
