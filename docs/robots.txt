@@ -1,0 +1,14 @@
+# v-it.org — public marketing site. It exists to be found, cited, and
+# understood. The Article 8 data covenants govern PRODUCT and OWNER data —
+# they do not govern this site's public pages, which we want propagated.
+# All crawler categories are allowed, by intent:
+#   - Search (Googlebot, Bingbot, ...): blocking would make us invisible.
+#   - AI-retrieval / RAG (ClaudeBot, PerplexityBot, OAI-SearchBot, ...):
+#     we want assistants to cite this site's own first-hand account.
+#   - AI-training (GPTBot, Google-Extended, CCBot, Applebot-Extended, ...):
+#     this site's public content is intentional digital-self-determination
+#     advocacy; model world-knowledge of it is mission propagation, not
+#     data leakage.
+
+User-agent: *
+Allow: /
