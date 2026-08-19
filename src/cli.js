@@ -4,6 +4,7 @@
 import { Command } from 'commander';
 import { readFileSync } from 'node:fs';
 import { brand } from './lib/brand.js';
+import { USING_VIT_REMINDER } from './lib/constants.js';
 import registerAdopt from './cmd/adopt.js';
 import registerBeacon from './cmd/beacon.js';
 import registerConfig from './cmd/config.js';
@@ -51,5 +52,13 @@ registerFollow(program);
 registerHack(program);
 registerLink(program);
 registerInbox(program);
+
+program.addHelpText('after', USING_VIT_REMINDER);
+program.configureOutput({
+  outputError(str, write) {
+    write(str);
+    write(`${USING_VIT_REMINDER}\n`);
+  },
+});
 
 export { program };
