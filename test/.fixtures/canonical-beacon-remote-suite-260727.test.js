@@ -289,6 +289,92 @@ describe('canonical remote beacon behavior', () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
+  test('vet matches your own cap even when its beacon is out of the project beacon set (vit#2)', async () => {
+    writeRawConfig(testDir, { beacon: 'vit:tangled.org/bmann/assemblinker' });
+    remoteRecords = [
+      {
+        uri: 'at://did:plc:test/org.v-it.cap/record',
+        cid: CAP_CID,
+        value: {
+          $type: 'org.v-it.cap',
+          ref: 'canonical-beacon-test',
+          title: 'Own Cap, Foreign Beacon',
+          description: 'Self-authored cap declared under a different project beacon',
+          text: 'test body',
+          createdAt: '2026-07-27T00:00:00.000Z',
+          beacon: 'vit:knot.commonscomputer.com//did:plc:mfquhie7kthb4ig453glwgdk',
+        },
+      },
+    ];
+
+    await runRegistered(registerVet, [
+      'vet', 'canonical-beacon-test', '--did', 'did:plc:test', '--json',
+    ]);
+
+    const output = JSON.parse(logSpy.mock.calls.at(-1)[0]);
+    expect(output.ok).toBe(true);
+    expect(output.ref).toBe('canonical-beacon-test');
+  });
+
+  test('vet still enforces the beacon filter for a cap authored by someone else (regression guard)', async () => {
+    writeRawConfig(testDir, { beacon: 'vit:tangled.org/bmann/assemblinker' });
+    remoteRecords = [
+      {
+        uri: 'at://did:plc:someone-else/org.v-it.cap/record',
+        cid: CAP_CID,
+        value: {
+          $type: 'org.v-it.cap',
+          ref: 'canonical-beacon-test',
+          title: 'Someone Elses Cap, Foreign Beacon',
+          description: 'Not self-authored -- must not bypass the beacon filter',
+          text: 'test body',
+          createdAt: '2026-07-27T00:00:00.000Z',
+          beacon: 'vit:knot.commonscomputer.com//did:plc:mfquhie7kthb4ig453glwgdk',
+        },
+      },
+    ];
+
+    await runRegistered(registerVet, [
+      'vet', 'canonical-beacon-test', '--did', 'did:plc:test', '--json',
+    ]);
+
+    expect(process.exitCode).toBe(1);
+    const output = JSON.parse(logSpy.mock.calls.at(-1)[0]);
+    expect(output.ok).toBe(false);
+  });
+
+  test('remix matches your own cap even when its beacon is out of the project beacon set (vit#2)', async () => {
+    enableAgent();
+    writeRawConfig(testDir, { beacon: 'vit:tangled.org/bmann/assemblinker' });
+    writeFileSync(
+      join(testDir, '.vit', 'trusted.jsonl'),
+      JSON.stringify({ ref: 'canonical-beacon-test', uri: 'at://did:plc:test/org.v-it.cap/record' }) + '\n',
+    );
+    remoteRecords = [
+      {
+        uri: 'at://did:plc:test/org.v-it.cap/record',
+        cid: CAP_CID,
+        value: {
+          $type: 'org.v-it.cap',
+          ref: 'canonical-beacon-test',
+          title: 'Own Cap, Foreign Beacon',
+          description: 'Self-authored cap declared under a different project beacon',
+          text: 'test body',
+          createdAt: '2026-07-27T00:00:00.000Z',
+          beacon: 'vit:knot.commonscomputer.com//did:plc:mfquhie7kthb4ig453glwgdk',
+        },
+      },
+    ];
+
+    await runRegistered(registerRemix, [
+      'remix', 'canonical-beacon-test', '--did', 'did:plc:test', '--json',
+    ]);
+
+    const output = JSON.parse(logSpy.mock.calls.at(-1)[0]);
+    expect(output.ok).toBe(true);
+    expect(output.ref).toBe('canonical-beacon-test');
+  });
+
   test('vouch publishes and logs one canonical project beacon after remote alias matching', async () => {
     writeRawConfig(testDir, { beacon: 'https://github.com/solpbc/thermals' });
     writeFileSync(

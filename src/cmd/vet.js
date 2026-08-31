@@ -289,17 +289,19 @@ export default function register(program) {
           }, { verbose });
 
           let match = null;
-          let selfOutOfScope = null;
           for (const records of allRecords) {
             for (const rec of records) {
               const recRef = resolveRef(rec.value, rec.cid);
               if (recRef !== ref) continue;
-              if (beaconSet.has(tryNormalizeBeacon(rec.value.beacon))) {
-                if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {
-                  match = rec;
-                }
-              } else if (!selfOutOfScope && rec.uri?.split('/')[2] === did) {
-                selfOutOfScope = rec;
+              // Your own caps are exempt from the project-beacon filter: the beacon
+              // scopes which OTHER accounts' caps a project will trust, but you
+              // already unconditionally query your own DID regardless of following
+              // -- there's no equivalent trust question about your own content, and
+              // the error hint below has always promised this ("and your own").
+              const isSelf = rec.uri?.split('/')[2] === did;
+              if (!isSelf && !beaconSet.has(tryNormalizeBeacon(rec.value.beacon))) continue;
+              if (!match || (rec.value.createdAt || '') > (match.value.createdAt || '')) {
+                match = rec;
               }
             }
           }
@@ -311,17 +313,9 @@ export default function register(program) {
             }
             console.error(`no cap found with ref '${ref}' for this beacon.`);
             console.error('');
-            if (selfOutOfScope) {
-              // Self-authored cap exists but its beacon isn't in this project's beacon
-              // set -- "following" can never explain this, since it's your own record.
-              const otherBeacon = tryNormalizeBeacon(selfOutOfScope.value.beacon) || selfOutOfScope.value.beacon;
-              console.error(`hint: you have a cap with this ref, but its beacon (${otherBeacon}) isn't in this project's beacon set.`);
-              console.error(`  vit init --secondary ${otherBeacon}  add it as a secondary beacon to pull from`);
-            } else {
-              console.error('hint: caps only appear from accounts you follow and your own.');
-              console.error(`  vit following          check who you're following`);
-              console.error(`  vit explore cap ${ref}  search the network-wide index`);
-            }
+            console.error('hint: caps only appear from accounts you follow and your own.');
+            console.error(`  vit following          check who you're following`);
+            console.error(`  vit explore cap ${ref}  search the network-wide index`);
             process.exitCode = 1;
             return;
           }

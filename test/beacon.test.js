@@ -5,6 +5,7 @@ import { describe, test, expect } from 'bun:test';
 import {
   BEACON_ACCEPTED_FORMS,
   beaconToHttps,
+  looksLikeIdentityBeacon,
   normalizeBeacon,
   parseGitUrl,
   tryNormalizeBeacon,
@@ -135,4 +136,26 @@ describe('beaconToHttps', () => {
     expect(() => beaconToHttps('notaurl')).toThrow('Invalid git URL'));
   test('empty vit: URI throws', () =>
     expect(() => beaconToHttps('vit:')).toThrow('Invalid beacon URI'));
+});
+
+describe('looksLikeIdentityBeacon', () => {
+  test('true for a Tangled-knot-shaped beacon (host + bare DID, no repo)', () =>
+    expect(looksLikeIdentityBeacon('vit:knot.commonscomputer.com//did:plc:mfquhie7kthb4ig453glwgdk')).toBe(true));
+  test('true when the DID sits in the org position', () =>
+    expect(looksLikeIdentityBeacon('vit:knot.example.com/did:plc:abc123/somerepo')).toBe(true));
+  test('true for a did:web identity', () =>
+    expect(looksLikeIdentityBeacon('vit:knot.example.com//did:web:example.com')).toBe(true));
+  test('false for an ordinary org/repo beacon', () =>
+    expect(looksLikeIdentityBeacon('vit:github.com/solpbc/vit')).toBe(false));
+  test('false for an ordinary no-org beacon', () =>
+    expect(looksLikeIdentityBeacon('vit:tangled.org//assemblinker')).toBe(false));
+  test('false for a beacon without the vit: prefix stripped first', () =>
+    expect(looksLikeIdentityBeacon('knot.example.com//did:plc:abc123')).toBe(true));
+  test('false for non-string input', () => {
+    expect(looksLikeIdentityBeacon(null)).toBe(false);
+    expect(looksLikeIdentityBeacon(undefined)).toBe(false);
+    expect(looksLikeIdentityBeacon(42)).toBe(false);
+  });
+  test('false for a beacon with no slash at all', () =>
+    expect(looksLikeIdentityBeacon('vit:justahost')).toBe(false));
 });

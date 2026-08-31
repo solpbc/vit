@@ -75,6 +75,30 @@ describe('vit init', () => {
     expect(result.exitCode).not.toBe(0);
   });
 
+  test('refuses a Tangled-knot-shaped beacon (host + bare DID, no repo)', () => {
+    const result = run(
+      'init --beacon knot.commonscomputer.com/did:plc:mfquhie7kthb4ig453glwgdk',
+      tmpDir,
+      { CLAUDECODE: '1' }
+    );
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain('looks like a person/identity URL');
+    expect(existsSync(join(tmpDir, '.vit', 'config.json'))).toBe(false);
+  });
+
+  test('refuses an identity-shaped --secondary beacon', () => {
+    run('init --beacon https://github.com/org/repo.git', tmpDir, { CLAUDECODE: '1' });
+    const result = run(
+      'init --secondary knot.commonscomputer.com/did:plc:mfquhie7kthb4ig453glwgdk',
+      tmpDir,
+      { CLAUDECODE: '1' }
+    );
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain('looks like a person/identity URL');
+    const content = JSON.parse(readFileSync(join(tmpDir, '.vit', 'config.json'), 'utf-8'));
+    expect(content.secondaryBeacon).toBeUndefined();
+  });
+
   test('reports beacon when no flag and beacon exists', () => {
     run('init --beacon https://github.com/solpbc/vit.git', tmpDir, { CLAUDECODE: '1' });
     const result = run('init', tmpDir, { CLAUDECODE: '1' });

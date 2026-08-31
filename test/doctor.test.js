@@ -25,6 +25,32 @@ describe('vit doctor', () => {
     expect(result.stdout).toMatch(/beacon:/);
   });
 
+  test('warns when the project beacon looks like a person/identity URL', () => {
+    const tmpProject = join(tmpdir(), '.test-doctor-project-' + Math.random().toString(36).slice(2));
+    mkdirSync(join(tmpProject, '.vit'), { recursive: true });
+    writeFileSync(
+      join(tmpProject, '.vit', 'config.json'),
+      JSON.stringify({ beacon: 'vit:knot.commonscomputer.com//did:plc:mfquhie7kthb4ig453glwgdk' })
+    );
+
+    try {
+      const result = run('doctor', tmpProject, doctorEnv());
+      expect(result.stdout).toContain('looks like a person/identity URL');
+
+      const jsonResult = run('doctor --json', tmpProject, doctorEnv());
+      const parsed = JSON.parse(jsonResult.stdout);
+      expect(parsed.beaconIdentityWarning).toBe(true);
+    } finally {
+      rmSync(tmpProject, { recursive: true, force: true });
+    }
+  });
+
+  test('does not warn for an ordinary project beacon', () => {
+    const result = run('doctor --json', undefined, doctorEnv());
+    const parsed = JSON.parse(result.stdout);
+    expect(parsed.beaconIdentityWarning).toBeUndefined();
+  });
+
   test('reports skill status', () => {
     const result = run('doctor', undefined, doctorEnv());
     expect(result.stdout).toMatch(/skill:/);

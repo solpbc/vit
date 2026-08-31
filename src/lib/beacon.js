@@ -86,6 +86,25 @@ function toBeacon(input) {
   return org ? `${host}/${org}/${repo}` : `${host}//${repo}`;
 }
 
+const DID_LIKE = /^did:[a-z0-9]+:/i;
+
+/**
+ * True when a canonical beacon's org or repo segment looks like an AT Protocol DID
+ * rather than a real repository name -- the shape produced when a bare identity URL
+ * (e.g. a Tangled *knot* host plus a DID, with no repo path) is fed to `vit init`
+ * instead of the actual repo URL. A beacon in this shape identifies a person, not a
+ * project, so every repo that person hosts the same mistaken way collapses onto one
+ * indistinguishable beacon.
+ */
+export function looksLikeIdentityBeacon(beacon) {
+  if (typeof beacon !== 'string') return false;
+  const body = beacon.startsWith('vit:') ? beacon.slice(4) : beacon;
+  const slash = body.indexOf('/');
+  if (slash === -1) return false;
+  const segments = body.slice(slash + 1).split('/').filter(Boolean);
+  return segments.some(seg => DID_LIKE.test(seg));
+}
+
 export const BEACON_ACCEPTED_FORMS = 'vit:host/owner/repo or a git URL (a scheme URL such as https://host/owner/repo, ssh://git@host/owner/repo, or git://host/owner/repo; SCP-style git@host:owner/repo; or host/owner/repo)';
 
 export function normalizeBeacon(input, source) {

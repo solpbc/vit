@@ -4,6 +4,7 @@
 import { loadConfig } from '../lib/config.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { readProjectConfig } from '../lib/vit-dir.js';
+import { looksLikeIdentityBeacon } from '../lib/beacon.js';
 import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
@@ -94,11 +95,18 @@ export default function register(program) {
         }
       }
 
+      let beaconIdentityWarning = false;
       try {
         const projConfig = readProjectConfig();
         beacon = projConfig.beacon || null;
         if (projConfig.beacon) {
           if (!opts.json) console.log(`${mark} beacon: ${projConfig.beacon}`);
+          if (looksLikeIdentityBeacon(projConfig.beacon)) {
+            beaconIdentityWarning = true;
+            if (!opts.json) {
+              console.log(`${mark} beacon looks like a person/identity URL, not a repo URL -- every repo hosted the same way would collapse onto this one beacon. Run vit init --beacon <the repo's own URL> to repair it.`);
+            }
+          }
         } else {
           if (!opts.json) console.log(`${mark} beacon: not set (run vit init)`);
         }
@@ -202,6 +210,7 @@ export default function register(program) {
           bluesky: { ok: blueskyOk, did: effectiveDid || null, pds, source: identitySource, authType },
         };
         if (beaconError) result.beaconError = beaconError;
+        if (beaconIdentityWarning) result.beaconIdentityWarning = true;
         jsonOk(result);
       }
       if (beaconError) process.exitCode = 1;

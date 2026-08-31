@@ -4,7 +4,7 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { join } from 'node:path';
-import { normalizeBeacon, tryNormalizeBeacon } from '../lib/beacon.js';
+import { normalizeBeacon, tryNormalizeBeacon, looksLikeIdentityBeacon } from '../lib/beacon.js';
 import { vitDir, readProjectConfig, readRawProjectConfig, writeProjectConfig } from '../lib/vit-dir.js';
 import { requireAgent } from '../lib/agent.js';
 import { mark, name, DOT_VIT_README } from '../lib/brand.js';
@@ -12,6 +12,17 @@ import { jsonOk, jsonError } from '../lib/json-output.js';
 import { errorMessage, formatError } from '../lib/error-format.js';
 
 const BEACON_REPAIR_HINT = 'run vit init --beacon <canonical-git-url> to repair it';
+const IDENTITY_BEACON_HINT = 'use the repo\'s own URL, not a bare host+identity URL (e.g. a Tangled knot URL with no repo path)';
+
+function assertNotIdentityBeacon(beacon, source) {
+  if (!looksLikeIdentityBeacon(beacon)) return;
+  const err = new Error(
+    `${source} looks like a person/identity URL, not a repo URL (derived beacon: ${beacon}). ` +
+    'Every repo hosted the same way would collapse onto this one beacon.'
+  );
+  err.hint = IDENTITY_BEACON_HINT;
+  throw err;
+}
 
 export default function register(program) {
   program
@@ -176,6 +187,7 @@ export default function register(program) {
             throw err;
           }
           const secondary = normalizeBeacon(opts.secondary, '--secondary');
+          assertNotIdentityBeacon(secondary, '--secondary');
           const merged = { ...config, beacon: primary, secondaryBeacon: secondary };
           writeProjectConfig(merged);
           if (opts.json) {
@@ -226,11 +238,13 @@ export default function register(program) {
         }
 
         const beacon = normalizeBeacon(gitUrl, '--beacon');
+        assertNotIdentityBeacon(beacon, '--beacon');
         if (verbose) vlog(`[verbose] Computed beacon: ${beacon}`);
         const existing = readRawProjectConfig();
         const merged = { ...existing, beacon };
         if (opts.secondary) {
           merged.secondaryBeacon = normalizeBeacon(opts.secondary, '--secondary');
+          assertNotIdentityBeacon(merged.secondaryBeacon, '--secondary');
         } else if (Object.hasOwn(existing, 'secondaryBeacon')) {
           // Tolerant normalization is deliberate on this repair path: an invalid secondary
           // must be dropped with a warning, not block repair of the primary beacon.
