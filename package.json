@@ -33,9 +33,13 @@
     "commander": "^13.0.0",
     "env-paths": "4.0.0",
     "isomorphic-git": "1.37.0",
-    "memfs": "4.56.10"
+    "memfs": "4.56.10",
+    "undici": "^6.28.1"
   },
   "devDependencies": {
     "marked": "^17.0.4"
+  },
+  "overrides": {
+    "undici": "^6.28.1"
   }
 }

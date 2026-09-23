@@ -28,6 +28,7 @@ let publishCalls = [];
 let putRecordCalls = [];
 let remoteRecords = [];
 let remoteRepoConfig = {};
+let fakeWebSocketClass;
 
 const fakeAgent = {
   resolveHandle: async () => ({ data: { did: 'did:plc:test' } }),
@@ -88,6 +89,14 @@ mock.module('isomorphic-git', () => ({
   },
 }));
 
+mock.module('undici', () => ({
+  WebSocket: class {
+    constructor(...args) {
+      return new fakeWebSocketClass(...args);
+    }
+  },
+}));
+
 const [
   { shipCap },
   { default: registerBeacon },
@@ -142,7 +151,6 @@ describe('canonical remote beacon behavior', () => {
   let errorSpy;
   let warnSpy;
   let savedEnv;
-  let savedWebSocket;
 
   beforeEach(() => {
     testDir = join(tmpdir(), '.test-canonical-beacon-remote-' + Math.random().toString(36).slice(2));
@@ -157,7 +165,6 @@ describe('canonical remote beacon behavior', () => {
       CODEX_CI: process.env.CODEX_CI,
       OPENCODE: process.env.OPENCODE,
     };
-    savedWebSocket = globalThis.WebSocket;
     process.env.CLAUDECODE = '';
     process.env.GEMINI_CLI = '';
     process.env.CODEX_CI = '';
@@ -174,7 +181,6 @@ describe('canonical remote beacon behavior', () => {
     logSpy.mockRestore();
     errorSpy.mockRestore();
     warnSpy.mockRestore();
-    globalThis.WebSocket = savedWebSocket;
     for (const [key, value] of Object.entries(savedEnv)) {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
@@ -448,7 +454,7 @@ describe('canonical remote beacon behavior', () => {
         },
       },
     ];
-    globalThis.WebSocket = class FakeWebSocket {
+    fakeWebSocketClass = class FakeWebSocket {
       constructor() {
         queueMicrotask(() => {
           for (const message of messages) {

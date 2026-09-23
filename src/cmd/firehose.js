@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 sol pbc
 
+import { WebSocket } from 'undici';
 import { loadConfig } from '../lib/config.js';
 import { CAP_COLLECTION, DEFAULT_JETSTREAM_URL } from '../lib/constants.js';
 import { resolveRef } from '../lib/cap-ref.js';
