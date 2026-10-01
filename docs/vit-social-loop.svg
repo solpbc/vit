@@ -34,27 +34,27 @@
   </g>
 
   <!-- skim — top -->
-  <text x="400" y="123" text-anchor="middle" font-size="26" font-weight="700" fill="#059669" letter-spacing="1">skim</text>
+  <text x="400" y="123" text-anchor="middle" font-size="26" font-weight="700" fill="#047857" letter-spacing="1">skim</text>
   <text x="400" y="143" text-anchor="middle" font-size="13" fill="#6b7280">browse what others share</text>
 
   <!-- vet — upper right -->
-  <text x="524" y="213" text-anchor="middle" font-size="26" font-weight="700" fill="#059669" letter-spacing="1">vet</text>
+  <text x="524" y="213" text-anchor="middle" font-size="26" font-weight="700" fill="#047857" letter-spacing="1">vet</text>
   <text x="524" y="233" text-anchor="middle" font-size="13" fill="#6b7280">check it</text>
 
   <!-- remix — lower right -->
-  <text x="476" y="358" text-anchor="middle" font-size="26" font-weight="700" fill="#059669" letter-spacing="1">remix</text>
+  <text x="476" y="358" text-anchor="middle" font-size="26" font-weight="700" fill="#047857" letter-spacing="1">remix</text>
   <text x="476" y="378" text-anchor="middle" font-size="13" fill="#6b7280">make it yours</text>
 
   <!-- vouch — lower left -->
-  <text x="324" y="358" text-anchor="middle" font-size="26" font-weight="700" fill="#059669" letter-spacing="1">vouch</text>
+  <text x="324" y="358" text-anchor="middle" font-size="26" font-weight="700" fill="#047857" letter-spacing="1">vouch</text>
   <text x="324" y="378" text-anchor="middle" font-size="13" fill="#6b7280">endorse what works</text>
 
   <!-- ship — upper left -->
-  <text x="276" y="213" text-anchor="middle" font-size="26" font-weight="700" fill="#059669" letter-spacing="1">ship</text>
+  <text x="276" y="213" text-anchor="middle" font-size="26" font-weight="700" fill="#047857" letter-spacing="1">ship</text>
   <text x="276" y="233" text-anchor="middle" font-size="13" fill="#6b7280">share it back</text>
 
   <!-- center tagline -->
-  <text x="400" y="268" text-anchor="middle" font-size="18" font-weight="600" fill="#059669" letter-spacing="0.5">open source is social</text>
+  <text x="400" y="268" text-anchor="middle" font-size="18" font-weight="600" fill="#047857" letter-spacing="0.5">open source is social</text>
 
   <!-- vit mark — subtle, bottom right -->
   <g transform="translate(755, 458) scale(0.55)" opacity="0.25">
