@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const vitBin = join(import.meta.dir, '..', 'bin', 'vit.js');
-const nonAgentEnv = { CLAUDECODE: '', GEMINI_CLI: '', CODEX_CI: '', OPENCODE: '' };
+const nonAgentEnv = { CLAUDECODE: '', GEMINI_CLI: '', CODEX_CI: '', OPENCODE: '', AI_AGENT: '', PI_CODING_AGENT: '' };
 
 export function run(args, cwd, env, input) {
   const result = spawnSync(`bun ${vitBin} ${args}`, {

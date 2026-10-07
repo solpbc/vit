@@ -13,6 +13,8 @@ description: >-
 
 vit is a Node CLI for social software capabilities. Agents use it to initialize projects, follow accounts, skim caps from followed accounts, and ship new caps. Some commands (login, adopt, vet) require human interaction - the agent should tell the user to run those in their terminal.
 
+Pi is recognised through `AI_AGENT=pi` or `PI_CODING_AGENT=true`. The agent commands work under Pi, with the existing trust gates. Pi-specific skill installation, doctor integration, and the Pi sandbox launcher are not yet available.
+
 ## 2. Prerequisites
 
 Dependency chain: `login → init → follow → skim/ship`.

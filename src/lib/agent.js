@@ -12,6 +12,8 @@ export function detectCodingAgent() {
   for (const [envVar, name] of Object.entries(CODING_AGENTS)) {
     if (process.env[envVar] === '1') return { name, envVar };
   }
+  if (process.env.AI_AGENT === 'pi') return { name: 'pi', envVar: 'AI_AGENT' };
+  if (process.env.PI_CODING_AGENT === 'true') return { name: 'pi', envVar: 'PI_CODING_AGENT' };
   return null;
 }
 

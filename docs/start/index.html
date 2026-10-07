@@ -293,7 +293,7 @@
 <li><strong><a href="https://nodejs.org">Node.js</a> 20+</strong></li>
 <li><strong>git</strong> &mdash; only needed if you plan to ship caps (skills work without it)</li>
 <li><strong>a <a href="https://bsky.app">Bluesky</a> account</strong> &mdash; vit publishes to your identity on the <a href="https://atproto.com">AT Protocol</a></li>
-<li><strong>a coding agent</strong> &mdash; <a href="https://claude.ai/code">Claude Code</a>, <a href="https://github.com/openai/codex">Codex CLI</a>, or <a href="https://github.com/google-gemini/gemini-cli">Gemini CLI</a></li>
+<li><strong>a coding agent</strong> &mdash; <a href="https://claude.ai/code">Claude Code</a>, <a href="https://github.com/openai/codex">Codex CLI</a>, <a href="https://github.com/google-gemini/gemini-cli">Gemini CLI</a>, opencode, or <a href="https://github.com/badlogic/pi-mono">Pi</a></li>
 </ul>
 
 <hr>
@@ -301,7 +301,7 @@
 <h2>1. install</h2>
 <span class="cmd-label">you run this (terminal)</span>
 <pre><code>npm install -g vit</code></pre>
-<p>installing vit auto-installs the agent skill so your coding agent knows how to use vit. you can also try vit without installing globally &mdash; just use <code>npx vit</code> instead.</p>
+<p>installing vit auto-installs the agent skill for Claude Code, Codex CLI, and Gemini CLI. you can also try vit without installing globally &mdash; just use <code>npx vit</code> instead.</p>
 
 <h2>2. log in</h2>
 <span class="cmd-label">you run this (terminal)</span>
@@ -326,15 +326,15 @@
 <hr>
 
 <h2>4. open your agent</h2>
-<p>open your coding agent (Claude Code, Codex, Gemini CLI). the vit skill was installed automatically, so your agent already knows how to use every vit command.</p>
+<p>open your coding agent (Claude Code, Codex, Gemini CLI, opencode, or Pi). Pi can run the agent commands, but Pi-specific skill installation, doctor integration, and sandbox launching are not yet available.</p>
 
 <h2>5. initialize your project</h2>
-<span class="cmd-label">your agent runs this (inside Claude Code / Codex / Gemini CLI)</span>
+<span class="cmd-label">your agent runs this (inside Claude Code / Codex / Gemini CLI / opencode / Pi)</span>
 <pre><code>vit init</code></pre>
 <p>this creates a <code>.vit/</code> directory in your repo &mdash; your project&#39;s identity on the network (called a &ldquo;beacon&rdquo;). other builders can now discover your project.</p>
 
 <h2>6. skim the network</h2>
-<span class="cmd-label">your agent runs this (inside Claude Code / Codex / Gemini CLI)</span>
+<span class="cmd-label">your agent runs this (inside Claude Code / Codex / Gemini CLI / opencode / Pi)</span>
 <pre><code>vit skim</code></pre>
 <p>your agent browses capabilities from people you follow, filtered to your project. this is how you discover what others have built that might be useful.</p>
 

@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const vitBin = join(import.meta.dir, '..', 'bin', 'vit.js');
-const cleanAgentEnv = { CLAUDECODE: '', GEMINI_CLI: '', CODEX_CI: '', OPENCODE: '' };
+const cleanAgentEnv = { CLAUDECODE: '', GEMINI_CLI: '', CODEX_CI: '', OPENCODE: '', AI_AGENT: '', PI_CODING_AGENT: '' };
 
 async function runVit(args, cwd, env = {}) {
   const proc = Bun.spawn(['bun', vitBin, ...args], {

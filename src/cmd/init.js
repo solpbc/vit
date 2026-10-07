@@ -40,7 +40,7 @@ export default function register(program) {
             jsonError('agent required', 'run vit init from a coding agent');
             return;
           }
-          console.error(`${name} init should be run by a coding agent (e.g. claude code, codex, gemini cli, opencode).`);
+          console.error(`${name} init should be run by a coding agent (e.g. claude code, codex, gemini cli, opencode, pi).`);
           console.error(`open your agent and ask it to run '${name} init' for you.`);
           process.exitCode = 1;
           return;

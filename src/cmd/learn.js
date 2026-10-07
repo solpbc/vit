@@ -247,7 +247,7 @@ Examples:
             jsonError('agent required', 'run vit learn from a coding agent');
             return;
           }
-          console.error(`${name} learn should be run by a coding agent (e.g. claude code, codex, gemini cli, opencode).`);
+          console.error(`${name} learn should be run by a coding agent (e.g. claude code, codex, gemini cli, opencode, pi).`);
           console.error(`open your agent and ask it to run '${name} learn' for you.`);
           process.exitCode = 1;
           return;

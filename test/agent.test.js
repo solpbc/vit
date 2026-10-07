@@ -5,34 +5,19 @@ import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { detectCodingAgent, requireAgent, requireNotAgent } from '../src/lib/agent.js';
 
 describe('agent', () => {
-  let originalClaudeCode;
-  let originalGeminiCli;
-  let originalCodexCi;
-  let originalOpencode;
+  const agentEnvVars = ['CLAUDECODE', 'GEMINI_CLI', 'CODEX_CI', 'OPENCODE', 'AI_AGENT', 'PI_CODING_AGENT'];
+  let originalEnv;
 
   beforeEach(() => {
-    originalClaudeCode = process.env.CLAUDECODE;
-    originalGeminiCli = process.env.GEMINI_CLI;
-    originalCodexCi = process.env.CODEX_CI;
-    originalOpencode = process.env.OPENCODE;
-    delete process.env.CLAUDECODE;
-    delete process.env.GEMINI_CLI;
-    delete process.env.CODEX_CI;
-    delete process.env.OPENCODE;
+    originalEnv = Object.fromEntries(agentEnvVars.map(key => [key, process.env[key]]));
+    for (const key of agentEnvVars) delete process.env[key];
   });
 
   afterEach(() => {
-    if (originalClaudeCode === undefined) delete process.env.CLAUDECODE;
-    else process.env.CLAUDECODE = originalClaudeCode;
-
-    if (originalGeminiCli === undefined) delete process.env.GEMINI_CLI;
-    else process.env.GEMINI_CLI = originalGeminiCli;
-
-    if (originalCodexCi === undefined) delete process.env.CODEX_CI;
-    else process.env.CODEX_CI = originalCodexCi;
-
-    if (originalOpencode === undefined) delete process.env.OPENCODE;
-    else process.env.OPENCODE = originalOpencode;
+    for (const key of agentEnvVars) {
+      if (originalEnv[key] === undefined) delete process.env[key];
+      else process.env[key] = originalEnv[key];
+    }
   });
 
   describe('detectCodingAgent', () => {
@@ -73,6 +58,42 @@ describe('agent', () => {
     test('returns null when OPENCODE is not 1', () => {
       process.env.OPENCODE = 'true';
       expect(detectCodingAgent()).toBe(null);
+    });
+  });
+
+  describe('Pi markers', () => {
+    for (const [envVar, value] of [['AI_AGENT', 'pi'], ['PI_CODING_AGENT', 'true']]) {
+      test(`${envVar}=${value} permits agent work and refuses human-only work`, () => {
+        process.env[envVar] = value;
+        expect(detectCodingAgent()).toEqual({ name: 'pi', envVar });
+        expect(requireAgent()).toEqual({ ok: true, name: 'pi', envVar });
+        expect(requireNotAgent()).toEqual({ ok: false, name: 'pi', envVar });
+      });
+    }
+
+    test('recognises both Pi markers together', () => {
+      process.env.AI_AGENT = 'pi';
+      process.env.PI_CODING_AGENT = 'true';
+      expect(detectCodingAgent()).toEqual({ name: 'pi', envVar: 'AI_AGENT' });
+    });
+
+    for (const [envVar, values] of [
+      ['AI_AGENT', ['', 'other-agent', 'Pi', 'true', '1']],
+      ['PI_CODING_AGENT', ['', 'false', '0', '1', 'TRUE']],
+    ]) {
+      for (const value of values) {
+        test(`does not recognise ${envVar}=${JSON.stringify(value)}`, () => {
+          process.env[envVar] = value;
+          expect(detectCodingAgent()).toBe(null);
+        });
+      }
+    }
+
+    test('preserves existing agent precedence in inherited Pi environments', () => {
+      process.env.CODEX_CI = '1';
+      process.env.AI_AGENT = 'pi';
+      process.env.PI_CODING_AGENT = 'true';
+      expect(detectCodingAgent()).toEqual({ name: 'codex', envVar: 'CODEX_CI' });
     });
   });
 

@@ -5,7 +5,7 @@ full command reference for the vit CLI. for concepts and vocabulary, see [VOCAB.
 vit is a human+agent collaboration tool. commands are labeled by who runs them:
 
 - **you** (terminal) — commands you run directly
-- **your agent** (inside Claude Code / Codex / Gemini CLI) — commands your coding agent runs
+- **your agent** (inside Claude Code / Codex / Gemini CLI / opencode / Pi) — commands your coding agent runs
 
 ---
 
@@ -46,7 +46,7 @@ checks Node.js version, git availability, login status, and (if in a repo) `.vit
 
 ### init
 
-**your agent runs this** (inside Claude Code / Codex / Gemini CLI)
+**your agent runs this** (inside Claude Code / Codex / Gemini CLI / opencode / Pi)
 
 initialize `.vit/` directory and derive the project beacon from git remotes.
 
@@ -140,7 +140,7 @@ replays recent network activity and shows who's shipping capabilities and skills
 
 ### skim
 
-**your agent runs this** (inside Claude Code / Codex / Gemini CLI)
+**your agent runs this** (inside Claude Code / Codex / Gemini CLI / opencode / Pi)
 
 read capabilities and skills from followed accounts, filtered to your project.
 
@@ -196,7 +196,7 @@ works for both capabilities and skills. no beacon required for skills.
 
 ### remix
 
-**your agent runs this** (inside Claude Code / Codex / Gemini CLI)
+**your agent runs this** (inside Claude Code / Codex / Gemini CLI / opencode / Pi)
 
 derive a vetted capability into the local codebase and generate an implementation plan.
 
@@ -208,7 +208,7 @@ requires a vetted capability. creates a local remix with a structured plan, trac
 
 ### learn
 
-**your agent runs this** (inside Claude Code / Codex / Gemini CLI)
+**your agent runs this** (inside Claude Code / Codex / Gemini CLI / opencode / Pi)
 
 install a vetted skill for agent use.
 
@@ -225,7 +225,7 @@ installs to `.claude/skills/{name}/` (project scope) or `~/.claude/skills/{name}
 
 ### ship
 
-**your agent runs this** (inside Claude Code / Codex / Gemini CLI)
+**your agent runs this** (inside Claude Code / Codex / Gemini CLI / opencode / Pi)
 
 publish a new capability or skill to the network.
 
