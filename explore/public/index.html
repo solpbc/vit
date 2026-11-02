@@ -206,6 +206,9 @@
     .cap-meta {
       font-size: 0.85rem;
       color: #6b7280;
+      overflow-wrap: anywhere;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .cap-meta a {
@@ -323,12 +326,19 @@
       display: flex;
       justify-content: space-between;
       align-items: baseline;
+      gap: 12px;
       padding: 10px 0;
       border-bottom: 1px solid #e5e7eb;
     }
 
     .beacon-item:last-child {
       border-bottom: none;
+    }
+
+    .beacon-name {
+      overflow-wrap: anywhere;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .beacon-name a {
@@ -342,6 +352,7 @@
     }
 
     .beacon-stats {
+      flex-shrink: 0;
       font-size: 0.85rem;
       color: #6b7280;
       text-align: right;
@@ -568,8 +579,6 @@
       border-radius: 3px;
       margin-left: 8px;
       vertical-align: middle;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
       background-color: #f3f4f6;
       color: #374151;
     }
@@ -683,6 +692,11 @@
       padding: 32px 0;
     }
 
+    .not-found code,
+    .empty-state code {
+      color: #4b5563;
+    }
+
     .back-link {
       display: inline-block;
       margin-bottom: 16px;
@@ -708,11 +722,9 @@
         <nav>
           <a href="https://v-it.org/">home</a>
           <a href="https://v-it.org/start/">start</a>
-          <a href="/" class="active">explore</a>
           <a href="https://v-it.org/doctrine/">doctrine</a>
-          <a href="https://v-it.org/vocab/">vocab</a>
-          <a href="https://v-it.org/architecture/">architecture</a>
-          <a href="https://github.com/solpbc/vit">github</a>
+          <a href="/" class="active">explore</a>
+          <a href="https://github.com/solpbc/vit">source</a>
         </nav>
       </div>
       <p class="tagline">open source is social<span id="pulse" class="pulse-indicator"></span></p>
@@ -937,7 +949,7 @@
       capsCursor = data.cursor;
 
       if (data.caps.length === 0) {
-        el.innerHTML = '<div class="empty-state"><p><strong>No caps yet.</strong></p><p>Caps are software capabilities published to the network. Ship the first one:</p><pre><code>vit ship --title "..." --description "..." --ref "..."</code></pre><p><a href="https://v-it.org/start/">Get started with vit →</a></p></div>';
+        el.innerHTML = '<div class="empty-state"><p><strong>no caps yet.</strong></p><p>caps are software capabilities published to the network. ship the first one:</p><pre><code>vit ship --title "..." --description "..." --ref "..."</code></pre><p><a href="https://v-it.org/start/">get started with vit →</a></p></div>';
         return;
       }
 
@@ -950,7 +962,7 @@
     async function renderCapDetail(el, ref) {
       var data = await api('cap?ref=' + encodeURIComponent(ref));
       if (!data.cap) {
-        el.innerHTML = '<div class="not-found"><a href="#caps" class="back-link">&larr; back to caps</a><p><strong>Cap not found.</strong></p><p>No cap with ref <code>' + esc(ref) + '</code> was found.</p></div>';
+        el.innerHTML = '<div class="not-found"><a href="#caps" class="back-link">&larr; back to caps</a><p><strong>cap not found.</strong></p><p>no cap with ref <code>' + esc(ref) + '</code> was found.</p></div>';
         return;
       }
       var cap = data.cap;
@@ -1016,7 +1028,7 @@
     async function renderSkillDetail(el, name) {
       var data = await api('skill?name=' + encodeURIComponent(name));
       if (!data.skill) {
-        el.innerHTML = '<div class="not-found"><a href="#skills" class="back-link">&larr; back to skills</a><p><strong>Skill not found.</strong></p><p>No skill named <code>' + esc(name) + '</code> was found.</p></div>';
+        el.innerHTML = '<div class="not-found"><a href="#skills" class="back-link">&larr; back to skills</a><p><strong>skill not found.</strong></p><p>no skill named <code>' + esc(name) + '</code> was found.</p></div>';
         return;
       }
       var skill = data.skill;
@@ -1116,9 +1128,9 @@
 
       if (data.skills.length === 0) {
         if (tag) {
-          el.innerHTML = heading + '<div class="empty-state"><p>No skills found matching tag "' + esc(tag) + '".</p><p><a href="#skills">View all skills</a></p></div>';
+          el.innerHTML = heading + '<div class="empty-state"><p>no skills found matching tag "' + esc(tag) + '".</p><p><a href="#skills">view all skills</a></p></div>';
         } else {
-          el.innerHTML = heading + '<div class="empty-state"><p><strong>No skills yet.</strong></p><p>Skills are reusable agent instructions published to the network. Publish one:</p><pre><code>vit ship --skill</code></pre><p><a href="https://v-it.org/start/">Get started with vit →</a></p></div>';
+          el.innerHTML = heading + '<div class="empty-state"><p><strong>no skills yet.</strong></p><p>skills are reusable agent instructions published to the network. publish one:</p><pre><code>vit ship --skill</code></pre><p><a href="https://v-it.org/start/">get started with vit →</a></p></div>';
         }
         return;
       }
@@ -1164,7 +1176,7 @@
       const data = await api('beacons');
 
       if (data.beacons.length === 0) {
-        el.innerHTML = '<div class="empty-state"><p><strong>No beacons yet.</strong></p><p>Beacons are project markers that connect repos to the vit network. Light one up:</p><pre><code>vit init</code></pre><p><a href="https://v-it.org/start/">Get started with vit →</a></p></div>';
+        el.innerHTML = '<div class="empty-state"><p><strong>no beacons yet.</strong></p><p>beacons are project markers that connect repos to the vit network. light one up:</p><pre><code>vit init</code></pre><p><a href="https://v-it.org/start/">get started with vit →</a></p></div>';
         return;
       }
 
