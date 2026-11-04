@@ -144,7 +144,7 @@ export default function register(program) {
         }
       }
       if (!opts.json && userSkills.length > 0) {
-        console.log(`${mark} user skills: ${userSkills.length} installed`);
+        console.log(`${mark} global skills:${userSkills.length} installed`);
         for (const s of userSkills) {
           const ver = s.version ? ` v${s.version}` : '';
           console.log(`    ${s.name}${ver}`);

@@ -2,7 +2,7 @@
 
 ## record types
 
-vit uses ATProto records stored in each user's PDS repository. three record types are used:
+vit uses ATProto records stored in each account's PDS repository. three record types are used:
 
 | record type | NSID | custom? | key | purpose |
 |---|---|---|---|---|
@@ -14,7 +14,7 @@ vit uses ATProto records stored in each user's PDS repository. three record type
 
 caps are structurally similar to Bluesky posts (`app.bsky.feed.post`) but serve a different purpose. using a custom NSID (`org.v-it.cap`) ensures:
 
-- caps live in their own collection (`org.v-it.cap`) and never appear in a user's Bluesky post feed.
+- caps live in their own collection (`org.v-it.cap`) and never appear in an account's Bluesky post feed.
 - Bluesky AppViews and feed generators ignore cap records (unknown collection).
 - vit tooling can query caps independently without filtering out posts.
 - the cap schema can evolve independently of `app.bsky.feed.post`.

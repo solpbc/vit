@@ -11,7 +11,7 @@ description: >-
 
 - **DID**: Decentralized identifier (e.g. `did:plc:abc123`). The stable identity.
 - **Handle**: Human-readable name (e.g. `alice.bsky.social`). Resolves to a DID.
-- **PDS**: Personal Data Server — stores a user's records.
+- **PDS**: Personal Data Server — stores an account's records.
 - **AT URI**: `at://did/collection/rkey` — uniquely identifies a record.
 - **Lexicon**: Schema definition for record types (like a protobuf for ATProto).
 - **NSID**: Namespaced identifier for collections (e.g. `app.bsky.feed.post`).

@@ -2,7 +2,7 @@
 name: using-vit
 description: >-
   Helps coding agents use vit to discover, follow, skim, and ship software
-  capabilities (caps) over ATProto. Activates when the user mentions vit,
+  capabilities (caps) over ATProto. Activates when the operator mentions vit,
   beacons, caps, shipping, skimming, following, vetting, or social coding.
   Provides command reference for: vit init, vit skim, vit ship, vit follow,
   vit following, vit learn, vit remix, vit doctor, vit config, vit beacon,
@@ -11,7 +11,7 @@ description: >-
 
 ## 1. Overview
 
-vit is a Node CLI for social software capabilities. Agents use it to initialize projects, follow accounts, skim caps from followed accounts, and ship new caps. Some commands (login, adopt, vet) require human interaction - the agent should tell the user to run those in their terminal.
+vit is a Node CLI for social software capabilities. Agents use it to initialize projects, follow accounts, skim caps from followed accounts, and ship new caps. Some commands (login, adopt, vet) require human interaction - the agent should tell the operator to run those in their terminal.
 
 Pi is recognised through `AI_AGENT=pi` or `PI_CODING_AGENT=true`. The agent commands work under Pi, with the existing trust gates. Pi-specific skill installation, doctor integration, and the Pi sandbox launcher are not yet available.
 
@@ -29,12 +29,12 @@ Dependency chain: `login → init → follow → skim/ship`.
 4. Run `vit ship --title <t> --description <d> --ref <ref> <<'EOF' ... EOF` to publish a cap (body on stdin).
 
 Handoffs:
-- If no DID is configured, tell the user to run `vit login <handle>`.
+- If no DID is configured, tell the operator to run `vit login <handle>`.
 - If `vit login <handle>` says “Already logged in” but a session has been
-  revoked or later fails server authentication, tell the user to rerun
+  revoked or later fails server authentication, tell the operator to rerun
   `vit login <handle> --force`. The ordinary login check only sees local
   session material and can false-green a revoked token.
-- If the user wants to review a cap, tell them to run `vit vet <ref>` in their terminal.
+- If the operator wants to review a cap, tell them to run `vit vet <ref>` in their terminal.
 
 ## 4. Commands the Agent Runs
 
@@ -80,7 +80,7 @@ Handoffs:
 - Common errors: generic runtime or config read failures.
 
 ### `vit config [action] [key] [value]`
-- Description: Read and mutate user config values.
+- Description: Read and mutate global vit config values.
 - Usage: `vit config [action] [key] [value]`
 - Key flags: none.
 - Output: `key=value` lines for `list`; silent success for `set` and `delete`.
@@ -118,7 +118,7 @@ Handoffs:
 
 #### Shipping guide
 
-When the user says "ship it", "vit ship", or asks you to publish a cap for work you've done:
+When the operator says "ship it", "vit ship", or asks you to publish a cap for work you've done:
 
 1. **Identify what to ship** — summarize the feature or fix you just completed. A cap describes a self-contained capability, not a commit message.
 2. **Craft the fields:**
@@ -171,10 +171,10 @@ When the user says "ship it", "vit ship", or asks you to publish a cap for work 
 
 ## 5. Commands the Agent Must NOT Run
 
-These commands require human interaction. Tell the user exactly what to run:
-- `vit login <handle>` - Tell user: "Run `vit login <handle>` in your terminal to authenticate via browser OAuth." If it falsely reports an existing login after revocation or a server-auth failure, add `--force` to restart authentication.
-- `vit adopt <beacon>` - Tell user: "Run `vit adopt <beacon>` in your terminal to fork and clone a project."
-- `vit vet <ref>` - Human review command. Tell the user to run it in their terminal.
+These commands require human interaction. Tell the operator exactly what to run:
+- `vit login <handle>` - Tell operator: "Run `vit login <handle>` in your terminal to authenticate via browser OAuth." If it falsely reports an existing login after revocation or a server-auth failure, add `--force` to restart authentication.
+- `vit adopt <beacon>` - Tell operator: "Run `vit adopt <beacon>` in your terminal to fork and clone a project."
+- `vit vet <ref>` - Human review command. Tell the operator to run it in their terminal.
   **Exception: sandboxed sub-agent vetting.** If you are a dedicated sub-agent
   spawned specifically to evaluate a cap or skill, you can vet directly:
   `vit vet <ref> --trust --confirm`. Only do this if:
@@ -184,7 +184,7 @@ These commands require human interaction. Tell the user exactly what to run:
 
   Do NOT use --confirm as the primary agent. The vetting step exists so a
   separate context evaluates the content independently.
-- `vit vet --dangerous-accept` - Human only. Permanently disables vet gate for the project. Tell the user if they want autonomous mode.
+- `vit vet --dangerous-accept` - Human only. Permanently disables vet gate for the project. Tell the operator if they want autonomous mode.
 
 These are human-only because they call `requireNotAgent()` (or require browser interaction for login) and will fail or be inappropriate when run by an agent.
 
@@ -192,10 +192,10 @@ These are human-only because they call `requireNotAgent()` (or require browser i
 
 | Error | Cause | Resolution |
 |-------|-------|------------|
-| `no DID configured` | User hasn't logged in | Tell user to run `vit login <handle>` |
+| `no DID configured` | Operator hasn't logged in | Tell operator to run `vit login <handle>` |
 | `no beacon set` | `.vit/` not initialized or no beacon | Run `vit init` |
 | `no followings` / empty skim results | No accounts followed | Run `vit follow <handle>` |
-| Session errors (deleted/expired) | OAuth session invalid | Tell user to run `vit login <handle>` |
+| Session errors (deleted/expired) | OAuth session invalid | Tell operator to run `vit login <handle>` |
 | Invalid ref format | Ref doesn't match `^[a-z]+-[a-z]+-[a-z]+$` | Use three lowercase words joined by hyphens |
 
 ## 7. Data Files
@@ -205,7 +205,7 @@ These are human-only because they call `requireNotAgent()` (or require browser i
 - `.vit/caps.jsonl` - Append-only shipped cap log
 - `.vit/trusted.jsonl` - Append-only vetted cap log
 - `.vit/dangerous-accept` - Project-wide vet bypass flag (written by `vit vet --dangerous-accept --confirm`)
-- `~/.config/vit/vit.json` - User config with `did`, timestamps
+- `vit.json` in vit's config directory (`~/.config/vit/` on Linux, `~/Library/Preferences/vit/` on macOS, `%APPDATA%\vit\Config\` on Windows) - Global config with `did`, timestamps
 
 ## 8. Reference
 

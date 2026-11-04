@@ -45,7 +45,7 @@ describe('vit learn', () => {
     const r = run('learn skill-test --user --did did:plc:test123', tmp, agentEnv);
     expect(r.exitCode).not.toBe(0);
     expect(r.stderr).toContain('not yet vetted');
-    expect(r.stderr).toContain('user-wide install requires vetting');
+    expect(r.stderr).toContain('global install requires vetting');
     rmSync(tmp, { recursive: true, force: true });
   });
 
@@ -89,7 +89,7 @@ describe('vit learn', () => {
       expect(r.exitCode).not.toBe(0);
       // Should STILL fail at vet check for --user
       expect(r.stderr).toContain('not yet vetted');
-      expect(r.stderr).toContain('user-wide install requires vetting');
+      expect(r.stderr).toContain('global install requires vetting');
       rmSync(tmp, { recursive: true, force: true });
     });
 

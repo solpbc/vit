@@ -279,5 +279,5 @@ describe('canonical beacon CLI behavior', () => {
         entry.args[0] === 'doctor' ? 'invalid project identity' : '.vit/config.json',
       );
     }
-  });
+  }, 60000); // eleven real subprocesses in sequence: the 5s default starves on a busy host
 });

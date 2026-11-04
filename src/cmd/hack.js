@@ -12,7 +12,7 @@ export default function register(program) {
   program
     .command('hack')
     .description('Fork and install vit from source')
-    .option('--from <repo>', 'Clone an existing fork instead of creating a new one (e.g. user/vit)')
+    .option('--from <repo>', 'Clone an existing fork instead of creating a new one (e.g. your-name/vit)')
     .action(async (opts) => {
       try {
         const ghPath = which('gh');

@@ -100,7 +100,7 @@ async function installSkill({ match, skillName, isGlobal, opts, ref }) {
     jsonOk({ ref, name: skillName, installedTo: installDir, scope, version: record.version || null });
     return;
   }
-  console.log(`${mark} learned: ${ref} (${scope})`);
+  console.log(`${mark} learned: ${ref} (${isGlobal ? 'global' : 'project'})`);
   console.log(`installed to: ${installDir}`);
   if (record.version) console.log(`version: ${record.version}`);
 }
@@ -220,19 +220,19 @@ export default function register(program) {
     .argument('<ref>', 'Skill reference: @handle/name or skill-{name}')
     .description('Install a skill from the network')
     .option('--did <did>', 'DID to use (skill-{name} path only)')
-    .option('--user', 'Install to user-wide ~/.claude/skills/ (skill-{name} path, requires vet)')
+    .option('--user', 'Install globally to ~/.claude/skills/ (skill-{name} path, requires vet)')
     .option('--project', 'Install to project .claude/skills/ (@handle/ path)')
     .option('--dry-run', 'Show skill contents without installing')
     .option('--json', 'Output as JSON')
     .option('-v, --verbose', 'Show step-by-step details')
     .addHelpText('after', `
 Examples:
-  vit learn @solpbc.org/using-vit          Install from publisher (user-wide)
+  vit learn @solpbc.org/using-vit          Install from publisher (global)
   vit learn @solpbc.org/using-vit.         Install from publisher (project-local)
   vit learn @solpbc.org/using-vit --project  Same as trailing dot
   vit learn @solpbc.org/using-vit --dry-run  Inspect without installing
   vit learn skill-agent-test-patterns      Install from followed accounts (project-local)
-  vit learn skill-agent-test-patterns --user Install from followed (user-wide, requires vet)
+  vit learn skill-agent-test-patterns --user Install from followed (global, requires vet)
 `)
     .action(async (ref, opts) => {
       try {
@@ -291,7 +291,7 @@ Examples:
             jsonError(`skill '${ref}' is not yet vetted`, 'user-wide install requires vetting');
             return;
           }
-          console.error(`skill '${ref}' is not yet vetted. user-wide install requires vetting.`);
+          console.error(`skill '${ref}' is not yet vetted. global install requires vetting.`);
           console.error(`tell your operator to vet it first:`);
           console.error('');
           console.error(`  vit vet ${ref}`);

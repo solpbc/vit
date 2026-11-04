@@ -88,13 +88,16 @@ describe('login', () => {
 
   test('--local without .vit/ directory fails', () => {
     const tmp = mkdtempSync(join(realTmpdir(), 'vit-test-'));
+    // login installs the using-vit skill under $HOME before anything else: keep that off the real one
+    const home = mkdtempSync(join(realTmpdir(), 'vit-test-home-'));
     try {
-      const result = run('login testhandle --local', tmp);
+      const result = run('login testhandle --local', tmp, { HOME: home, XDG_CONFIG_HOME: join(home, '.config') });
       expect(result.exitCode).not.toBe(0);
       const output = (result.stdout || '') + ' ' + (result.stderr || '');
       expect(output).toContain('vit init');
     } finally {
       rmSync(tmp, { recursive: true });
+      rmSync(home, { recursive: true, force: true });
     }
   });
 
