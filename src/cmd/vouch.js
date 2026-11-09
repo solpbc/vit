@@ -14,6 +14,7 @@ import { loadConfig } from '../lib/config.js';
 import { jsonOk, jsonError } from '../lib/json-output.js';
 import { formatError } from '../lib/error-format.js';
 import { tryNormalizeBeacon } from '../lib/beacon.js';
+import { requireTrustedRecord } from '../lib/trust-gate.js';
 
 export default function register(program) {
   program
@@ -136,6 +137,8 @@ export default function register(program) {
             return;
           }
 
+          requireTrustedRecord(ref, match, trusted);
+
           const now = new Date().toISOString();
           const vouchRecord = {
             $type: VOUCH_COLLECTION,
@@ -178,6 +181,7 @@ export default function register(program) {
         } else {
           const vouchKind = opts.kind || 'endorse';
           const isWant = vouchKind === 'want';
+          const trusted = readLog('trusted.jsonl');
 
           // Cap vouch — beacon required unless want-vouching (demand signal)
           const beaconSet = readBeaconSet();
@@ -194,7 +198,6 @@ export default function register(program) {
             }
             if (verbose) vlog(`[verbose] beacons: ${[...beaconSet].join(', ')}`);
 
-            const trusted = readLog('trusted.jsonl');
             const trustedEntry = trusted.find(e => e.ref === ref);
             if (!trustedEntry) {
               if (opts.json) {
@@ -253,6 +256,8 @@ export default function register(program) {
             process.exitCode = 1;
             return;
           }
+
+          if (!isWant) requireTrustedRecord(ref, match, trusted);
 
           const now = new Date().toISOString();
           const projBeacon = beaconSet.size > 0

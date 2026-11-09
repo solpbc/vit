@@ -10,7 +10,7 @@ import { SKILL_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { readFollowing, readLog, appendLog, vitDir } from '../lib/vit-dir.js';
 import { requireAgent, detectCodingAgent } from '../lib/agent.js';
-import { shouldBypassVet } from '../lib/trust-gate.js';
+import { shouldBypassVet, requireTrustedRecord } from '../lib/trust-gate.js';
 import { isSkillRef, nameFromSkillRef, isValidSkillRef, isValidSkillName } from '../lib/skill-ref.js';
 import { mark, name } from '../lib/brand.js';
 import { resolvePds, resolveHandle, listRecordsFromPds, batchQuery } from '../lib/pds.js';
@@ -280,10 +280,11 @@ Examples:
         const skillName = nameFromSkillRef(ref);
         if (verbose) vlog(`[verbose] skill name: ${skillName}`);
 
-        // Trust gate
+        // Preflight only; check the selected record's URI and CID before use.
         const isUserInstall = !!opts.user;
         const trusted = readLog('trusted.jsonl');
         const trustedEntry = trusted.find(e => e.ref === ref);
+        const trustGate = isUserInstall ? { bypass: false } : shouldBypassVet();
 
         if (isUserInstall && !trustedEntry) {
           // --user ALWAYS requires vet
@@ -305,7 +306,6 @@ Examples:
 
         if (!isUserInstall && !trustedEntry) {
           // Project-level: requires vet UNLESS dangerous-accept
-          const trustGate = shouldBypassVet();
           if (!trustGate.bypass) {
             if (opts.json) {
               jsonError(`skill '${ref}' is not yet vetted`, `run 'vit vet ${ref}' first`);
@@ -379,6 +379,8 @@ Examples:
           process.exitCode = 1;
           return;
         }
+
+        if (!trustGate.bypass) requireTrustedRecord(ref, match, trusted);
 
         const record = match.value;
         if (verbose) vlog(`[verbose] found skill: ${record.name} from ${match.uri}`);

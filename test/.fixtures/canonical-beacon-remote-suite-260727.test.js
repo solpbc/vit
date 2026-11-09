@@ -265,7 +265,7 @@ describe('canonical remote beacon behavior', () => {
     });
     writeFileSync(
       join(testDir, '.vit', 'trusted.jsonl'),
-      JSON.stringify({ ref: 'canonical-beacon-test', uri: CAP_URI }) + '\n',
+      JSON.stringify({ ref: 'canonical-beacon-test', uri: CAP_URI, cid: CAP_CID }) + '\n',
     );
     remoteRecords = [capRecord('https://tangled.org/solpbc.org/rookery')];
 
@@ -354,7 +354,7 @@ describe('canonical remote beacon behavior', () => {
     writeRawConfig(testDir, { beacon: 'vit:tangled.org/bmann/assemblinker' });
     writeFileSync(
       join(testDir, '.vit', 'trusted.jsonl'),
-      JSON.stringify({ ref: 'canonical-beacon-test', uri: 'at://did:plc:test/org.v-it.cap/record' }) + '\n',
+      JSON.stringify({ ref: 'canonical-beacon-test', uri: 'at://did:plc:test/org.v-it.cap/record', cid: CAP_CID }) + '\n',
     );
     remoteRecords = [
       {
@@ -385,7 +385,7 @@ describe('canonical remote beacon behavior', () => {
     writeRawConfig(testDir, { beacon: 'https://github.com/solpbc/thermals' });
     writeFileSync(
       join(testDir, '.vit', 'trusted.jsonl'),
-      JSON.stringify({ ref: 'canonical-beacon-test', uri: CAP_URI }) + '\n',
+      JSON.stringify({ ref: 'canonical-beacon-test', uri: CAP_URI, cid: CAP_CID }) + '\n',
     );
     remoteRecords = [capRecord('https://github.com/solpbc/thermals')];
 

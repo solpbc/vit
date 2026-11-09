@@ -59,7 +59,7 @@ Handoffs:
 - Usage: `vit remix <ref>`
 - Key flags: `--did <did>`, `--verbose`
 - Output: text pretext block with cap content to stdout (consumed by the calling agent).
-- Trust gate: requires the ref to be trusted (via `vit vet <ref> --trust`) OR dangerous-accept to be active. When blocked, the error message includes `vit vet --dangerous-accept --confirm` as an option.
+- Trust gate: requires trust for the selected record's ref, URI, and CID (via `vit vet <ref> --trust`) OR dangerous-accept to be active. A changed record or an older trust entry without a CID requires re-vetting.
 - Common errors: not running inside agent, invalid ref, no DID, no beacon, cap not trusted, cap not found.
 
 ### `vit learn <ref>`
@@ -67,7 +67,7 @@ Handoffs:
 - Usage: `vit learn <ref>`
 - Key flags: `--did <did>`, `--user`, `--verbose`
 - Output: confirmation of install location.
-- Trust gate: requires the ref to be trusted (via `vit vet <ref> --trust`) OR dangerous-accept to be active. `--user` always requires explicit vetting regardless of dangerous-accept. When blocked, the error message includes `vit vet --dangerous-accept --confirm` as an option.
+- Trust gate: requires trust for the selected record's ref, URI, and CID (via `vit vet <ref> --trust`) OR dangerous-accept to be active. A changed record or an older trust entry without a CID requires re-vetting. `--user` always requires matching vetting regardless of dangerous-accept.
 - Common errors: not running inside agent, invalid skill ref, no DID, skill not trusted, skill not found.
 
 ### Agent-usable commands
@@ -203,7 +203,7 @@ These are human-only because they call `requireNotAgent()` (or require browser i
 - `.vit/config.json` - `{ "beacon": "vit:host/org/repo" }`
 - `.vit/following.json` - `[{ "handle": "...", "did": "...", "followedAt": "..." }]`
 - `.vit/caps.jsonl` - Append-only shipped cap log
-- `.vit/trusted.jsonl` - Append-only vetted cap log
+- `.vit/trusted.jsonl` - Append-only cap and skill trust log, binding each ref to the vetted record's URI and CID. Entries without a CID require re-vetting.
 - `.vit/dangerous-accept` - Project-wide vet bypass flag (written by `vit vet --dangerous-accept --confirm`)
 - `vit.json` in vit's config directory (`~/.config/vit/` on Linux, `~/Library/Preferences/vit/` on macOS, `%APPDATA%\vit\Config\` on Windows) - Global config with `did`, timestamps
 

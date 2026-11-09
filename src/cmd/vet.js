@@ -320,6 +320,9 @@ export default function register(program) {
             return;
           }
 
+          if (opts.trust && (typeof match.cid !== 'string' || !match.cid)) {
+            throw new Error(`cannot trust '${ref}': the record has no CID. fetch it again with 'vit vet ${ref}'.`);
+          }
           const record = match.value;
 
           if (opts.sandbox) {
@@ -337,6 +340,7 @@ export default function register(program) {
                 appendLog('trusted.jsonl', {
                   ref,
                   uri: match.uri,
+                  cid: match.cid,
                   trustedAt: new Date().toISOString(),
                   sandboxVerdict: verdict,
                 });
@@ -398,6 +402,7 @@ export default function register(program) {
             appendLog('trusted.jsonl', {
               ref,
               uri: match.uri,
+              cid: match.cid,
               trustedAt: new Date().toISOString(),
             });
             if (opts.json) {
@@ -491,6 +496,9 @@ export default function register(program) {
             return;
           }
 
+          if (opts.trust && (typeof match.cid !== 'string' || !match.cid)) {
+            throw new Error(`cannot trust '${ref}': the record has no CID. fetch it again with 'vit vet ${ref}'.`);
+          }
           const record = match.value;
 
           if (opts.sandbox) {
@@ -518,6 +526,7 @@ export default function register(program) {
                 appendLog('trusted.jsonl', {
                   ref,
                   uri: match.uri,
+                  cid: match.cid,
                   trustedAt: new Date().toISOString(),
                   sandboxVerdict: verdict,
                 });
@@ -570,6 +579,7 @@ export default function register(program) {
             appendLog('trusted.jsonl', {
               ref,
               uri: match.uri,
+              cid: match.cid,
               trustedAt: new Date().toISOString(),
             });
             if (opts.json) {

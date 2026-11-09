@@ -6,7 +6,7 @@ import { CAP_COLLECTION } from '../lib/constants.js';
 import { restoreAgent } from '../lib/oauth.js';
 import { readBeaconSet, readFollowing, readLog } from '../lib/vit-dir.js';
 import { requireAgent, detectCodingAgent } from '../lib/agent.js';
-import { shouldBypassVet } from '../lib/trust-gate.js';
+import { shouldBypassVet, requireTrustedRecord } from '../lib/trust-gate.js';
 import { resolveRef, REF_PATTERN } from '../lib/cap-ref.js';
 import { brand, name } from '../lib/brand.js';
 import { resolvePds, listRecordsFromPds, batchQuery } from '../lib/pds.js';
@@ -70,10 +70,11 @@ export default function register(program) {
         }
         if (verbose) vlog(`[verbose] beacons: ${[...beaconSet].join(', ')}`);
 
+        // Preflight only; check the selected record's URI and CID before use.
         const trusted = readLog('trusted.jsonl');
         const trustedEntry = trusted.find(e => e.ref === ref);
+        const trustGate = shouldBypassVet();
         if (!trustedEntry) {
-          const trustGate = shouldBypassVet();
           if (!trustGate.bypass) {
             if (opts.json) {
               jsonError(`cap '${ref}' is not trusted`, `tell your operator to run 'vit vet ${ref} --trust'`);
@@ -143,6 +144,8 @@ export default function register(program) {
           process.exitCode = 1;
           return;
         }
+
+        if (!trustGate.bypass) requireTrustedRecord(ref, match, trusted);
 
         const record = match.value;
         const author = match.uri.split('/')[2];
